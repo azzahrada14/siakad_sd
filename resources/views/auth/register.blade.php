@@ -9,7 +9,7 @@
             SIGN UP<br>
             SIAKAD SDN CIMANAHAYU
         </h1>
-                <p class="text-sm text-blue-100 mt-2">
+                <p class="text-sm text-gray-100 mt-2">
                     Buat akun untuk mengakses SIAKAD SDN Cimanahayu
                 </p>
             </div>

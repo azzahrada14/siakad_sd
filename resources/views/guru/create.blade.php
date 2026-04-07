@@ -1,8 +1,10 @@
 @extends('layouts.app')
 
 @section('content')
- <div class="p-6 bg-gray-100 min-h-screen flex justify-center">
+<div class="p-6 bg-gray-100 min-h-screen flex justify-center">
+
         <div class="w-full max-w-3xl bg-white p-6 rounded-xl shadow">
+ 
 
             <h2 class="text-xl font-bold mb-6">Tambah Guru</h2>
 
@@ -74,7 +76,7 @@
                         <input type="text" name="no_hp"
                             class="w-full border rounded p-2"
                             value="{{ old('no_hp') }}">
-                    </div><br><br>
+                    </div><br>
 
                     <div class="flex gap-2">
                       <button type="submit"

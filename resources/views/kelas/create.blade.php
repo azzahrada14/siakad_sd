@@ -1,7 +1,8 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="container mx-auto px-6 py-8">
+
+    <div class="p-6 py-8 bg-gray-100  flex justify-center">
 <div class="w-full max-w-3xl bg-white p-6 rounded-xl shadow">
         <h2 class="text-2xl font-bold text-gray-800 mb-6">
             Tambah Kelas

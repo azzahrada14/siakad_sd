@@ -4,25 +4,19 @@
 
 <div class="max-w-7xl mx-auto px-6">
 
-    {{-- JUDUL --}}
-    <div class="mb-6">
-        <h2 class="text-2xl font-semibold text-gray-800">
-            Dashboard SIAKAD SDN Cimanahayu
-        </h2>
-    </div>
 
     {{-- LOGO --}}
     <div class="text-center mb-10">
         <img src="{{ asset('logo.png') }}" class="w-20 mx-auto mb-3">
 
-        <h1 class="text-2xl font-bold text-gray-800">
-            Sistem Informasi Akademik
+        <h1 class="text-3xl font-bold text-gray-800">
+            Dasboard Sistem Informasi Akademik
         </h1>
 
-        <p class="text-gray-500">
+        <p class="text2x1 text-gray-500">
             SD Negeri Cimanahayu
         </p>
-    </div>
+    </div><br>
 
     {{-- CARD --}}
     <div class="flex flex-col md:flex-row gap-6">
