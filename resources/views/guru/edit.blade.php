@@ -44,9 +44,41 @@
                     </div>
 
                     <div class="mb-4">
-                        <label>No HP</label>
-                        <input type="text" name="no_hp" value="{{ $guru->no_hp }}" class="w-full border rounded p-2">
-                    </div> <br><br>
+                        <label>email</label>
+                        <input type="text" name="email" value="{{ $guru->email }}" class="w-full border rounded p-2">
+                    </div>
+
+                    {{-- JENIS GURU --}}
+<div class="mb-4">
+
+    <label class="block font-medium mb-2">
+
+        Jenis Guru
+
+    </label>
+
+    <select name="role_guru"
+            class="w-full border rounded-lg px-4 py-3">
+
+        <option value="mapel"
+            {{ $guru->role_guru == 'mapel' ? 'selected' : '' }}>
+
+            Guru Mapel
+
+        </option>
+
+        <option value="wali"
+            {{ $guru->role_guru == 'wali' ? 'selected' : '' }}>
+
+            Wali Kelas
+
+        </option>
+
+    </select>
+
+</div>
+                    
+                    <br><br>
 
                     <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded">
                         Update

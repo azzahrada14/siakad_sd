@@ -2,37 +2,42 @@
 
 namespace App\Models;
 
-use App\Models\Mapel;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Guru extends Model
 {
-    use HasFactory;
-
-    protected $table = 'gurus';
-
     protected $fillable = [
+        'user_id',
         'nip',
         'nama_guru',
         'jenis_kelamin',
         'tempat_lahir',
         'tanggal_lahir',
         'alamat',
-        'no_hp',
+        'email',
+        'role_guru',
+        'mapel_id',
+        'kelas_id'
     ];
 
-    protected $casts = [
-        'tanggal_lahir' => 'date',
-    ];
-    
-    public function kelas()
+    public function user()
     {
-        return $this->hasOne(Kelas::class, 'wali_kelas_id');
+        return $this->belongsTo(User::class);
     }
 
-    public function mapels()
+    public function mapel()
     {
-        return $this->hasMany(Mapel::class);
+        return $this->belongsTo(
+            Mapel::class,
+            'mapel_id'
+        );
+    }
+
+    public function kelas()
+    {
+        return $this->belongsTo(
+            Kelas::class,
+            'kelas_id'
+        );
     }
 }

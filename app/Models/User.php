@@ -2,46 +2,46 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
 class User extends Authenticatable
 {
-    use HasFactory, Notifiable;
+    use Notifiable;
 
     protected $fillable = [
+
         'name',
         'email',
         'password',
-        'role',
+        'role'
+
     ];
 
     protected $hidden = [
+
         'password',
-        'remember_token',
+        'remember_token'
+
     ];
 
-    protected function casts(): array
+    public function guru()
     {
-        return [
-            'email_verified_at' => 'datetime',
-            'password' => 'hashed',
-        ];
+        return $this->hasOne(Guru::class);
     }
 
-    public function isAdmin()
+    public function isOperator()
     {
-        return $this->role === 'admin';
+        return $this->role == 'operator';
     }
 
-    public function isGuruKelas()
+    public function isGuru()
     {
-        return $this->role === 'guru_kelas';
+        return $this->role == 'guru';
     }
 
-    public function isGuruMapel()
+    public function isKepalaSekolah()
     {
-        return $this->role === 'guru_mapel';
+        return $this->role == 'kepala_sekolah';
     }
 }

@@ -40,33 +40,12 @@
     <label class="block mb-1 font-medium">Login Sebagai</label>
     <select name="role" class="w-full border p-2 rounded" required>
         <option value="">-- Pilih Role --</option>
-        <option value="admin">Administrator</option>
+        <option value="operator">Operator</option>
         <option value="guru">Guru</option>
-        <option value="siswa">Siswa</option>
+        <option value="kepala_sekolah">Kepala Sekolah</option>
     </select>
 </div>
 
-        {{-- REMEMBER + FORGOT --}}
-        <div class="mt-4 flex items-center justify-between">
-
-            <label class="flex items-center">
-                <input type="checkbox" name="remember" class="mr-2">
-                <span class="text-sm text-gray-600">Remember me</span>
-            </label>
-
-            <a href="{{ route('password.request') }}"
-               class="text-sm text-blue-600 hover:underline">
-                Lupa Password?
-            </a>
-
-        </div>
-
-        <div class="mt-4 text-center">
-    <span>Belum punya akun?</span>
-    <a href="{{ route('register') }}" class="text-blue-600 hover:underline">
-        Signup
-    </a>
-</div>
 
         {{-- BUTTON --}}
         <div class="flex justify-end mt-4">

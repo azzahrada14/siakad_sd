@@ -2,18 +2,22 @@
 
 namespace App\Models;
 
-use App\Models\Guru;
 use Illuminate\Database\Eloquent\Model;
 
 class Mapel extends Model
 {
-    protected $fillable = [
-        'kode_mapel',
-        'nama_mapel',
-        'guru_id'
-    ];
-public function guru()
+   protected $fillable = [
+    'kode_mapel',
+    'nama_mapel',
+    'guru_id'
+];
+
+public function absensi()
 {
-    return $this->belongsTo(Guru::class);
+    return $this->hasMany(Absensi::class);
+}
+public function details()
+{
+    return $this->hasMany(RaporDetail::class);
 }
 }

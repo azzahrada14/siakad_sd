@@ -27,6 +27,10 @@ class Siswa extends Model
         'pekerjaan_ayah',
         'pekerjaan_ibu',
         'status_siswa',
+        'nama_wali',
+'pekerjaan_wali',
+'telepon_orangtua',
+'tahun_masuk',
         
     ];
 
@@ -35,4 +39,12 @@ class Siswa extends Model
     {
         return $this->belongsTo(Kelas::class);
     }
+    public function ekstrakurikuler()
+{
+    return $this->hasMany(Ekstrakurikuler::class);
+}
+public function kelulusan()
+{
+    return $this->hasOne(Kelulusan::class);
+}
 }

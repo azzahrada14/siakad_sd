@@ -6,19 +6,22 @@ use App\Models\Mapel;
 use App\Models\Guru;
 use Illuminate\Http\Request;
 
+use App\Imports\MapelImport;
+use App\Exports\MapelExport;
+use Maatwebsite\Excel\Facades\Excel;
+
 class MapelController extends Controller
 {
-    public function index()
-    {
-        $mapels = Mapel::with('guru')->get();
-        return view('mapel.index', compact('mapels'));
-    }
-
-   public function create()
+   public function index()
 {
-    $guru = Guru::all();
+    $mapels = Mapel::all();
 
-    return view('mapel.create', compact('guru'));
+    return view('mapel.index', compact('mapels'));
+}
+
+  public function create()
+{
+    return view('mapel.create');
 }
 
     public function store(Request $request)
@@ -35,13 +38,12 @@ class MapelController extends Controller
     }
 
     public function edit($id)
-    {
-        $mapel = Mapel::findOrFail($id);
-        $guru = Guru::all();
+{
+    $mapel = Mapel::findOrFail($id);
 
-        return view('mapel.edit', compact('mapel','guru'));
-    }
-
+    return view('mapel.edit', compact('mapel'));
+}
+    
     public function update(Request $request, $id)
     {
         $request->validate([
@@ -63,4 +65,29 @@ class MapelController extends Controller
         return redirect()->route('mapel.index')
             ->with('success', 'Data mapel berhasil dihapus');
     }
+
+    public function import(Request $request)
+{
+    $request->validate([
+        'file' => 'required|mimes:xlsx,xls'
+    ]);
+
+    Excel::import(
+        new MapelImport,
+        $request->file('file')
+    );
+
+    return back()->with(
+        'success',
+        'Data mapel berhasil diimport'
+    );
+}
+
+public function export()
+{
+    return Excel::download(
+        new MapelExport,
+        'data_mapel.xlsx'
+    );
+}
 }

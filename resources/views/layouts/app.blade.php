@@ -1,29 +1,50 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+<html lang="id">
+
 <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="csrf-token" content="{{ csrf_token() }}">
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <title>SIAKAD SDN Cimanahayu</title>
 
-    <link rel="preconnect" href="https://fonts.bunny.net">
-    <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
+    @vite([
+        'resources/css/app.css',
+        'resources/js/app.js'
+    ])
 
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
+    {{-- Alpine --}}
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+    {{-- Feather Icon --}}
+    <script src="https://unpkg.com/feather-icons"></script>
+
+<script>
+window.addEventListener('load', () => {
+    feather.replace();
+});
+</script>
+
 </head>
 
-<body class="font-sans antialiased bg-gray-100">
+<body
+    class="bg-gray-100"
+    x-data="{ sidebarOpen:true }">
 
-    {{-- NAVBAR --}}
     @include('layouts.navigation')
 
-    {{-- CONTENT --}}
-    <main class="py-6">
-        <div class="max-w-7xl mx-auto px-6">
-            @yield('content')
-        </div>
+    <main
+        :class="sidebarOpen ? 'ml-64' : 'ml-20'"
+        class="pt-[90px] p-6 transition-all duration-300">
+
+        @yield('content')
+
     </main>
 
+    <script src="https://cdn.jsdelivr.net/npm/alpinejs" defer></script>
+
+@yield('scripts')
+
 </body>
+
 </html>

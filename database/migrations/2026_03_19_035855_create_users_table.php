@@ -17,7 +17,9 @@ return new class extends Migration
             $table->string('role')->default('admin');
             $table->rememberToken();
             $table->timestamps();
-        });
+       
+            });
+
     }
 
     public function down(): void

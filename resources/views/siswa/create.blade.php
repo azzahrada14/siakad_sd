@@ -65,7 +65,7 @@
                     <input type="text" name="nipd"
                        maxlength="9"
                        pattern="\d{9}"
-                       title="NIPD harus berupa 10 digit angka"
+                       title="NIPD harus berupa 9 digit angka"
                         class="w-full border p-2 rounded">
                 </div>
 
@@ -75,7 +75,7 @@
                     <input type="text" name="nisn"
                        maxlength="10"
                        pattern="\d{10}"
-                       title="NISN harus berupa 9 digit angka" 
+                       title="NISN harus berupa 10 digit angka" 
                     class="w-full border p-2 rounded">
                 </div>
 
@@ -93,6 +93,101 @@
                         class="w-full border p-2 rounded">
                 </div>
 
+                {{-- Agama --}}
+<div class="mb-4">
+    <label class="block text-sm font-medium">Agama</label>
+    <input type="text"
+        name="agama"
+        class="w-full border p-2 rounded">
+</div>
+
+{{-- Alamat --}}
+<div class="mb-4">
+    <label class="block text-sm font-medium">Alamat</label>
+    <textarea
+        name="alamat"
+        rows="3"
+        class="w-full border p-2 rounded"></textarea>
+</div>
+
+{{-- Nama Ayah --}}
+<div class="mb-4">
+    <label class="block text-sm font-medium">Nama Ayah</label>
+    <input type="text"
+        name="nama_ayah"
+        class="w-full border p-2 rounded">
+</div>
+
+{{-- Nama Ibu --}}
+<div class="mb-4">
+    <label class="block text-sm font-medium">Nama Ibu</label>
+    <input type="text"
+        name="nama_ibu"
+        class="w-full border p-2 rounded">
+</div>
+
+{{-- Pekerjaan Ayah --}}
+<div class="mb-4">
+    <label class="block text-sm font-medium">Pekerjaan Ayah</label>
+    <input type="text"
+        name="pekerjaan_ayah"
+        class="w-full border p-2 rounded">
+</div>
+
+{{-- Pekerjaan Ibu --}}
+<div class="mb-4">
+    <label class="block text-sm font-medium">Pekerjaan Ibu</label>
+    <input type="text"
+        name="pekerjaan_ibu"
+        class="w-full border p-2 rounded">
+</div>
+
+{{-- Status Siswa --}}
+<div class="mb-4">
+    <label class="block text-sm font-medium">Status Siswa</label>
+
+    <select
+        name="status_siswa"
+        class="w-full border p-2 rounded">
+
+        <option value="Aktif">Aktif</option>
+        <option value="Naik Kelas">Naik Kelas</option>
+        <option value="Pindah">Pindah</option>
+        <option value="Keluar">Keluar</option>
+        <option value="Lulus">Lulus</option>
+        <option value="Tidak Lulus">Tidak Lulus</option>
+
+    </select>
+</div>
+
+<div class="mb-4">
+    <label>Nama Wali</label>
+    <input type="text"
+           name="nama_wali"
+           class="w-full border p-2 rounded">
+</div>
+
+<div class="mb-4">
+    <label>Pekerjaan Wali</label>
+    <input type="text"
+           name="pekerjaan_wali"
+           class="w-full border p-2 rounded">
+</div>
+
+<div class="mb-4">
+    <label>Telepon Orang Tua</label>
+    <input type="text"
+           name="telepon_orangtua"
+           class="w-full border p-2 rounded">
+</div>
+
+<div class="mb-4">
+    <label>Tahun Masuk</label>
+    <input type="number"
+           name="tahun_masuk"
+           class="w-full border p-2 rounded">
+</div>
+
                 {{-- BUTTON --}}
                <div class="flex gap-2">
                       <button type="submit"
@@ -100,7 +195,7 @@
                             Simpan
                         </button>
 
-                        <a href="{{ route('guru.index') }}"
+                        <a href="{{ route('siswa.index') }}"
                             class="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600">
                             Kembali
                         </a>

@@ -9,11 +9,14 @@ class TahunAjaran extends Model
 {
     use HasFactory;
 
-    protected $table = 'tahun_ajarans';
-
     protected $fillable = [
         'tahun_ajaran',
         'semester',
         'status',
     ];
+
+    public function nilais()
+    {
+        return $this->hasMany(Nilai::class);
+    }
 }
