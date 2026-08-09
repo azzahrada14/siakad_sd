@@ -24,46 +24,37 @@
     <form method="GET"
           class="flex flex-wrap items-center gap-3">
 
-        <select name="kelas_id"
+        <select name="kelas"
                 class="border border-gray-300 rounded-lg px-4 py-2">
 
             <option value="">Semua Kelas</option>
 
             @foreach($kelas as $item)
-            <option value="{{ $item->id }}"
-                {{ request('kelas_id') == $item->id ? 'selected' : '' }}>
-                {{ $item->nama_kelas }}
-            </option>
-            @endforeach
+
+<option
+    value="{{ $item->id }}"
+    {{ request('kelas') == $item->id ? 'selected' : '' }}>
+
+    {{ $item->nama_kelas }}
+
+</option>
+
+@endforeach
+    
 
         </select>
 
-        <select name="tahun_ajaran_id"
-                class="border border-gray-300 rounded-lg px-4 py-2">
+        @if($tahunAktif)
+<div class="text-sm text-gray-600">
+    Tahun Ajaran :
+    <strong>{{ $tahunAktif->tahun_ajaran }}</strong>
+    -
+    Semester
+    <strong>{{ $tahunAktif->semester }}</strong>
+</div>
+@endif
 
-            @foreach($tahunajaran as $ta)
-            <option value="{{ $ta->id }}"
-                {{ request('tahun_ajaran_id') == $ta->id ? 'selected' : '' }}>
-                {{ $ta->tahun_ajaran }}
-            </option>
-            @endforeach
 
-        </select>
-
-        <select name="semester"
-                class="border border-gray-300 rounded-lg px-4 py-2">
-
-            <option value="Ganjil"
-                {{ request('semester') == 'Ganjil' ? 'selected' : '' }}>
-                Ganjil
-            </option>
-
-            <option value="Genap"
-                {{ request('semester') == 'Genap' ? 'selected' : '' }}>
-                Genap
-            </option>
-
-        </select>
 
         <button type="submit"
                 class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg">
@@ -96,6 +87,21 @@
     </div>
 
 </div>
+@if(request('kelas'))
+
+<div class="mb-4">
+
+<span class="bg-blue-100 text-blue-700 px-3 py-2 rounded">
+
+Kelas :
+
+{{ $kelasDipilih->nama_kelas }}
+
+</span>
+
+</div>
+
+@endif
 
  {{-- TABLE --}}
     <div class="bg-white rounded-xl shadow overflow-x-auto">
@@ -141,7 +147,7 @@
                 </td>
 
                 <td class="border p-3 text-center">
-                    {{ $item->kelas->nama_kelas ?? '-' }}
+                    {{ $kelasDipilih->nama_kelas ?? '-' }}
                 </td>
 
                 <td class="border p-3 text-center">
@@ -149,11 +155,6 @@
                     @if($item->status_siswa == 'Aktif')
                         <span class="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs">
                             Aktif
-                        </span>
-
-                    @elseif($item->status_siswa == 'Naik Kelas')
-                        <span class="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-xs">
-                            Naik Kelas
                         </span>
 
                     @elseif($item->status_siswa == 'Lulus')

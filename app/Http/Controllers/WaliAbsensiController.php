@@ -4,269 +4,400 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-
-use App\Models\Siswa;
-use App\Models\Absensi;
-use App\Models\Guru;
-use App\Models\Mapel;
-use App\Models\Kelas;
+use Maatwebsite\Excel\Facades\Excel;
 
 use Carbon\Carbon;
+use App\Exports\WaliAbsensiExport;
+use App\Imports\WaliAbsensiImport;
+use App\Models\Guru;
+use App\Models\Kelas;
+use App\Models\Mapel;
+use App\Models\Siswa;
+use App\Models\Absensi;
+use App\Models\AnggotaKelas;
+use App\Models\TahunAjaran;
 
 class WaliAbsensiController extends Controller
 {
     public function index(Request $request)
-    {
-       
-        /*
-        |--------------------------------------------------------------------------
-        | LOGIN GURU
-        |--------------------------------------------------------------------------
-        */
+{
+    /*
+    |--------------------------------------------------------------------------
+    | GURU LOGIN
+    |--------------------------------------------------------------------------
+    */
 
-        $guru = Auth::user()->guru;
+    $guru = Auth::user()->guru;
 
-        /*
-        |--------------------------------------------------------------------------
-        | KELAS WALI
-        |--------------------------------------------------------------------------
-        */
+    /*
+    |--------------------------------------------------------------------------
+    | TAHUN AJARAN AKTIF
+    |--------------------------------------------------------------------------
+    */
 
-        $kelas = Kelas::where(
-            'wali_kelas_id',
-            $guru->id
-        )->first();
+    $tahunAktif = TahunAjaran::where(
 
-        /*
-        |--------------------------------------------------------------------------
-        | SISWA SESUAI KELAS
-        |--------------------------------------------------------------------------
-        */
+        'status',
 
-        $siswas = [];
+        'Aktif'
 
-        if ($kelas) {
+    )->first();
 
-            $siswas = Siswa::where(
-                'kelas_id',
-                $kelas->id
-            )
-            ->orderBy('nama_siswa')
-            ->get();
-        }
+    /*
+    |--------------------------------------------------------------------------
+    | KELAS WALI
+    |--------------------------------------------------------------------------
+    */
 
-        /*
-        |--------------------------------------------------------------------------
-        | FILTER
-        |--------------------------------------------------------------------------
-        */
+    $kelas = Kelas::where(
 
-        $bulan = $request->bulan ?? date('m');
+        'wali_kelas_id',
 
-        $tahun = $request->tahun ?? date('Y');
+        $guru->id
 
-        $guruId = $request->guru_id;
+    )->first();
+    /*
+|--------------------------------------------------------------------------
+| SISWA DALAM KELAS
+|--------------------------------------------------------------------------
+*/
 
-        $mapelId = $request->mapel_id;
-  
+$siswas = collect();
 
-        /*
-        |--------------------------------------------------------------------------
-        | DROPDOWN
-        |--------------------------------------------------------------------------
-        */
+if ($kelas) {
 
-        $gurus = Guru::orderBy('nama_guru')->get();
-        $mapels = Mapel::orderBy('nama_mapel')->get();
+    $ids = AnggotaKelas::where(
 
-        /*
-        |--------------------------------------------------------------------------
-        | JUMLAH HARI
-        |--------------------------------------------------------------------------
-        */
+        'kelas_id',
 
-        $jumlahHari = Carbon::create(
-            $tahun,
-            $bulan
-        )->daysInMonth;
+        $kelas->id
 
-        /*
-        |--------------------------------------------------------------------------
-        | DATA ABSENSI
-        |--------------------------------------------------------------------------
-        */
+    )->pluck(
 
-        $data = [];
+        'siswa_id'
 
-        foreach ($siswas as $siswa) {
+    );
 
-            $tanggalData = [];
+    $siswas = Siswa::whereIn(
 
-            $hadir = 0;
-            $izin = 0;
-            $sakit = 0;
-            $alfa = 0;
+        'id',
 
-            for ($i = 1; $i <= $jumlahHari; $i++) {
+        $ids
 
-                $tanggal = Carbon::create(
-                    $tahun,
-                    $bulan,
-                    $i
-                )->format('Y-m-d');
+    )
 
-                /*
-                |--------------------------------------------------------------------------
-                | QUERY ABSENSI
-                |--------------------------------------------------------------------------
-                */
+    ->orderBy(
 
-                $absen = Absensi::where(
-                    'siswa_id',
-                    $siswa->id
-                )
-                ->whereDate(
-                    'tanggal',
-                    $tanggal
-                );
+        'nama_siswa'
 
-               
-                /*
-                |--------------------------------------------------------------------------
-                | FILTER MAPEL
-                |--------------------------------------------------------------------------
-                */
-             
+    )
 
-                if ($mapelId) {
+    ->get();
 
-                    $absen->where(
-                        'mapel_id',
-                        $mapelId
-                    );
+}
+/*
+|--------------------------------------------------------------------------
+| FILTER REKAP
+|--------------------------------------------------------------------------
+*/
 
-                }
+$bulan = $request->bulan ?? now()->month;
 
-                
+$tahun = (int) explode('/', $tahunAktif->tahun_ajaran)[0];
 
-                /*
-                |--------------------------------------------------------------------------
-                | STATUS ABSENSI
-                |--------------------------------------------------------------------------
-                */
+$mapelId = $request->mapel_id;
 
-         
-             
+/*
+|--------------------------------------------------------------------------
+| MASTER MAPEL
+|--------------------------------------------------------------------------
+*/
 
+$mapels = Mapel::orderBy(
 
-  
+    'nama_mapel'
+
+)->get();
+
+/*
+|--------------------------------------------------------------------------
+| JUMLAH HARI
+|--------------------------------------------------------------------------
+*/
+
+$jumlahHari = Carbon::create(
+
+    $tahun,
+
+    $bulan
+
+)->daysInMonth;
+/*
+|--------------------------------------------------------------------------
+| ARRAY REKAP
+|--------------------------------------------------------------------------
+*/
+
+$data = [];
 
 
 
+foreach($siswas as $siswa){
+
+    $tanggalData = [];
+
+    $hadir = 0;
+
+    $izin = 0;
+
+    $sakit = 0;
+
+    $alfa = 0;
+
+    for($i=1;$i<=$jumlahHari;$i++){
+
+    $tanggal = Carbon::create(
+
+        $tahun,
+
+        $bulan,
+
+        $i
+
+    )->format('Y-m-d');
     
+    
+    $absen = Absensi::where(
 
-$absen = $absen->first();
+        'siswa_id',
 
-if ($absen) {
+        $siswa->id
 
-    $status = strtolower($absen->status);
+    )
 
-    if ($status == 'hadir') {
+    ->where(
 
-        $tanggalData[$i] = 'H';
-        $hadir++;
+        'kelas_id',
 
-    } elseif ($status == 'sakit') {
+        $kelas->id
 
-        $tanggalData[$i] = 'S';
-        $sakit++;
+    )
 
-    } elseif ($status == 'izin') {
+    ->where(
 
-        $tanggalData[$i] = 'I';
-        $izin++;
+        'tahun_ajaran_id',
 
-    } elseif ($status == 'alfa') {
+        $tahunAktif->id
 
-        $tanggalData[$i] = 'A';
-        $alfa++;
+    )
 
-    } else {
+    ->where(
 
-        $tanggalData[$i] = '-';
+        'semester',
+
+        $tahunAktif->semester
+
+    )
+
+    ->whereDate(
+
+        'tanggal',
+
+        $tanggal
+
+    );
+
+    if ($mapelId) {
+    $absen->where('mapel_id', $mapelId);
+}
+
+    $absen = $absen->first();
+
+
+
+
+/*
+|--------------------------------------------------------------------------
+| STATUS HARIAN
+|--------------------------------------------------------------------------
+*/
+
+if($absen){
+
+    switch(strtolower($absen->status)){
+
+        case 'hadir':
+
+            $tanggalData[$i] = 'H';
+
+            $hadir++;
+
+        break;
+
+        case 'izin':
+
+            $tanggalData[$i] = 'I';
+
+            $izin++;
+
+        break;
+
+        case 'sakit':
+
+            $tanggalData[$i] = 'S';
+
+            $sakit++;
+
+        break;
+
+        case 'alfa':
+
+            $tanggalData[$i] = 'A';
+
+            $alfa++;
+
+        break;
+
+        default:
+
+            $tanggalData[$i] = '-';
 
     }
 
-} else {
+}else{
 
     $tanggalData[$i] = '-';
 
 }
+    }
+    /*
+|--------------------------------------------------------------------------
+| REKAP
+|--------------------------------------------------------------------------
+*/
 
-            } 
-            
+$total =
 
-            /*
-            |--------------------------------------------------------------------------
-            | TOTAL & PERSENTASE
-            |--------------------------------------------------------------------------
-            */
+    $hadir +
 
-          $total = $hadir + $izin + $sakit + $alfa;
+    $izin +
 
-$persen = $jumlahHari > 0
-    ? round(($hadir / $jumlahHari) * 100)
-    : 0;
+    $sakit +
 
-            /*
-            |--------------------------------------------------------------------------
-            | ARRAY DATA
-            |--------------------------------------------------------------------------
-            */
+    $alfa;
 
-           
-$data[] = [
+$persentase =
+
+    $jumlahHari > 0
+
+    ?
+
+    round(
+
+        ($hadir / $jumlahHari) * 100
+
+    )
+
+    :
+
+    0;
+
+    $data[] = [
 
     'siswa' => $siswa,
+
     'tanggal' => $tanggalData,
+
     'hadir' => $hadir,
-    'sakit' => $sakit,
+
     'izin' => $izin,
+
+    'sakit' => $sakit,
+
     'alfa' => $alfa,
+
     'total' => $total,
-    'persen' => $persen
+
+    'persentase' => $persentase
 
 ];
-        }
+}
+return view(
 
-        /*
-        |--------------------------------------------------------------------------
-        | RETURN VIEW
-        |--------------------------------------------------------------------------
-        */
+    'wali.absensi',
 
-        return view('wali.absensi', compact(
+    compact(
 
-            'kelas',
+        'guru',
 
-            'siswas',
+        'kelas',
 
-            'bulan',
+        'siswas',
 
-            'tahun',
+        'mapels',
 
-            'jumlahHari',
+        'bulan',
 
-            'gurus',
+        'tahun',
 
-            'mapels',
+        'jumlahHari',
 
-            'guruId',
+        'tahunAktif',
 
-            'mapelId',
+        'mapelId',
 
-            'data'
+        'data'
 
-        ));
-    }
+    )
+
+);
+}
+public function export(Request $request)
+{
+
+    return Excel::download(
+
+        new WaliAbsensiExport(
+
+            $request->kelas,
+
+            $request->bulan,
+
+            $request->tahun,
+
+            $request->mapel_id
+
+        ),
+
+        'Rekap_Absensi.xlsx'
+
+    );
+
+}
+public function import(Request $request)
+{
+
+    $request->validate([
+
+        'file'=>'required|mimes:xlsx,xls'
+
+    ]);
+
+    Excel::import(
+
+        new WaliAbsensiImport,
+
+        $request->file('file')
+
+    );
+
+    return back()->with(
+
+        'success',
+
+        'Import absensi berhasil.'
+
+    );
+
+}
 }

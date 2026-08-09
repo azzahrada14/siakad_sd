@@ -7,11 +7,15 @@ use Illuminate\Http\Request;
 use App\Models\Rapor;
 use App\Models\RaporDetail;
 use App\Models\Siswa;
+use App\Models\TahunAjaran;
+use App\Models\Kelas;
 use App\Models\Nilai;
 use App\Models\Absensi;
+use App\Models\Guru;
+use App\Models\NilaiTP;
+use App\Models\AnggotaKelas;
 use App\Models\RankingSiswa;
 use App\Models\Ekstrakurikuler;
-use App\Models\TahunAjaran;
 use Barryvdh\DomPDF\Facade\Pdf;
 
 class RaporController extends Controller
@@ -25,19 +29,75 @@ class RaporController extends Controller
 
    public function index()
 {
+    $tahunAktif = TahunAjaran::where('status', 'Aktif')->first();
+
+    if (!$tahunAktif) {
+        return back()->with(
+            'error',
+            'Tahun ajaran aktif belum tersedia.'
+        );
+    }
+
+    $guru = auth()->user()->guru;
+
+    if (!$guru) {
+        abort(403);
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Kelas wali pada tahun ajaran aktif
+    |--------------------------------------------------------------------------
+    */
+
+    $kelasGuru = Kelas::where(
+        'wali_kelas_id',
+        $guru->id
+    )
+    ->where(
+        'tahun_ajaran_id',
+        $tahunAktif->id
+    )
+    ->first();
+
+    if (!$kelasGuru) {
+        return back()->with(
+            'error',
+            'Anda belum menjadi wali kelas pada tahun ajaran aktif.'
+        );
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Ambil hanya rapor kelas wali
+    |--------------------------------------------------------------------------
+    */
+
     $rapor = Rapor::with([
         'siswa',
-        'kelas',
-        'tahunAjaran'
-    ])->get();
-
-    $tahunAjaran = TahunAjaran::all();
+        'kelas'
+    ])
+    ->where(
+        'kelas_id',
+        $kelasGuru->id
+    )
+    ->where(
+        'tahun_ajaran_id',
+        $tahunAktif->id
+    )
+    ->where(
+        'semester',
+        $tahunAktif->semester
+    )
+    ->orderBy('siswa_id')
+    ->paginate(10);
 
     return view(
         'rapor.index',
         compact(
-            'rapor',
-            'tahunAjaran'
+            'tahunAktif',
+            'kelasGuru',
+            'rapor'
         )
     );
 }
@@ -48,266 +108,448 @@ class RaporController extends Controller
     |--------------------------------------------------------------------------
     */
 
-    public function generate(Request $request)
-    {
-        if(auth()->user()->role == 'kepala_sekolah'){
-    abort(403);
-}
-       RaporDetail::whereIn(
-    'rapor_id',
-    Rapor::where('tahun_ajaran_id', $request->tahun_ajaran_id)
-        ->where('semester', $request->semester)
-        ->pluck('id')
-)->delete();
+  public function generate(Request $request)
+{
+    /*
+    |--------------------------------------------------------------------------
+    | HAK AKSES
+    |--------------------------------------------------------------------------
+    */
 
-Rapor::where('tahun_ajaran_id', $request->tahun_ajaran_id)
-    ->where('semester', $request->semester)
-    ->delete();
-
-       
-        
-      
-           
-
-        /*
-        |--------------------------------------------------------------------------
-        | AMBIL SISWA
-        |--------------------------------------------------------------------------
-        */
-
-        if(auth()->user()->role == 'guru')
-        {
-
-            $guru = auth()->user()->guru;
-
-            $siswas = Siswa::where(
-                'kelas_id',
-                $guru->kelas_id
-            )->get();
-
-        }
-        else
-        {
-
-            $siswas = Siswa::all();
-
-        }
-
-        /*
-        |--------------------------------------------------------------------------
-        | GENERATE RAPOR
-        |--------------------------------------------------------------------------
-        */
-
-        foreach($siswas as $siswa)
-
-        {
-       
-            /*
-            |--------------------------------------------------------------------------
-            | NILAI RATA-RATA
-            |--------------------------------------------------------------------------
-            */
-
-            $rata = Nilai::where(
-                'siswa_id',
-                $siswa->id
-            )
-            ->where(
-                'tahun_ajaran_id',
-                $request->tahun_ajaran_id
-            )
-            ->where(
-                'semester',
-                $request->semester
-            )
-            ->avg('nilai_akhir');
-
-            /*
-            |--------------------------------------------------------------------------
-            | RANKING
-            |--------------------------------------------------------------------------
-            */
-
-           $ranking = RankingSiswa::where(
-    'siswa_id',
-    $siswa->id
-)
-->where(
-    'tahun_ajaran_id',
-    $request->tahun_ajaran_id
-)
-->where(
-    'semester',
-    $request->semester
-)
-->first();
-
-            /*
-            |--------------------------------------------------------------------------
-            | ABSENSI
-            |--------------------------------------------------------------------------
-            */
-
-            $hadir = Absensi::where(
-                'siswa_id',
-                $siswa->id
-            )
-            ->where(
-                'tahun_ajaran_id',
-                $request->tahun_ajaran_id
-            )
-            ->where(
-                'semester',
-                $request->semester
-            )
-            ->where(
-                'status',
-                'hadir'
-            )
-            ->count();
-
-            $izin = Absensi::where(
-                'siswa_id',
-                $siswa->id
-            )
-            ->where(
-                'tahun_ajaran_id',
-                $request->tahun_ajaran_id
-            )
-            ->where(
-                'semester',
-                $request->semester
-            )
-            ->where(
-                'status',
-                'izin'
-            )
-            ->count();
-
-            $sakit = Absensi::where(
-                'siswa_id',
-                $siswa->id
-            )
-            ->where(
-                'tahun_ajaran_id',
-                $request->tahun_ajaran_id
-            )
-            ->where(
-                'semester',
-                $request->semester
-            )
-            ->where(
-                'status',
-                'sakit'
-            )
-            ->count();
-
-            $alfa = Absensi::where(
-                'siswa_id',
-                $siswa->id
-            )
-            ->where(
-                'tahun_ajaran_id',
-                $request->tahun_ajaran_id
-            )
-            ->where(
-                'semester',
-                $request->semester
-            )
-            ->where(
-                'status',
-                'alfa'
-            )
-            ->count();
-
-            /*
-            |--------------------------------------------------------------------------
-            | SIMPAN HEADER RAPOR
-            |--------------------------------------------------------------------------
-            */
-
-            $rapor = Rapor::create([
-              
-                'siswa_id' => $siswa->id,
-
-                'kelas_id' => $siswa->kelas_id,
-
-                'tahun_ajaran_id' => $request->tahun_ajaran_id,
-
-                'semester' => $request->semester,
-
-                'rata_rata' => round($rata ?? 0,2),
-
-                'ranking' => $ranking->ranking ?? null,
-
-                'hadir' => $hadir,
-
-                'izin' => $izin,
-
-                'sakit' => $sakit,
-
-                'alfa' => $alfa,
-
-                'is_generate' => true
-
-            ]);
-              if(auth()->user()->role == 'kepala_sekolah'){
-    abort(403);
-}
-
-            
-
-            /*
-            |--------------------------------------------------------------------------
-            | SIMPAN DETAIL RAPOR
-            |--------------------------------------------------------------------------
-            */
-
-            $nilai = Nilai::where(
-                'siswa_id',
-                $siswa->id
-            )
-            ->where(
-                'tahun_ajaran_id',
-                $request->tahun_ajaran_id
-            )
-            ->where(
-                'semester',
-                $request->semester
-            )
-            ->get();
-
-            foreach($nilai as $item)
-            {
-
-             RaporDetail::create([
-
-    'rapor_id' => $rapor->id,
-
-    'mapel_id' => $item->mapel_id,
-
-    'nilai_akhir' => $item->nilai_akhir,
-
-    'capaian_pengetahuan' => null,
-
-    'capaian_keterampilan' => null,
-
-]);
-
-            }
-    
-
-        }
-
-        return redirect()
-            ->route('rapor.index')
-            ->with(
-                'success',
-                'Rapor berhasil digenerate.'
-            );
-
+    if (auth()->user()->role == 'kepala_sekolah') {
+        abort(403);
     }
+
+    /*
+    |--------------------------------------------------------------------------
+    | VALIDASI
+    |--------------------------------------------------------------------------
+    */
+
+    $request->validate([
+        'tahun_ajaran_id' => 'required',
+        'semester' => 'required',
+    ]);
+
+    /*
+    |--------------------------------------------------------------------------
+    | TAHUN AJARAN
+    |--------------------------------------------------------------------------
+    */
+
+    $tahunAktif = TahunAjaran::find($request->tahun_ajaran_id);
+
+    if (!$tahunAktif) {
+        return back()->with(
+            'error',
+            'Tahun ajaran tidak ditemukan.'
+        );
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | GURU
+    |--------------------------------------------------------------------------
+    */
+
+    $guru = auth()->user()->guru;
+
+    if (!$guru) {
+        abort(403);
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | KELAS WALI
+    |--------------------------------------------------------------------------
+    */
+
+    $kelasGuru = Kelas::where(
+        'wali_kelas_id',
+        $guru->id
+    )
+    ->where(
+        'tahun_ajaran_id',
+        $request->tahun_ajaran_id
+    )
+    ->first();
+
+    if (!$kelasGuru) {
+        return back()->with(
+            'error',
+            'Anda belum menjadi wali kelas pada tahun ajaran tersebut.'
+        );
+    }
+
+    $kelasId = $kelasGuru->id;
+
+    /*
+    |--------------------------------------------------------------------------
+    | HAPUS RAPOR LAMA KELAS INI
+    |--------------------------------------------------------------------------
+    */
+
+    $raporLama = Rapor::where(
+        'kelas_id',
+        $kelasId
+    )
+    ->where(
+        'tahun_ajaran_id',
+        $request->tahun_ajaran_id
+    )
+    ->where(
+        'semester',
+        $request->semester
+    )
+    ->pluck('id');
+
+    if ($raporLama->isNotEmpty()) {
+
+        RaporDetail::whereIn(
+            'rapor_id',
+            $raporLama
+        )->delete();
+
+        Rapor::whereIn(
+            'id',
+            $raporLama
+        )->delete();
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | AMBIL SISWA DARI ANGGOTA KELAS
+    |--------------------------------------------------------------------------
+    |
+    | HANYA siswa yang benar-benar terdaftar
+    | di kelas wali tersebut yang akan dibuatkan rapor.
+    |
+    */
+
+    $anggotaKelas = AnggotaKelas::with('siswa')
+        ->where(
+            'kelas_id',
+            $kelasId
+        )
+        ->where(
+            'tahun_ajaran_id',
+            $request->tahun_ajaran_id
+        )
+        ->get();
+
+    if ($anggotaKelas->isEmpty()) {
+
+        return back()->with(
+            'error',
+            'Belum ada siswa pada kelas ' .
+            $kelasGuru->nama_kelas .
+            '.'
+        );
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | GENERATE RAPOR
+    |--------------------------------------------------------------------------
+    */
+
+    $jumlahGenerate = 0;
+
+    foreach ($anggotaKelas as $anggota) {
+
+        $siswa = $anggota->siswa;
+
+        if (!$siswa) {
+            continue;
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | AMBIL NILAI SISWA
+        |--------------------------------------------------------------------------
+        */
+
+        $nilai = Nilai::where(
+            'siswa_id',
+            $siswa->id
+        )
+        ->where(
+            'tahun_ajaran_id',
+            $request->tahun_ajaran_id
+        )
+        ->where(
+            'semester',
+            $request->semester
+        )
+        ->get();
+
+        /*
+        |--------------------------------------------------------------------------
+        | JIKA BELUM ADA NILAI, JANGAN BUAT RAPOR
+        |--------------------------------------------------------------------------
+        */
+
+        if ($nilai->isEmpty()) {
+            continue;
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | RATA-RATA NILAI
+        |--------------------------------------------------------------------------
+        */
+
+        $rata = $nilai->avg('nilai_akhir');
+
+        /*
+        |--------------------------------------------------------------------------
+        | RANKING
+        |--------------------------------------------------------------------------
+        */
+
+        $ranking = RankingSiswa::where(
+            'siswa_id',
+            $siswa->id
+        )
+        ->where(
+            'kelas_id',
+            $kelasId
+        )
+        ->where(
+            'tahun_ajaran_id',
+            $request->tahun_ajaran_id
+        )
+        ->where(
+            'semester',
+            $request->semester
+        )
+        ->first();
+
+        /*
+        |--------------------------------------------------------------------------
+        | ABSENSI
+        |--------------------------------------------------------------------------
+        */
+
+        $hadir = Absensi::where(
+            'siswa_id',
+            $siswa->id
+        )
+        ->where(
+            'tahun_ajaran_id',
+            $request->tahun_ajaran_id
+        )
+        ->where(
+            'semester',
+            $request->semester
+        )
+        ->where(
+            'status',
+            'hadir'
+        )
+        ->count();
+
+        $izin = Absensi::where(
+            'siswa_id',
+            $siswa->id
+        )
+        ->where(
+            'tahun_ajaran_id',
+            $request->tahun_ajaran_id
+        )
+        ->where(
+            'semester',
+            $request->semester
+        )
+        ->where(
+            'status',
+            'izin'
+        )
+        ->count();
+
+        $sakit = Absensi::where(
+            'siswa_id',
+            $siswa->id
+        )
+        ->where(
+            'tahun_ajaran_id',
+            $request->tahun_ajaran_id
+        )
+        ->where(
+            'semester',
+            $request->semester
+        )
+        ->where(
+            'status',
+            'sakit'
+        )
+        ->count();
+
+        $alfa = Absensi::where(
+            'siswa_id',
+            $siswa->id
+        )
+        ->where(
+            'tahun_ajaran_id',
+            $request->tahun_ajaran_id
+        )
+        ->where(
+            'semester',
+            $request->semester
+        )
+        ->where(
+            'status',
+            'alfa'
+        )
+        ->count();
+
+        /*
+        |--------------------------------------------------------------------------
+        | SIMPAN HEADER RAPOR
+        |--------------------------------------------------------------------------
+        */
+
+        $rapor = Rapor::create([
+
+            'siswa_id' => $siswa->id,
+
+            // Kelas asal siswa saat ini
+            'kelas_id' => $kelasId,
+
+            'tahun_ajaran_id' =>
+                $request->tahun_ajaran_id,
+
+            'semester' =>
+                $request->semester,
+
+            'rata_rata' =>
+                round($rata ?? 0, 2),
+
+            'ranking' =>
+                $ranking->ranking ?? null,
+
+            'hadir' =>
+                $hadir,
+
+            'izin' =>
+                $izin,
+
+            'sakit' =>
+                $sakit,
+
+            'alfa' =>
+                $alfa,
+
+            'is_generate' =>
+                true,
+        ]);
+
+        /*
+        |--------------------------------------------------------------------------
+        | DETAIL RAPOR
+        |--------------------------------------------------------------------------
+        */
+
+        foreach ($nilai as $item) {
+
+            $tpTertinggi = $item->detailTP()
+                ->with('tp')
+                ->orderByDesc('nilai')
+                ->first();
+
+            $tpTerendah = $item->detailTP()
+                ->with('tp')
+                ->orderBy('nilai')
+                ->first();
+
+            $pengetahuan = "-";
+            $keterampilan = "-";
+
+            /*
+            | Capaian pengetahuan
+            */
+
+            if (
+                $tpTertinggi &&
+                $tpTertinggi->tp
+            ) {
+
+                $pengetahuan =
+                    "Ananda sangat menguasai dalam " .
+                    strtolower(
+                        $tpTertinggi->tp->deskripsi
+                    ) .
+                    ".";
+            }
+
+            /*
+            | Capaian keterampilan
+            */
+
+            if (
+                $tpTerendah &&
+                $tpTerendah->tp
+            ) {
+
+                $keterampilan =
+                    "Ananda perlu bimbingan dalam " .
+                    strtolower(
+                        $tpTerendah->tp->deskripsi
+                    ) .
+                    ".";
+            }
+
+            /*
+            | Simpan detail
+            */
+
+            RaporDetail::create([
+
+                'rapor_id' =>
+                    $rapor->id,
+
+                'mapel_id' =>
+                    $item->mapel_id,
+
+                'nilai_akhir' =>
+                    $item->nilai_akhir,
+
+                'capaian_pengetahuan' =>
+                    $pengetahuan,
+
+                'capaian_keterampilan' =>
+                    $keterampilan,
+            ]);
+        }
+
+        $jumlahGenerate++;
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | SELESAI
+    |--------------------------------------------------------------------------
+    */
+
+    if ($jumlahGenerate == 0) {
+
+        return back()->with(
+            'error',
+            'Tidak ada siswa yang memiliki nilai untuk dibuatkan rapor.'
+        );
+    }
+
+    return redirect()
+        ->route('rapor.index')
+        ->with(
+            'success',
+            'Rapor berhasil digenerate untuk ' .
+            $jumlahGenerate .
+            ' siswa kelas ' .
+            $kelasGuru->nama_kelas .
+            '.'
+        );
+}
         /*
     |--------------------------------------------------------------------------
     | EDIT RAPOR
@@ -514,52 +756,51 @@ $request->validate([
     public function print($id)
 {
     if(auth()->user()->role != 'guru'){
-    abort(403);
-}
+        abort(403);
+    }
 
     $rapor = Rapor::with([
-
         'siswa',
-
         'kelas',
-
         'tahunAjaran',
-
         'details.mapel'
-
     ])->findOrFail($id);
 
     $ekstrakurikuler = Ekstrakurikuler::where(
-
         'siswa_id',
-
         $rapor->siswa_id
-
     )
-
     ->where(
-
         'tahun_ajaran_id',
-
         $rapor->tahun_ajaran_id
-
     )
-
     ->where(
-
         'semester',
-
         $rapor->semester
-
     )
-
     ->get();
-return view(
-    'rapor.print',
-    compact(
-        'rapor',
-        'ekstrakurikuler'
-    )
-);
+
+    // kepala sekolah
+    $kepalaSekolah = Guru::where(
+        'jabatan_ptk',
+        'Kepala Sekolah'
+    )->first();
+
+    // halaman 2
+    $page2 = $rapor->details->take(6);
+
+    // halaman 3
+    $page3 = $rapor->details->slice(6);
+
+    return view(
+        'rapor.print',
+        compact(
+            'rapor',
+            'ekstrakurikuler',
+            'kepalaSekolah',
+            'page2',
+            'page3'
+        )
+    );
 }
 }

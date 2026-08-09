@@ -1,375 +1,796 @@
 @extends('layouts.app')
 
 @section('content')
-   <div class="p-6 bg-gray-100 min-h-screen">
 
-    {{-- HEADER --}}
-    <div class="mb-6">
+{{-- ================= MODAL IMPORT ================= --}}
+<div
+    id="modalImport"
+    class="fixed inset-0 bg-black/40 hidden items-center justify-center z-50">
 
-        <h1 class="text-4xl font-bold text-gray-800">
-            Data Siswa
-        </h1>
+    <div class="bg-white rounded-xl shadow-xl w-full max-w-md p-6">
 
-        <p class="text-gray-500 mt-1">
-            Kelola data siswa SDN Cimanahyu
+        <h2 class="text-xl font-bold mb-5">
+            Import Data Siswa
+        </h2>
+
+        <form
+            action="{{ route('siswa.import') }}"
+            method="POST"
+            enctype="multipart/form-data">
+
+            @csrf
+
+            <input
+                type="file"
+                name="file"
+                accept=".xlsx,.xls"
+                class="w-full border rounded-lg p-3"
+                required>
+
+            <div class="flex justify-end gap-3 mt-6">
+
+                <button
+                    type="button"
+                    onclick="tutupModalSiswa()"
+                    class="px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-lg">
+
+                    Batal
+
+                </button>
+
+                <button
+                    type="submit"
+                    class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg">
+
+                    Import
+
+                </button>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
+
+        {{-- ================= HEADER ================= --}}
+<div class="flex flex-col lg:flex-row lg:justify-between lg:items-start mb-6">
+
+    <div>
+
+            <h2 class="flex items-center gap-3 text-3xl font-bold text-gray-800">
+
+                    <x-heroicon-o-academic-cap class="w-8 h-8 text-blue-600"/>
+
+                    Data Siswa
+
+                </h2>
+
+
+        <p class="text-gray-500 mt-2 text-lg">
+
+            Kelola seluruh data peserta didik SD Negeri Cimanahayu.
+
         </p>
 
     </div>
 
-   <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-5">
+     
 
-    {{-- Kiri --}}
-    <div class="flex flex-wrap items-center gap-2">
+    @if($tahunAktif)
 
-        {{-- IMPORT --}}
-        <form action="{{ route('siswa.import') }}"
-              method="POST"
-              enctype="multipart/form-data">
-            @csrf
+    <div class="mt-5 lg:mt-0">
 
-            <label class="inline-flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg cursor-pointer">
+        <div class="bg-blue-50 border border-blue-200 rounded-xl px-5 py-3 shadow-sm min-w-[270px]">
 
-                <x-heroicon-o-arrow-up-tray class="w-5 h-5"/>
+            <p class="text-xs uppercase text-blue-600 font-semibold">
 
-                Import
+                Tahun Ajaran Aktif
 
-                <input type="file"
-                       name="file"
-                       onchange="this.form.submit()"
-                       class="hidden">
+            </p>
 
-            </label>
+            <h3 class="text-xl font-bold text-blue-700">
 
-        </form>
+                {{ $tahunAktif->tahun_ajaran }}
 
-        {{-- EXPORT --}}
-        <a href="{{ route('siswa.export') }}"
-           class="inline-flex items-center gap-2 bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-lg">
+            </h3>
 
-            <x-heroicon-o-arrow-down-tray class="w-5 h-5"/>
+            <div class="flex justify-between items-center mt-1">
 
-            Export
+                <span class="text-gray-600">
 
-        </a>
+                    Semester {{ $tahunAktif->semester }}
 
-        {{-- TAMBAH --}}
-        <a href="{{ route('siswa.create') }}"
-           class="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg">
+                </span>
 
-            <x-heroicon-o-plus class="w-5 h-5"/>
+                <span class="bg-green-100 text-green-700 text-xs px-3 py-1 rounded-full">
 
-            Tambah Siswa
+                    Aktif
 
-        </a>
+                </span>
+
+            </div>
+
+        </div>
 
     </div>
 
-    {{-- Cari --}}
-    <form method="GET"
-          class="flex gap-2">
+    @endif
 
-        <input
-            type="text"
-            name="search"
-            value="{{ request('search') }}"
-            placeholder="Cari siswa..."
-            class="w-72 border border-gray-300 rounded-lg px-4 py-2">
+</div>
 
-        <select
-            name="kelas"
-            class="border border-gray-300 rounded-lg px-4 py-2 bg-white">
+        
 
-            <option value="">Semua Kelas</option>
+        {{-- ================= CARD STATISTIK ================= --}}
 
-            @foreach($kelas as $k)
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-5 mb-6">
 
-                <option value="{{ $k->id }}"
-                    {{ request('kelas') == $k->id ? 'selected' : '' }}>
+            <div class="bg-white rounded-xl shadow border border-gray-200 p-5">
 
-                    {{ $k->nama_kelas }}
+                <div class="flex justify-between items-center">
 
-                </option>
+                    <div>
 
-            @endforeach
+                        <p class="text-gray-500 text-sm">
 
-        </select>
+                            Total Peserta Didik
 
-        <button
-            type="submit"
-            class="bg-slate-700 hover:bg-slate-800 text-white px-4 py-2 rounded-lg">
+                        </p>
 
-            Cari
+                        <h2 class="text-3xl font-bold text-blue-600 mt-2">
 
-        </button>
+                            {{ $totalSiswa }}
+
+                        </h2>
+
+                    </div>
+
+                    <div
+                        class="w-14 h-14 rounded-full bg-blue-100 flex items-center justify-center">
+
+                        <x-heroicon-o-users class="w-8 h-8 text-blue-600"/>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+            <div class="bg-white rounded-xl shadow border border-gray-200 p-5">
+
+                <div class="flex justify-between items-center">
+
+                    <div>
+
+                        <p class="text-gray-500 text-sm">
+
+                            Laki-laki
+
+                        </p>
+
+                        <h2 class="text-3xl font-bold text-sky-600 mt-2">
+
+                            {{ $jumlahLaki }}
+
+                        </h2>
+
+                    </div>
+
+                    <div
+                        class="w-14 h-14 rounded-full bg-sky-100 flex items-center justify-center">
+
+                        <x-heroicon-o-user class="w-8 h-8 text-sky-600"/>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+            <div class="bg-white rounded-xl shadow border border-gray-200 p-5">
+
+                <div class="flex justify-between items-center">
+
+                    <div>
+
+                        <p class="text-gray-500 text-sm">
+
+                            Perempuan
+
+                        </p>
+
+                        <h2 class="text-3xl font-bold text-pink-600 mt-2">
+
+                            {{ $jumlahPerempuan }}
+
+                        </h2>
+
+                    </div>
+
+                    <div
+                        class="w-14 h-14 rounded-full bg-pink-100 flex items-center justify-center">
+
+                        <x-heroicon-o-user class="w-8 h-8 text-pink-600"/>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+        {{-- ================= FILTER ================= --}}
+
+<div class="bg-white rounded-xl shadow border border-gray-200 mb-6">
+
+    <div class="px-6 py-4 border-b bg-slate-50 rounded-t-xl">
+
+        <div class="flex items-center gap-2">
+
+            <x-heroicon-o-funnel class="w-5 h-5 text-blue-600"/>
+
+            <h2 class="font-semibold text-gray-800">
+
+                Filter Data Peserta Didik
+
+            </h2>
+
+        </div>
+
+    </div>
+
+    <form action="{{ route('siswa.index') }}" method="GET">
+
+        <div class="p-6">
+
+            <div class="grid grid-cols-1 md:grid-cols-5 gap-5">
+
+                {{-- SEARCH --}}
+                <div>
+
+                    <label class="block text-sm text-gray-600 mb-2">
+
+                        Pencarian
+
+                    </label>
+
+                    <input
+                        type="text"
+                        name="search"
+                        value="{{ request('search') }}"
+                        placeholder="Nama / NIPD / NISN"
+                        class="w-full h-11 rounded-lg border-gray-300 focus:ring-blue-500 focus:border-blue-500">
+
+                </div>
+
+                {{-- TINGKAT --}}
+                <div>
+
+                    <label class="block text-sm text-gray-600 mb-2">
+
+                        Tingkat
+
+                    </label>
+
+                    <select
+                        name="tingkat"
+                        class="w-full h-11 rounded-lg border-gray-300">
+
+                        <option value="">Semua Tingkat</option>
+
+                        @for($i=1;$i<=6;$i++)
+
+                        <option
+                            value="{{ $i }}"
+                            {{ request('tingkat')==$i?'selected':'' }}>
+
+                            Kelas {{ $i }}
+
+                        </option>
+
+                        @endfor
+
+                    </select>
+
+                </div>
+
+                {{-- ROMBEL --}}
+                <div>
+
+                    <label class="block text-sm text-gray-600 mb-2">
+
+                        Rombel
+
+                    </label>
+
+                    <select
+                        name="kelas"
+                        class="w-full h-11 rounded-lg border-gray-300">
+
+                        <option value="">Semua Rombel</option>
+
+                        @foreach($kelas as $k)
+
+                        <option
+                            value="{{ $k->id }}"
+                            {{ request('kelas')==$k->id?'selected':'' }}>
+
+                            {{ $k->nama_kelas }}
+
+                        </option>
+
+                        @endforeach
+
+                    </select>
+
+                </div>
+
+                {{-- STATUS --}}
+                <div>
+
+                    <label class="block text-sm text-gray-600 mb-2">
+
+                        Status
+
+                    </label>
+
+                    <select
+                        name="status"
+                        class="w-full h-11 rounded-lg border-gray-300">
+
+                        <option value="">Semua Status</option>
+
+                        <option value="Aktif"
+                            {{ request('status')=='Aktif'?'selected':'' }}>
+                            Aktif
+                        </option>
+
+                        <option value="Naik Kelas"
+                            {{ request('status')=='Naik Kelas'?'selected':'' }}>
+                            Naik Kelas
+                        </option>
+
+                        <option value="Lulus"
+                            {{ request('status')=='Lulus'?'selected':'' }}>
+                            Lulus
+                        </option>
+
+                        <option value="Pindah"
+                            {{ request('status')=='Pindah'?'selected':'' }}>
+                            Pindah
+                        </option>
+
+                        <option value="Keluar"
+                            {{ request('status')=='Keluar'?'selected':'' }}>
+                            Keluar
+                        </option>
+
+                    </select>
+
+                </div>
+
+                {{-- BUTTON --}}
+                <div class="flex items-end gap-3">
+
+                    <button
+                        type="submit"
+                        class="flex-1 h-11 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium">
+
+                        Cari
+
+                    </button>
+
+                    <a
+                        href="{{ route('siswa.index') }}"
+                        class="h-11 px-5 flex items-center justify-center rounded-lg bg-gray-300 hover:bg-gray-400">
+
+                        Reset
+
+                    </a>
+
+                </div>
+
+            </div>
+
+        </div>
 
     </form>
 
 </div>
 
-<div class="flex flex-wrap justify-between items-center gap-4 mb-4">
 
-    {{-- Kiri --}}
-    <div class="flex items-center gap-2">
+<div class="flex flex-col lg:flex-row lg:justify-between lg:items-center mb-6">
 
-        <span class="text-sm text-gray-500">
-            Tampilkan
-        </span>
+    <div>
 
-        <select
-            class="border border-gray-300 bg-white rounded-lg px-3 py-2 text-sm shadow-sm">
+        <h2 class="text-lg font-semibold text-slate-800">
 
-            <option>10</option>
-            <option>25</option>
-            <option>50</option>
-            <option>100</option>
+            Manajemen Data Peserta Didik
 
-        </select>
+        </h2>
 
-        <span class="text-sm text-gray-500">
-            entri
+        <p class="text-sm text-gray-500 mt-1">
+
+            Import, export data peserta didik.
+
+        </p>
+
+    </div>
+
+    <div class="flex flex-wrap gap-3 mt-5 lg:mt-0">
+
+
+                <button
+    type="button"
+    onclick="bukaModalSiswa()"
+    class="inline-flex items-center gap-2 px-5 py-3 rounded-lg bg-green-600 text-white hover:bg-green-700 transition">
+
+    <x-heroicon-o-arrow-up-tray class="w-5 h-5"/>
+
+    Import Excel
+
+</button>
+
+                <a href="{{ route('siswa.export') }}"
+                    class="inline-flex items-center gap-2 px-5 py-3 rounded-lg bg-yellow-500 text-white hover:bg-yellow-600 transition">
+
+                      <x-heroicon-o-arrow-down-tray class="w-5 h-5"/>
+
+                    Export Excel
+
+                </a>
+
+            </div>
+
+        </div>
+{{-- ================= DATA PESERTA DIDIK ================= --}}
+
+<div class="bg-white rounded-xl shadow border border-gray-200">
+
+    {{-- HEADER TABEL --}}
+    <div class="flex flex-col lg:flex-row lg:justify-between lg:items-center gap-4 px-6 py-5 border-b bg-gray-50 rounded-t-xl">
+
+        <div>
+
+            <h2 class="text-lg font-semibold text-gray-800">
+
+                Data Peserta Didik
+
+            </h2>
+
+            <p class="text-sm text-gray-500 mt-1">
+
+                Menampilkan
+
+                <strong>{{ $siswa->firstItem() ?? 0 }}</strong>
+
+                -
+
+                <strong>{{ $siswa->lastItem() ?? 0 }}</strong>
+
+                dari
+
+                <strong>{{ $siswa->total() }}</strong>
+
+                peserta didik
+
+            </p>
+
+        </div>
+
+        <span
+            class="inline-flex items-center rounded-full bg-blue-100 px-4 py-2 text-sm font-semibold text-blue-700">
+
+            {{ $totalSiswa }} Siswa
+
         </span>
 
     </div>
 
-    {{-- Kanan --}}
-    <div class="flex items-center gap-3">
+    {{-- TABEL --}}
+    <div class="overflow-x-auto">
 
-        <span>Mode Edit</span>
+        <table class="w-full min-w-[1450px] border-collapse">
 
-        <div id="toggleEdit"
-             class="switch active"></div>
+            <thead>
 
-        <span id="statusEdit">
-            Aktif
-        </span>
+                <tr class="bg-slate-100 text-gray-700 text-sm">
 
-    </div>
+                    <th class="border px-3 py-3 text-center w-16">
+                        No
+                    </th>
 
-</div>
-   
+                    <th class="border px-3 py-3 text-center w-32">
+                        NIPD
+                    </th>
 
-        {{-- TABLE --}}
-        <div class="mt-6 bg-white rounded-xl shadow overflow-x-auto w-full">
-            <table class="w-full text-sm text-left">
-                
-                {{-- HEADER --}}
-                <thead class="bg-gray-100 text-gray-700">
-                    <tr>
-                        <th class="border p-3 w-12">No</th>
-                        <th class="border p-3 text-center" >Nama</th>
-                        <th class="border p-3 text-center">NIPD</th>
-                        <th class="border p-3 text-center">Kelas</th>
-                        <th class="border p-3 text-center">Jenis Kelamin</th>
-                        <th class="border p-3 text-center">NISN</th>
-                        <th class="border p-3 text-center">TTL</th>
-                         <th class="border p-3 text-center">Status</th>
-                        <th class="border p-3 text-center">Aksi</th>
-                    </tr>
-                </thead>
+                    <th class="border px-3 py-3 text-center w-36">
+                        NISN
+                    </th>
 
-                {{-- BODY --}}
-                <tbody>
-                    @forelse($siswa as $s)
-                    <tr class="border-t hover:bg-gray-50">
+                    <th class="border px-4 py-3 text-left min-w-[320px]">
+                        Nama Peserta Didik
+                    </th>
 
-                        <td class="border p-3 text-center">
-                            {{ $loop->iteration }}
-                        </td>
+                    <th class="border px-3 py-3 text-center w-20">
+                        JK
+                    </th>
 
-                        <td class="border p-3 font-medium">
-                            {{ $s->nama_siswa }}
-                        </td>
+                    <th class="border px-4 py-3 text-left min-w-[220px]">
+                        Tempat / Tanggal Lahir
+                    </th>
 
-                        <td class="border p-3 text-center">
-                            {{ $s->nipd ?? '-' }}
-                        </td>
+                    <th class="border px-3 py-3 text-center w-24">
+                        Tingkat
+                    </th>
 
-                        <td class="border p-3 text-center">
-                            {{ $s->kelas->nama_kelas ?? '-' }}
-                        </td>
+                    <th class="border px-3 py-3 text-center w-28">
+                        Rombel
+                    </th>
 
-                        <td class="p-3 text-center">
-                            {{ $s->jenis_kelamin == 'L' ? 'Laki-laki' : 'Perempuan' }}
-                        </td>
+                    <th class="border px-3 py-3 text-center w-32">
+                        Status
+                    </th>
 
-                        <td class="border p-3 text-center">
-                            {{ $s->nisn ?? '-' }}
-                        </td>
+                    <th class="border px-3 py-3 text-center w-44">
+                        Aksi
+                    </th>
 
-                        <td class="border p-3 text-center">
-                            {{ $s->tempat_lahir ?? '-' }},
-                            {{ $s->tanggal_lahir ? \Carbon\Carbon::parse($s->tanggal_lahir)->format('d M Y') : '-' }}
-                        </td>
+                </tr>
 
-         
+            </thead>
+
+            <tbody>
+
+                @forelse($siswa as $item)
+
+                <tr class="hover:bg-sky-50 transition duration-150">
+
+                    <td class="border text-center py-3">
+
+                        {{ $siswa->firstItem()+$loop->index }}
+
+                    </td>
+
+                    <td class="border text-center py-3">
+
+                        {{ $item->nipd ?? '-' }}
+
+                    </td>
+
+                    <td class="border text-center py-3">
+
+                        {{ $item->nisn ?? '-' }}
+
+                    </td>
+
+                    <td class="border px-4 py-3">
+
+                        <div class="font-semibold text-gray-800">
+
+                            {{ $item->nama_siswa }}
+
+                        </div>
+
+                        <div class="text-xs text-gray-500 mt-1">
+
+                            NIK :
+                            {{ $item->nik ?? '-' }}
+
+                        </div>
+
+                    </td>
+
+                    <td class="border text-center">
+
+                        @if($item->jenis_kelamin=='L')
+
+                            <span class="inline-flex items-center justify-center w-7 h-7 rounded-full bg-blue-100 text-blue-700 font-bold text-xs">
+
+                                L
+
+                            </span>
+
+                        @else
+
+                            <span class="inline-flex items-center justify-center w-7 h-7 rounded-full bg-pink-100 text-pink-700 font-bold text-xs">
+
+                                P
+
+                            </span>
+
+                        @endif
+
+                    </td>
+
+                    <td class="border px-4 py-3">
+
+                        <div>
+
+                            {{ $item->tempat_lahir ?? '-' }}
+
+                        </div>
+
+                        <div class="text-xs text-gray-500">
+
+                            {{ $item->tanggal_lahir ? \Carbon\Carbon::parse($item->tanggal_lahir)->format('d-m-Y') : '-' }}
+
+                        </div>
+
+                    </td>
+
+                    <td class="border text-center">
+
+                        {{ $item->tingkat }}
+
+                    </td>
+
+                    <td class="border text-center">
+{{ optional(optional($item->kelasAktif)->kelas)->nama_kelas ?? '-' }}
+
+                    </td>
+
+                    <td class="border text-center">
+
+                        @php
+
+                            $warna = match($item->status_siswa){
+
+                                'Aktif' => 'bg-green-100 text-green-700',
+
+                                'Naik Kelas' => 'bg-blue-100 text-blue-700',
+
+                                'Lulus' => 'bg-indigo-100 text-indigo-700',
+
+                                'Pindah' => 'bg-yellow-100 text-yellow-700',
+
+                                default => 'bg-red-100 text-red-700'
+
+                            };
+
+                        @endphp
+
+                        <span class="px-3 py-1 rounded-full text-xs font-semibold {{ $warna }}">
+
+                            {{ $item->status_siswa }}
+
+                        </span>
+
+                    </td>
+
+                    <td class="border">
+
+                        <div class="flex justify-center gap-2">
+
+                            <a
+                                href="{{ route('siswa.show',$item->id) }}"
+                                 class="p-1.5 rounded-lg bg-blue-100 hover:bg-blue-200 transition">
+
+        <x-heroicon-o-eye class="w-5 h-5 text-blue-600"/>
+
+                            </a>
+
+                            <a
+                                href="{{ route('siswa.edit',$item->id) }}"
+                                class="p-1.5 rounded-lg bg-yellow-100 hover:bg-yellow-200 transition">
+
+        <x-heroicon-o-pencil-square class="w-5 h-5 text-yellow-600"/>
+
+                            </a>
 
 
-    
-                    
-                    <td class="border p-3 text-center">
+                        </div>
 
-    @if($s->status_siswa == 'Aktif')
-        <span class="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs">
-            Aktif
-        </span>
+                    </td>
 
-    @elseif($s->status_siswa == 'Naik Kelas')
-        <span class="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-xs">
-            Naik Kelas
-        </span>
-
-    @elseif($s->status_siswa == 'Pindah')
-        <span class="bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full text-xs">
-            Pindah
-        </span>
-
-    @elseif($s->status_siswa == 'Keluar')
-        <span class="bg-red-100 text-red-700 px-3 py-1 rounded-full text-xs">
-            Keluar
-        </span>
-
-    @elseif($s->status_siswa == 'Lulus')
-        <span class="bg-indigo-100 text-indigo-700 px-3 py-1 rounded-full text-xs">
-            Lulus
-        </span>
-
-    @elseif($s->status_siswa == 'Tidak Lulus')
-        <span class="bg-gray-100 text-gray-700 px-3 py-1 rounded-full text-xs">
-            Tidak Lulus
-        </span>
-
-    @else
-        -
-    @endif
-
-</td>
-
-<td class="border p-3">
-
-    <div class="flex justify-center gap-2">
-
-        {{-- DETAIL selalu tampil --}}
-        <a href="{{ route('siswa.show',$s->id) }}"
-           class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-2 rounded-lg">
-            Detail
-        </a>
-
-        {{-- EDIT ikut Mode Edit --}}
-        <a href="{{ route('siswa.edit',$s->id) }}"
-           class="aksi-edit bg-amber-500 hover:bg-amber-600 text-white px-3 py-2 rounded-lg">
-            Edit
-        </a>
-
-        {{-- HAPUS ikut Mode Edit --}}
-        <form action="{{ route('siswa.destroy',$s->id) }}"
-              method="POST"
-              class="aksi-edit">
-            @csrf
-            @method('DELETE')
-
-            <button
-                onclick="return confirm('Yakin hapus siswa ini?')"
-                class="bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-lg">
-
-                Hapus
-
-            </button>
-
-        </form>
-
-    </div>
-
-</td>
-
-                    </tr>
-                     
+                </tr>
 
                 @empty
-                    <tr>
-                        <td colspan="9" class="text-center p-4 text-gray-500">
-                            Data belum ada
-                        </td>
-                    </tr>
-                    @endforelse
-                </tbody>
 
-            </table>
+<tr>
+
+<td colspan="11" class="py-12">
+
+<div class="text-center">
+
+ <x-heroicon-o-academic-cap class="mx-auto h-16 w-16 text-gray-300"/>
+
+<h3 class="mt-4 text-lg font-semibold text-gray-700">
+
+Belum Ada Data Siswa.
+
+</h3>
+
+<p class="mt-2 text-gray-500">
+
+Silakan tambahkan data peserta didik terlebih dahulu.
+
+</p>
+
+</div>
+
+</td>
+
+</tr>
+
+@endforelse
+
+                 
+
+            </tbody>
+
+        </table>
+
+    </div>
+
         </div>
-        <div class="mt-5 bg-white rounded-xl shadow-sm px-4 py-3 flex justify-between items-center">
 
-    <p class="text-sm text-gray-500">
-        Menampilkan {{ $siswa->count() }} data
-    </p>
+    {{-- ================= FOOTER TABEL ================= --}}
+<br>
+            <div class="text-sm text-gray-600">
 
-    <div class="flex gap-2">
+                Menampilkan
 
-        <button class="px-3 py-1 border rounded-lg bg-white">
-            ‹
-        </button>
+                <span class="font-semibold">
 
-        <button class="px-3 py-1 rounded-lg bg-blue-600 text-white">
-            1
-        </button>
+                    {{ $siswa->firstItem() ?? 0 }}
 
-        <button class="px-3 py-1 border rounded-lg bg-white">
-            ›
-        </button>
+                </span>
+
+                -
+
+                <span class="font-semibold">
+
+                    {{ $siswa->lastItem() ?? 0 }}
+
+                </span>
+
+                dari
+
+                <span class="font-semibold">
+
+                    {{ $siswa->total() }}
+
+                </span>
+
+                peserta didik
+
+            </div>
+
+            <div>
+
+               {{ $siswa->links('vendor.pagination.tailwind') }}
+
+            </div>
+
+        </div>
 
     </div>
 
 </div>
-<style>
-.switch{
-    position:relative;
-    width:48px;
-    height:24px;
-    background:#d1d5db;
-    border-radius:9999px;
-    cursor:pointer;
-    transition:.3s;
-}
-
-.switch::before{
-    content:'';
-    position:absolute;
-    width:20px;
-    height:20px;
-    top:2px;
-    left:2px;
-    background:#fff;
-    border-radius:50%;
-    transition:.3s;
-}
-
-.switch.active{
-    background:#2563eb;
-}
-
-.switch.active::before{
-    transform:translateX(24px);
-}
-</style>
-
+@push('scripts')
 <script>
-document.addEventListener('DOMContentLoaded', () => {
+function bukaModalSiswa() {
+    const modal = document.getElementById('modalImport');
 
-    const toggle = document.getElementById('toggleEdit');
-    const status = document.getElementById('statusEdit');
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+}
 
-    toggle.addEventListener('click', () => {
+function tutupModalSiswa() {
+    const modal = document.getElementById('modalImport');
 
-        toggle.classList.toggle('active');
+    modal.classList.remove('flex');
+    modal.classList.add('hidden');
+}
 
-        const aktif = toggle.classList.contains('active');
-
-        document.querySelectorAll('.aksi-edit').forEach(el => {
-            el.style.display = aktif ? '' : 'none';
-        });
-
-        status.innerText = aktif ? 'Aktif' : 'Nonaktif';
-
-    });
-
+document.addEventListener('keydown', function(e){
+    if (e.key === 'Escape') {
+        tutupModalSiswa();
+    }
 });
 </script>
+@endpush
 @endsection

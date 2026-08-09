@@ -1,402 +1,939 @@
-{{-- resources/views/guru/index.blade.php --}}
-
 @extends('layouts.app')
 
 @section('content')
 
-<div class="p-6 bg-gray-100 min-h-screen">
+<div
+id="modalImport"
+class="fixed inset-0 bg-black/40 hidden items-center justify-center z-50">
 
-    {{-- HEADER --}}
-    <div class="mb-6">
+<div class="bg-white rounded-xl w-full max-w-md p-6">
 
-        <h1 class="text-4xl font-bold text-gray-800">
-            Data Guru
-        </h1>
+<h2 class="text-xl font-bold mb-4">
 
-        <p class="text-gray-500 mt-1">
-            Kelola data guru SDN Cimanahyu
+Import Data Guru
+
+</h2>
+
+<form
+action="{{ route('guru.import') }}"
+method="POST"
+enctype="multipart/form-data">
+
+@csrf
+
+<input
+type="file"
+name="file"
+accept=".xlsx,.xls"
+class="w-full border rounded-lg p-3"
+required>
+
+<div class="flex justify-end gap-3 mt-6">
+
+<button
+    type="button"
+    onclick="tutupModalGuru()"
+    class="px-4 py-2 bg-gray-500 text-white rounded-lg">
+    Batal
+</button>
+
+<button
+class="px-4 py-2 bg-green-600 text-white rounded-lg">
+
+Import
+
+</button>
+
+</div>
+
+</form>
+
+</div>
+
+</div>
+
+@if(session('success'))
+
+<div
+class="mb-5 rounded-lg bg-green-100 border border-green-300 text-green-700 px-4 py-3">
+
+{{ session('success') }}
+
+</div>
+
+@endif
+
+@if(session('error'))
+
+<div
+class="mb-5 rounded-lg bg-red-100 border border-red-300 text-red-700 px-4 py-3">
+
+{{ session('error') }}
+
+</div>
+
+@endif
+
+   {{-- ================= HEADER ================= --}}
+{{-- ================= HEADER ================= --}}
+<div class="flex flex-col lg:flex-row lg:justify-between lg:items-start mb-6">
+
+
+    <div>
+
+     <h2 class="flex items-center gap-3 text-3xl font-bold text-gray-800">
+
+                    <x-heroicon-o-user-group class="w-8 h-8 text-blue-600"/>
+
+                    Data Guru
+
+                </h2>
+
+        <p class="text-gray-500 mt-2 text-lg">
+
+            Kelola seluruh data guru SD Negeri Cimanahayu.
+
         </p>
 
     </div>
 
-           
-{{-- TOOLBAR --}}
-<div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-5">
+    @if($tahunAktif)
 
-    {{-- Kiri --}}
-    <div class="flex flex-wrap items-center gap-2">
+    <div class="mt-5 lg:mt-0">
 
-        <form action="{{ route('guru.import') }}"
-              method="POST"
-              enctype="multipart/form-data">
-            @csrf
+        <div class="bg-blue-50 border border-blue-200 rounded-xl shadow-sm px-5 py-4 min-w-[280px]">
 
-            <label class="inline-flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg cursor-pointer">
-                <x-heroicon-o-arrow-up-tray class="w-5 h-5"/>
-                Import
-                <input type="file"
-                       name="file"
-                       onchange="this.form.submit()"
-                       class="hidden">
-            </label>
-        </form>
+            <p class="text-xs uppercase tracking-wide text-blue-600 font-semibold">
 
-        <a href="{{ route('guru.export') }}"
-           class="inline-flex items-center gap-2 bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-lg">
-            <x-heroicon-o-arrow-down-tray class="w-5 h-5"/>
-            Export
-        </a>
+                Tahun Ajaran Aktif
 
-        <a href="{{ route('guru.create') }}"
-           class="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg">
-            <x-heroicon-o-plus class="w-5 h-5"/>
-            Tambah Guru
-        </a>
+            </p>
+
+            <h2 class="text-2xl font-bold text-blue-700 mt-1">
+
+                {{ $tahunAktif->tahun_ajaran }}
+
+            </h2>
+
+            <div class="flex justify-between items-center mt-2">
+
+                <span class="text-gray-600 text-sm">
+
+                    Semester {{ $tahunAktif->semester }}
+
+                </span>
+
+                <span class="inline-flex items-center gap-1 rounded-full bg-green-100 px-3 py-1 text-xs font-semibold text-green-700">
+
+                    <span class="w-2 h-2 rounded-full bg-green-500"></span>
+
+                    Aktif
+
+                </span>
+
+            </div>
+
+        </div>
 
     </div>
 
-    {{-- Cari --}}
-    <form action="{{ route('guru.index') }}"
-          method="GET"
-          class="flex gap-2">
+    @endif
 
-        <input
-            type="text"
-            name="search"
-            value="{{ request('search') }}"
-            placeholder="Cari guru..."
-            class="w-72 border border-gray-300 rounded-lg px-4 py-2">
+</div>
+{{-- ================= CARD STATISTIK ================= --}}
 
-        <button
-            type="submit"
-            class="bg-slate-700 hover:bg-slate-800 text-white px-4 py-2 rounded-lg">
 
-            Cari
+<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5 mb-6">
 
-        </button>
+    {{-- Total Guru --}}
+    <div class="bg-white rounded-xl shadow border border-gray-200 p-5">
+
+        <div class="flex justify-between items-center">
+
+            <div>
+
+                <p class="text-gray-500 text-sm">
+                    Total Guru
+                </p>
+
+                <h2 class="text-3xl font-bold text-blue-600 mt-2">
+                    {{ $totalGuru }}
+                </h2>
+
+            </div>
+
+            <div class="w-14 h-14 rounded-full bg-blue-100 flex items-center justify-center">
+
+                <x-heroicon-o-user-group class="w-8 h-8 text-blue-600"/>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    {{-- Wali Kelas --}}
+    <div class="bg-white rounded-xl shadow border border-gray-200 p-5">
+
+        <div class="flex justify-between items-center">
+
+            <div>
+
+                <p class="text-gray-500 text-sm">
+                    Wali Kelas
+                </p>
+
+                <h2 class="text-3xl font-bold text-green-600 mt-2">
+                    {{ $totalWali }}
+                </h2>
+
+            </div>
+
+            <div class="w-14 h-14 rounded-full bg-green-100 flex items-center justify-center">
+
+                <x-heroicon-o-home class="w-8 h-8 text-green-600"/>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    {{-- Guru PAI --}}
+    <div class="bg-white rounded-xl shadow border border-gray-200 p-5">
+
+        <div class="flex justify-between items-center">
+
+            <div>
+
+                <p class="text-gray-500 text-sm">
+                    Guru PAI
+                </p>
+
+                <h2 class="text-3xl font-bold text-yellow-500 mt-2">
+                    {{ $totalPai }}
+                </h2>
+
+            </div>
+
+            <div class="w-14 h-14 rounded-full bg-yellow-100 flex items-center justify-center">
+
+                <x-heroicon-o-book-open class="w-8 h-8 text-yellow-600"/>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    {{-- Guru PJOK --}}
+    <div class="bg-white rounded-xl shadow border border-gray-200 p-5">
+
+        <div class="flex justify-between items-center">
+
+            <div>
+
+                <p class="text-gray-500 text-sm">
+                    Guru PJOK
+                </p>
+
+                <h2 class="text-3xl font-bold text-red-500 mt-2">
+                    {{ $totalPjok }}
+                </h2>
+
+            </div>
+
+            <div class="w-14 h-14 rounded-full bg-red-100 flex items-center justify-center">
+
+                <x-heroicon-o-trophy class="w-8 h-8 text-red-600"/>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+{{-- ================= FILTER ================= --}}
+
+<div class="bg-white rounded-xl shadow border border-gray-200 mb-6">
+
+    <div class="px-6 py-4 border-b bg-slate-50 rounded-t-xl">
+
+        <div class="flex items-center gap-2">
+
+            <x-heroicon-o-funnel class="w-5 h-5 text-blue-600"/>
+
+            <h2 class="font-semibold text-gray-800">
+
+                Filter Data Guru
+
+            </h2>
+
+        </div>
+
+    </div>
+
+    <form action="{{ route('guru.index') }}" method="GET">
+
+        <div class="p-6">
+
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-5">
+
+                {{-- SEARCH --}}
+                <div>
+
+                    <label class="block text-sm text-gray-600 mb-2">
+
+                        Pencarian
+
+                    </label>
+
+                    <input
+                        type="text"
+                        name="search"
+                        value="{{ request('search') }}"
+                        placeholder="Nama / NIP / NUPTK"
+                        class="w-full h-11 rounded-lg border-gray-300 focus:ring-blue-500 focus:border-blue-500">
+
+                </div>
+
+                {{-- JENIS PENGAJAR --}}
+                <div>
+
+                    <label class="block text-sm text-gray-600 mb-2">
+
+                        Jenis Pengajar
+
+                    </label>
+
+                    <select
+                        name="jenis_pengajar"
+                        class="w-full h-11 rounded-lg border-gray-300">
+
+                        <option value="">Semua</option>
+
+                        <option value="Wali Kelas"
+                            {{ request('jenis_pengajar')=='Wali Kelas' ? 'selected' : '' }}>
+                            Wali Kelas
+                        </option>
+
+                        <option value="Guru PAI"
+                            {{ request('jenis_pengajar')=='Guru PAI' ? 'selected' : '' }}>
+                            Guru PAI
+                        </option>
+
+                        <option value="Guru PJOK"
+                            {{ request('jenis_pengajar')=='Guru PJOK' ? 'selected' : '' }}>
+                            Guru PJOK
+                        </option>
+
+                        <option value="Kepala Sekolah"
+                            {{ request('jenis_pengajar')=='Kepala Sekolah' ? 'selected' : '' }}>
+                            Kepala Sekolah
+                        </option>
+
+                        <option value="Operator"
+                            {{ request('jenis_pengajar')=='Operator' ? 'selected' : '' }}>
+                            Operator
+                        </option>
+
+                    </select>
+
+                </div>
+
+                {{-- STATUS --}}
+                <div>
+
+                    <label class="block text-sm text-gray-600 mb-2">
+
+                        Status Guru
+
+                    </label>
+
+                    <select
+                        name="status_guru"
+                        class="w-full h-11 rounded-lg border-gray-300">
+
+                        <option value="">Semua</option>
+
+                        <option value="Aktif"
+                            {{ request('status_guru')=='Aktif' ? 'selected' : '' }}>
+                            Aktif
+                        </option>
+
+                        <option value="Mutasi Keluar"
+                            {{ request('status_guru')=='Mutasi Keluar' ? 'selected' : '' }}>
+                            Mutasi Keluar
+                        </option>
+
+                        <option value="Pensiun"
+                            {{ request('status_guru')=='Pensiun' ? 'selected' : '' }}>
+                            Pensiun
+                        </option>
+
+                    </select>
+
+                </div>
+
+                {{-- BUTTON --}}
+                <div class="flex items-end gap-3">
+
+                    <button
+                        type="submit"
+                        class="flex-1 h-11 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium">
+
+                        Cari
+
+                    </button>
+
+                    <a
+                        href="{{ route('guru.index') }}"
+                        class="h-11 px-5 flex items-center justify-center rounded-lg bg-gray-300 hover:bg-gray-400">
+
+                        Reset
+
+                    </a>
+
+                </div>
+
+            </div>
+
+        </div>
 
     </form>
 
 </div>
 
+{{-- ================= AKSI ================= --}}
 
-{{-- FILTER BAR --}}
-<div class="flex flex-wrap justify-between items-center gap-4 mb-4">
+<div class="flex flex-col lg:flex-row lg:justify-between lg:items-center mb-6">
 
-    {{-- Kiri --}}
-    <div class="flex items-center gap-2">
+    <div>
 
-        <span class="text-sm text-gray-500">
-            Tampilkan
-        </span>
+        <h2 class="text-lg font-semibold text-slate-800">
 
-        <select
-            class="border border-gray-300 bg-white rounded-lg px-3 py-2 text-sm shadow-sm">
+            Manajemen Data Guru
 
-            <option>10</option>
-            <option>25</option>
-            <option>50</option>
-            <option>100</option>
+        </h2>
 
-        </select>
+        <p class="text-sm text-gray-500 mt-1">
 
-        <span class="text-sm text-gray-500">
-            entri
-        </span>
+            Import, export data guru.
+
+        </p>
 
     </div>
 
-    {{-- Kanan --}}
-   
-    <div class="flex items-center gap-3">
-        <span>Mode Edit</span>
-        <div id="toggleEdit" class="switch active"></div>
-        <span id="statusEdit">Aktif</span>
+    <div class="flex flex-wrap gap-3 mt-5 lg:mt-0">
+
+    
+        {{-- IMPORT --}}
+        <button
+            type="button"
+            onclick="bukaModalGuru()"
+            class="inline-flex items-center gap-2 px-5 py-3 rounded-lg bg-green-600 text-white hover:bg-green-700 transition">
+
+            <x-heroicon-o-arrow-up-tray class="w-5 h-5"/>
+
+            Import Excel
+
+        </button>
+
+        {{-- EXPORT --}}
+        <a
+            href="{{ route('guru.export') }}"
+            class="inline-flex items-center gap-2 px-5 py-3 rounded-lg bg-yellow-500 text-white hover:bg-yellow-600 transition">
+
+            <x-heroicon-o-arrow-down-tray class="w-5 h-5"/>
+
+            Export Excel
+
+        </a>
+
     </div>
 
 </div>
+{{-- ================= DATA GURU ================= --}}
 
+<div class="bg-white rounded-xl shadow border border-gray-200">
 
-    {{-- TABLE --}}
-<div class="bg-white rounded-xl shadow overflow-x-auto">
-    <table class="w-full text-sm text-left">
+    {{-- Header --}}
+    <div class="flex flex-col lg:flex-row lg:justify-between lg:items-center gap-4 px-6 py-5 border-b bg-slate-50 rounded-t-xl">
 
-            {{-- HEADER --}}
-           <thead class="bg-gray-100 text-gray-700">
+        <div>
 
-                <tr>
+            <h2 class="text-lg font-semibold text-slate-800">
 
-                    <th class="border px-4 py-4 text-center font-semibold w-16">
+                Data Guru
+
+            </h2>
+
+            <p class="text-sm text-gray-500 mt-1">
+
+                Menampilkan
+
+                <span class="font-semibold">
+
+                    {{ $gurus->firstItem() ?? 0 }}
+
+                </span>
+
+                -
+
+                <span class="font-semibold">
+
+                    {{ $gurus->lastItem() ?? 0 }}
+
+                </span>
+
+                dari
+
+                <span class="font-semibold">
+
+                    {{ $gurus->total() }}
+
+                </span>
+
+                data guru
+
+            </p>
+
+        </div>
+
+        <div>
+
+            <span class="inline-flex items-center rounded-full bg-blue-100 px-4 py-2 text-sm font-semibold text-blue-700">
+
+                {{ $totalGuru }} Guru
+
+            </span>
+
+        </div>
+
+    </div>
+
+    {{-- Table --}}
+    <div class="overflow-x-auto">
+
+        <table class="min-w-[1350px] w-full border-collapse">
+
+            <thead class="bg-slate-100">
+
+                <tr class="text-sm text-gray-700">
+
+                    <th class="border px-3 py-3 text-center w-14">
                         No
                     </th>
 
-                    <th class="border px-4 py-4 font-semibold">
-                        NIP
-                    </th>
-
-                    <th class="border px-4 py-4 font-semibold">
+                    <th class="border px-4 py-3 text-left w-72">
                         Nama Guru
                     </th>
 
-                    <th class="border px-4 py-4 text-center font-semibold">
-                        Jenis Guru
+                    <th class="border px-4 py-3 text-left w-52">
+                        NIP / NUPTK
                     </th>
 
-                    <th class="border px-4 py-4 text-center font-semibold">
-                        Guru Mata Pelajaran
+                    <th class="border px-3 py-3 text-center w-16">
+                        JK
                     </th>
 
-                    <th class="border px-4 py-4 text-center font-semibold">
+                    <th class="border px-3 py-3 text-left w-40">
+                        Jenis PTK
+                    </th>
+
+                    <th class="border px-3 py-3 text-left w-40">
+                        Status PTK
+                    </th>
+
+                    <th class="border px-3 py-3 text-center w-44">
+                        Pengajar
+                    </th>
+
+<th class="border px-3 py-3 text-center w-44">
                         Wali Kelas
                     </th>
 
-                    <th class="border px-4 py-4 text-center font-semibold">
-                        Jenis Kelamain
+
+                    <th class="border px-3 py-3 text-center w-28">
+                        Status
                     </th>
 
-                    <th class="border px-4 py-4 font-semibold">
-                        TTL
+                    <th class="border px-3 py-3 text-left w-36">
+                        No. HP
                     </th>
 
-                    <th class="border px-4 py-4 font-semibold">
-                        Email
+                    <th class="border px-3 py-3 text-center w-56">
+                        Aksi
                     </th>
 
-                    <th class="border px-4 py-4 text-center font-semibold">
-                        Password
-                    </th>
-<th class="border px-4 py-4 text-center font-semibold w-40 aksi-edit">
-    Aksi
-</th>
                 </tr>
 
             </thead>
 
+            <tbody class="divide-y divide-gray-200">
+                <tbody class="divide-y divide-gray-200">
+
+@forelse($gurus as $guru)
+
+<tr class="hover:bg-sky-50 transition duration-150">
+
+    {{-- NO --}}
+    <td class="border px-3 py-3 text-center">
+
+        {{ $gurus->firstItem() + $loop->index }}
+
+    </td>
+
+    {{-- NAMA --}}
+    <td class="border px-4 py-3">
+
+        <div class="font-semibold text-slate-800">
+
+           
+ {{ strtoupper($guru->nama_guru) }}
+
+        </div>
+
+        <div class="text-xs text-gray-500 mt-1">
+
+            {{ $guru->email ?? '-' }}
+
+        </div>
+
+    </td>
+
+    {{-- NIP --}}
+    <td class="border px-4 py-3">
+
+        <div>
+
+            <span class="font-medium">
+
+                NIP :
+
+            </span>
+
+            {{ $guru->nip ?: '-' }}
+
+        </div>
+
+        <div class="text-xs text-gray-500 mt-1">
+
+            NUPTK : {{ $guru->nuptk ?: '-' }}
+
+        </div>
+
+    </td>
+
+    {{-- JK --}}
+    <td class="border px-3 py-3 text-center">
+
+        @if($guru->jenis_kelamin=='L')
+
+            <span class="inline-flex px-3 py-1 rounded-full bg-blue-100 text-blue-700 text-xs font-semibold">
+
+                L
+
+            </span>
+
+        @else
+
+            <span class="inline-flex px-3 py-1 rounded-full bg-pink-100 text-pink-700 text-xs font-semibold">
+
+                P
+
+            </span>
+
+        @endif
+
+    </td>
+
+    {{-- JENIS PTK --}}
+    <td class="border px-3 py-3">
+
+        {{ $guru->jenis_ptk ?? '-' }}
+
+    </td>
+
+    {{-- STATUS PTK --}}
+    <td class="border px-3 py-3">
+
+        {{ $guru->status_kepegawaian ?? '-' }}
+
+    </td>
+
+    {{-- JENIS PENGAJAR --}}
+    <td class="border px-3 py-3 text-center">
+
+        @switch($guru->jenis_pengajar)
+
+            @case('Wali Kelas')
+
+                <span class="inline-flex rounded-full bg-blue-100 text-blue-700 px-3 py-1 text-xs font-semibold">
+
+                    Wali Kelas
+
+                </span>
+
+            @break
+
+            @case('Guru PAI')
+
+                <span class="inline-flex rounded-full bg-green-100 text-green-700 px-3 py-1 text-xs font-semibold">
+
+                    Guru PAI
+
+                </span>
+
+            @break
+
+            @case('Guru PJOK')
+
+                <span class="inline-flex rounded-full bg-yellow-100 text-yellow-700 px-3 py-1 text-xs font-semibold">
+
+                    Guru PJOK
+
+                </span>
+
+            @break
+
+            @case('Kepala Sekolah')
+
+                <span class="inline-flex rounded-full bg-purple-100 text-purple-700 px-3 py-1 text-xs font-semibold">
+
+                    Kepala Sekolah
+
+                </span>
+
+            @break
+
+            @default
+
+                <span class="inline-flex rounded-full bg-gray-100 text-gray-700 px-3 py-1 text-xs font-semibold">
+
+                    Operator
+
+                </span>
+
+        @endswitch
+
+    </td>
 
 
-            {{-- BODY --}}
-            <tbody class="divide-y divide-gray-200 bg-white">
-
-@forelse($gurus as $item)
-
-<tr class="hover:bg-gray-50 transition">
-                    {{-- NO --}}
-                    <td class="border px-4 py-5 text-center">
-                        {{ $loop->iteration }}
-                    </td>
-
-
-
-                    {{-- NIP --}}
-                    <td class="border px-4 py-5 whitespace-nowrap">
-                        {{ $item->nip }}
-                    </td>
-
-
-
-                    {{-- NAMA --}}
-                    <td class="border px-4 py-5 font-medium text-gray-800">
-                        {{ $item->nama_guru }}
-                    </td>
-
-
-
-                    {{-- ROLE --}}
-                    <td class="border px-4 py-5 text-center whitespace-nowrap">
-
-                        @if($item->role_guru == 'wali')
-
-                            <span class="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap inline-block">
-                                Wali Kelas
-                            </span>
-
-                        @else
-
-                            <span class="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap inline-block">
-                                Guru Mapel
-                            </span>
-
-                        @endif
-
-                    </td>
-
-
-
-                    {{-- MAPEL --}}
-                    <td class="border px-4 py-5 text-center whitespace-nowrap">
-                        {{ $item->mapel->nama_mapel ?? '-' }}
-                    </td>
-
-
-
-                    {{-- WALI --}}
-                    <td class="border px-4 py-5 text-center whitespace-nowrap">
-                        {{ $item->kelas->nama_kelas ?? '-' }}
-                    </td>
-
-
-
-                    {{-- JK --}}
-                    <td class="px-4 py-5 text-center">
-                        {{ $item->jenis_kelamin }}
-                    </td>
-
-
-
-                    {{-- TTL --}}
-                    <td class="border px-4 py-5">
-                        <div>{{ $item->tempat_lahir }}</div>
-                        <div class="text-gray-500 text-sm">
-                            {{ \Carbon\Carbon::parse($item->tanggal_lahir)->format('d-m-Y') }}
-                        </div>
-                        </td>
-
-                    {{-- EMAIL --}}
-                    <td class="border px-4 py-5">
-    {{ $g->user->email ?? '-' }}
+<td>
+    @if($guru->waliKelas)
+        <span class="block text-center px-2 py-1">
+            {{ $guru->waliKelas->nama_kelas }}
+        </span>
+    @else
+        <span class="block text-center">-</span>
+    @endif
 </td>
 
+    {{-- STATUS --}}
+    <td class="border px-3 py-3 text-center">
 
+        @if($guru->status_guru=='Aktif')
 
-                    {{-- PASSWORD --}}
-                    <td class="border px-4 py-5 text-center">
+            <span class="inline-flex rounded-full bg-green-100 text-green-700 px-3 py-1 text-xs font-semibold">
 
-                        <span class="bg-gray-100 px-3 py-1 rounded-lg text-gray-700">
-                            12345678
-                        </span>
+                Aktif
 
-                    </td>
+            </span>
 
+        @elseif($guru->status_guru=='Pensiun')
 
+            <span class="inline-flex rounded-full bg-yellow-100 text-yellow-700 px-3 py-1 text-xs font-semibold">
 
-                    {{-- AKSI --}}
-<td class="border px-4 py-5 aksi-edit">
+                Pensiun
 
-    <div class="flex justify-center gap-2 aksi-edit">
+            </span>
 
-       <a href="{{ route('guru.edit',$item->id) }}"
-   class="bg-amber-500 hover:bg-amber-600 text-white px-3 py-2 rounded-lg inline-flex items-center gap-1">
+        @else
 
-    <x-heroicon-o-pencil-square class="w-4 h-4"/>
+            <span class="inline-flex rounded-full bg-red-100 text-red-700 px-3 py-1 text-xs font-semibold">
 
-    Edit
+                Mutasi
 
-</a>
+            </span>
 
-        <form action="{{ route('guru.destroy',$item->id) }}"
-              method="POST"
-              onsubmit="return confirm('Hapus guru ini?')">
+        @endif
 
-            @csrf
-            @method('DELETE')
+    </td>
 
-            <button
-    class="bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-lg inline-flex items-center gap-1">
+    {{-- NO HP --}}
+    <td class="border px-3 py-3">
 
-    <x-heroicon-o-trash class="w-4 h-4"/>
+        {{ $guru->no_hp ?? '-' }}
 
-    Hapus
+    </td>
 
-</button>
+    {{-- AKSI --}}
+    <td class="border px-3 py-3">
 
-        </form>
+        <div class="flex justify-center items-center gap-2 whitespace-nowrap">
 
-    </div>
+            {{-- Detail --}}
+            <a
+                href="{{ route('guru.show',$guru->id) }}"
+                 class="p-1.5 rounded-lg bg-blue-100 hover:bg-blue-200 transition">
 
-</td>
+                <x-heroicon-o-eye class="w-5 h-5 text-blue-600"/>
 
+            </a>
 
-                </tr>
+            {{-- Edit --}}
+            <a
+                href="{{ route('guru.edit',$guru->id) }}"
+               class="p-1.5 rounded-lg bg-yellow-100 hover:bg-yellow-200 transition">
+
+                <x-heroicon-o-pencil-square class="w-5 h-5 text-yellow-600"/>
+
+            </a>
+
+            {{-- Reset Password --}}
+            <form
+                action="{{ route('guru.reset-password',$guru->id) }}"
+                method="POST">
+
+                @csrf
+
+                <button
+                    onclick="return confirm('Reset password guru ini?')"
+                   class="p-1.5 rounded-lg bg-red-100 hover:bg-red-200 transition">
+    
+
+                    <x-heroicon-o-key class="w-5 h-5 text-red-600"/>
+
+                </button>
+
+            </form>
+
+            {{-- Mutasi --}}
+            <form
+               action="{{ route('guru.mutasi',$guru->id) }}"
+                method="POST">
+
+                @csrf
+               @method('PATCH')
+
+                <button
+                    onclick="return confirm('Mutasikan guru ini?')"
+                   class="p-1.5 rounded-lg bg-green-100 hover:bg-red-200 transition">
+                   
+                    <x-heroicon-o-arrow-right-on-rectangle class="w-5 h-5 text-green-600"/>
+
+                </button>
+
+            </form>
+
+        </div>
+
+    </td>
+
+</tr>
+
 @empty
 
-             <tr>
-    <td colspan="11" class="text-center py-10 text-gray-500">
-        Data guru tidak ditemukan
-    </td>
+<tr>
+
+<td colspan="11" class="py-12">
+
+<div class="text-center">
+
+<x-heroicon-o-user-group class="mx-auto h-16 w-16 text-gray-300"/>
+
+<h3 class="mt-4 text-lg font-semibold text-gray-700">
+
+Belum Ada Data Guru
+
+</h3>
+
+<p class="mt-2 text-gray-500">
+
+Silakan tambahkan data guru terlebih dahulu.
+
+</p>
+
+</div>
+
+</td>
+
 </tr>
 
 @endforelse
 
 </tbody>
-               
+
 </table>
+
 </div>
-    <div class="flex gap-2">
 
-        <button
-            class="px-3 py-1 border rounded-lg bg-white">
-            ‹
-        </button>
+{{-- ================= FOOTER TABEL ================= --}}
 
-        <button
-            class="px-3 py-1 rounded-lg bg-blue-600 text-white">
-            1
-        </button>
+<div class="flex flex-col lg:flex-row lg:justify-between lg:items-center gap-4 px-6 py-4 border-t bg-gray-50 rounded-b-xl">
 
-        <button
-            class="px-3 py-1 border rounded-lg bg-white">
-            ›
-        </button>
+    <div class="text-sm text-gray-600">
+
+        Menampilkan
+
+        <span class="font-semibold">
+
+            {{ $gurus->firstItem() ?? 0 }}
+
+        </span>
+
+        -
+
+        <span class="font-semibold">
+
+            {{ $gurus->lastItem() ?? 0 }}
+
+        </span>
+
+        dari
+
+        <span class="font-semibold">
+
+            {{ $gurus->total() }}
+
+        </span>
+
+        data guru
+
+    </div>
+
+    <div>
+
+        {{ $gurus->links('vendor.pagination.tailwind') }}
 
     </div>
 
 </div>
 
-<style>
-.switch{
-    position:relative;
-    width:48px;
-    height:24px;
-    background:#d1d5db;
-    border-radius:9999px;
-    cursor:pointer;
-    transition:.3s;
-}
-
-.switch::before{
-    content:'';
-    position:absolute;
-    width:20px;
-    height:20px;
-    top:2px;
-    left:2px;
-    background:#fff;
-    border-radius:50%;
-    transition:.3s;
-}
-
-.switch.active{
-    background:#2563eb;
-}
-
-.switch.active::before{
-    transform:translateX(24px);
-}
-</style>
-
-
+</div>
+@push('scripts')
 <script>
-document.addEventListener('DOMContentLoaded', () => {
+function bukaModalGuru() {
+    const modal = document.getElementById('modalImport');
 
-    const toggle = document.getElementById('toggleEdit');
-    const status = document.getElementById('statusEdit');
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+}
 
-    toggle.addEventListener('click', () => {
+function tutupModalGuru() {
+    const modal = document.getElementById('modalImport');
 
-        toggle.classList.toggle('active');
+    modal.classList.remove('flex');
+    modal.classList.add('hidden');
+}
 
-        const aktif = toggle.classList.contains('active');
-
-        document.querySelectorAll('.aksi-edit').forEach(el => {
-            el.style.display = aktif ? '' : 'none';
-        });
-
-        status.innerText = aktif ? 'Aktif' : 'Nonaktif';
-
-    });
-
+document.addEventListener('keydown', function(e){
+    if(e.key === 'Escape'){
+        tutupModalGuru();
+    }
 });
 </script>
-</div>
-    
+@endpush
 @endsection

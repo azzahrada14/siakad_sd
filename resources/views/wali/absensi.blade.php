@@ -2,323 +2,423 @@
 
 @section('content')
 
-<div class="p-6 bg-gray-100 min-h-screen">
+<div class="max-w-[98%] mx-auto py-6">
 
     {{-- HEADER --}}
-{{-- HEADER --}}
-<div class="mb-6">
+    <div class="bg-white rounded-2xl shadow border p-8 mb-6">
 
-    <h1 class="text-4xl font-bold text-gray-800">
-        Rekap Absensi Wali Kelas
-    </h1>
+        <div class="flex justify-between items-center">
 
-    <p class="text-gray-500 mt-1">
-        Monitoring kehadiran siswa kelas
+            <div>
 
-        <span class="font-semibold text-blue-600">
-            {{ $kelas->nama_kelas ?? '-' }}
-        </span>
+                <h1 class="flex items-center gap-3 text-3xl font-bold text-slate-800">
+                        <x-heroicon-o-clipboard-document-check class="w-8 h-8 text-blue-600" />
+                    Rekap Absensi Siswa
 
-    </p>
+                </h1>
 
+                <p class="text-gray-500 mt-2">
+
+                    Daftar Hadir Siswa Dalam Bulan
+
+                </p>
+
+            </div>
+ {{-- Informasi Kanan --}}
+        <div class="flex flex-col lg:flex-row gap-4">
+
+            @if($tahunAktif)
+            <div class="bg-blue-50 border border-blue-200 rounded-xl px-6 py-4 shadow-sm min-w-[260px]">
+
+                <p class="text-xs uppercase tracking-wide text-blue-600 font-semibold">
+                    Tahun Ajaran Aktif
+                </p>
+
+                <h3 class="text-2xl font-bold text-blue-700 mt-1">
+                    {{ $tahunAktif->tahun_ajaran }}
+                </h3>
+
+                <div class="flex justify-between items-center mt-2">
+
+                    <span class="text-gray-600">
+                        Semester {{ $tahunAktif->semester }}
+                    </span>
+
+                    <span class="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-semibold">
+                        Aktif
+                    </span>
+
+                </div>
+
+            </div>
+            @endif
+        </div>
+    </div>
 </div>
 
-{{-- TOOLBAR + FILTER --}}
-<div class="flex flex-col lg:flex-row lg:justify-between lg:items-center gap-4 mb-5">
+<div class="bg-white rounded-2xl shadow border p-6 mb-6">
 
-    {{-- KIRI --}}
-    <div class="flex flex-wrap items-center gap-2">
+    <form method="GET" action="{{ route('wali.absensi') }}">
 
-        {{-- IMPORT --}}
-        <form
-            action="{{ route('guru.import') }}"
-            method="POST"
-            enctype="multipart/form-data">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-5">
 
-            @csrf
+            {{-- KELAS --}}
+            <div>
 
-            <label
-                class="inline-flex items-center gap-2
-                bg-green-600 hover:bg-green-700
-                text-white px-4 py-2 rounded-lg cursor-pointer">
-
-                <x-heroicon-o-arrow-up-tray class="w-5 h-5"/>
-
-                Import
+                <label class="block mb-2 text-sm font-semibold">
+                    Kelas
+                </label>
 
                 <input
-                    type="file"
-                    name="file"
-                    onchange="this.form.submit()"
-                    class="hidden">
+                    type="text"
+                    readonly
+                    value="{{ $kelas->nama_kelas }}"
+                    class="w-full rounded-xl bg-gray-100 border-gray-300">
 
-            </label>
+            </div>
 
-        </form>
+            {{-- BULAN --}}
+            <div>
 
-        {{-- EXPORT --}}
-        <a
-            href="{{ route('guru.export') }}"
-            class="inline-flex items-center gap-2
-            bg-amber-500 hover:bg-amber-600
-            text-white px-4 py-2 rounded-lg">
+                <label class="block mb-2 text-sm font-semibold">
+                    Bulan
+                </label>
 
-            <x-heroicon-o-arrow-down-tray class="w-5 h-5"/>
-
-            Export
-
-        </a>
-
-    </div>
-
-    @php
-$namaBulan = [
-1=>'Januari',
-2=>'Februari',
-3=>'Maret',
-4=>'April',
-5=>'Mei',
-6=>'Juni',
-7=>'Juli',
-8=>'Agustus',
-9=>'September',
-10=>'Oktober',
-11=>'November',
-12=>'Desember'
+                   @php
+$bulanIndonesia = [
+    1 => 'Januari',
+    2 => 'Februari',
+    3 => 'Maret',
+    4 => 'April',
+    5 => 'Mei',
+    6 => 'Juni',
+    7 => 'Juli',
+    8 => 'Agustus',
+    9 => 'September',
+    10 => 'Oktober',
+    11 => 'November',
+    12 => 'Desember',
 ];
 @endphp
 
-    {{-- KANAN --}}
-    <form action="{{ route('wali.absensi') }}"
-      method="GET"
-      class="flex flex-wrap items-center gap-2">
+<select name="bulan" class="w-full rounded-xl border-gray-300">
 
-      <input type="hidden" name="test" value="123">
-
-        <select
-            name="bulan"
-            class="w-40 border border-gray-300 rounded-lg px-3 py-2">
-
-            @foreach($namaBulan as $key=>$nama)
-
-                <option
-                    value="{{ $key }}"
-                    {{ $bulan==$key ? 'selected':'' }}>
-
-                    {{ $nama }}
-
-                </option>
-
-            @endforeach
-
-        </select>
-
-        <input
-            type="number"
-            name="tahun"
-            value="{{ $tahun }}"
-            class="w-28 border border-gray-300 rounded-lg px-3 py-2">
-
-        <select
-    name="mapel_id"
-    class="w-52 border border-gray-300 rounded-lg px-3 py-2">
-
-    <option value="">
-        Semua Mapel
-    </option>
-
-    @foreach($mapels as $mapel)
-
-        <option
-            value="{{ $mapel->id }}"
-            {{ request('mapel_id') == $mapel->id ? 'selected' : '' }}>
-
-            {{ $mapel->nama_mapel }}
-
+    @for($i = 1; $i <= 12; $i++)
+        <option value="{{ $i }}" @selected($bulan == $i)>
+            {{ $bulanIndonesia[$i] }}
         </option>
-
-    @endforeach
+    @endfor
 
 </select>
 
-        <input
-    type="submit"
-    value="Filter"
-    class="bg-blue-600 text-white px-4 py-2 rounded-lg">
+            </div>
+
+            {{-- MATA PELAJARAN --}}
+            <div>
+
+                <label class="block mb-2 text-sm font-semibold">
+                    Mata Pelajaran
+                </label>
+
+                <select
+                    name="mapel_id"
+                    class="w-full rounded-xl border-gray-300">
+
+                    <option value="">
+                        Semua Mata Pelajaran
+                    </option>
+
+                    @foreach($mapels as $mapel)
+
+                        <option
+                            value="{{ $mapel->id }}"
+                            @selected($mapelId == $mapel->id)>
+
+                            {{ $mapel->nama_mapel }}
+
+                        </option>
+
+                    @endforeach
+
+                </select>
+
+            </div>
+
+            {{-- TAHUN AJARAN --}}
+            <div>
+
+                <label class="block mb-2 text-sm font-semibold">
+                    Tahun Ajaran
+                </label>
+
+                <input
+                    type="text"
+                    readonly
+                    value="{{ $tahunAktif->tahun_ajaran }}"
+                    class="w-full rounded-xl bg-gray-100 border-gray-300">
+
+                
+
+            </div>
+
+            {{-- FILTER --}}
+            <div class="flex items-end">
+
+                <button
+                    type="submit"
+                    class="w-full inline-flex justify-center items-center gap-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white py-3">
+
+                    <x-heroicon-o-funnel class="w-5 h-5"/>
+
+                    Tampilkan Rekap
+
+                </button>
+
+            </div>
+
+            {{-- EXPORT --}}
+            <div class="flex items-end">
+
+                <a
+                    href="{{ route('wali.absensi.export',[
+                        'bulan' => $bulan,
+                        'mapel_id' => $mapelId
+                    ]) }}"
+                    class="w-full inline-flex justify-center items-center gap-2 rounded-xl bg-green-600 hover:bg-green-700 text-white py-3">
+
+                    <x-heroicon-o-arrow-down-tray class="w-5 h-5"/>
+
+                    Export Excel
+
+                </a>
+
+            </div>
+
+        </div>
 
     </form>
 
 </div>
 
+</div>
+<div class="bg-white rounded-2xl shadow border overflow-auto">
 
-{{-- TABLE --}}
+<table class="min-w-max w-full border-collapse text-sm">
 
-<div class="flex flex-wrap items-center gap-4 text-sm mb-3">
+<thead>
 
-    <span class="font-semibold">
-        Keterangan :
-    </span>
+<tr class="bg-gray-600 text-white">
 
-    <span>
-        — Belum Tercatat
-    </span>
+<th rowspan="2"
+class="border px-3 py-3">
 
-    <span>
-        ✅ Hadir
-    </span>
+No
 
-    <span>
-        📄 Sakit
-    </span>
+</th>
 
-    <span>
-        🚶 Izin
-    </span>
+<th rowspan="2"
+class="border px-5 py-3 min-w-[220px]">
 
-    <span>
-        ✖ Alfa
-    </span>
+Nama Siswa
+
+</th>
+
+<th rowspan="2"
+class="border px-4 py-3">
+
+NIPD
+
+</th>
+
+<th colspan="{{ $jumlahHari }}"
+class="border px-4 py-3 text-center">
+
+Tanggal
+
+</th>
+
+<th colspan="5"
+class="border px-4 py-3">
+
+Rekap
+
+</th>
+
+</tr>
+
+<tr class="bg-gray-500 text-white">
+
+@for($i=1;$i<=$jumlahHari;$i++)
+
+<th class="border px-3 py-2">
+
+{{ $i }}
+
+</th>
+
+@endfor
+
+<th class="border px-3">
+
+H
+
+</th>
+
+<th class="border px-3">
+
+I
+
+</th>
+
+<th class="border px-3">
+
+S
+
+</th>
+
+<th class="border px-3">
+
+A
+
+</th>
+
+<th class="border px-3">
+
+%
+
+</th>
+
+</tr>
+
+</thead>
+
+<tbody>
+    @forelse($data as $item)
+
+<tr class="hover:bg-blue-50">
+
+<td class="border text-center">
+
+{{ $loop->iteration }}
+
+</td>
+
+<td class="border px-3">
+
+<div class="font-semibold">
+
+{{ $item['siswa']->nama_siswa }}
 
 </div>
 
-        <div class="bg-white rounded-xl shadow">
+</td>
 
-<div class="overflow-x-auto">
+<td class="border text-center">
 
-<table class="w-full text-sm border-collapse">
+{{ $item['siswa']->nipd }}
 
-    <thead class="bg-slate-700 text-white sticky top-0">
+</td>
+@for($i=1;$i<=$jumlahHari;$i++)
 
-        <tr>
+@php
 
-            <th class="border p-3">No</th>
+$status = $item['tanggal'][$i];
 
-            <th class="border p-3">NIPD</th>
+@endphp
 
-            <th class="border p-3">NISN</th>
+<td class="border text-center">
 
-            <th class="border p-3">Nama Siswa</th>
+@if($status=='H')
 
-            @for($i=1;$i<=$jumlahHari;$i++)
-                <th class="border p-2 text-center">
-                    {{ $i }}
-                </th>
-            @endfor
+<span class="font-bold text-green-600">
 
-            <th class="border p-2 text-green-500">✅</th>
-            <th class="border p-2 text-yellow-500">📄</th>
-            <th class="border p-2 text-blue-500">🚶</th>
-            <th class="border p-2 text-red-500">✖</th>
-            <th class="border p-2">Total</th>
-            <th class="border p-2">%</th>
+H
 
-        </tr>
+</span>
 
-    </thead>
+@elseif($status=='I')
 
-    <tbody>
+<span class="font-bold text-yellow-600">
 
-    @forelse($data as $d)
+I
 
-        <tr class="hover:bg-gray-50">
+</span>
 
-            <td class="border p-3 text-center">
-                {{ $loop->iteration }}
-            </td>
+@elseif($status=='S')
 
-            <td class="border p-3 text-center">
-                {{ $d['siswa']->nipd }}
-            </td>
+<span class="font-bold text-blue-600">
 
-            <td class="border p-3 text-center">
-                {{ $d['siswa']->nisn }}
-            </td>
+S
 
-            <td class="border p-3 whitespace-nowrap font-medium">
-                {{ $d['siswa']->nama_siswa }}
-            </td>
+</span>
 
-            @for($i=1;$i<=$jumlahHari;$i++)
+@elseif($status=='A')
 
-                @php
-                    $status = strtolower($d['tanggal'][$i] ?? '-');
-                @endphp
+<span class="font-bold text-red-600">
 
-                <td class="border text-center">
+A
 
-                    @switch($status)
+</span>
 
-                        @case('h')
-                            <span class="text-green-600 font-bold">✓</span>
-                        @break
+@else
 
-                        @case('s')
-                            📄
-                        @break
+-
 
-                        @case('i')
-                            🚶
-                        @break
+@endif
 
-                        @case('a')
-                            <span class="text-red-600">✖</span>
-                        @break
+</td>
 
-                        @default
-                            <span class="text-gray-300">—</span>
+@endfor
+<td class="border text-center bg-green-50 font-semibold">
 
-                    @endswitch
+{{ $item['hadir'] }}
 
-                </td>
+</td>
 
-            @endfor
+<td class="border text-center bg-yellow-50 font-semibold">
 
-            <td class="border text-center text-green-600 font-bold">
-                {{ $d['hadir'] }}
-            </td>
+{{ $item['izin'] }}
 
-            <td class="border text-center text-yellow-600 font-bold">
-                {{ $d['sakit'] }}
-            </td>
+</td>
 
-            <td class="border text-center text-blue-600 font-bold">
-                {{ $d['izin'] }}
-            </td>
+<td class="border text-center bg-blue-50 font-semibold">
 
-            <td class="border text-center text-red-600 font-bold">
-                {{ $d['alfa'] }}
-            </td>
+{{ $item['sakit'] }}
 
-            <td class="border text-center font-bold">
-                {{ $d['total'] }}
-            </td>
+</td>
 
-            <td class="border text-center font-bold">
-                {{ number_format($d['persen'],2) }}%
-            </td>
+<td class="border text-center bg-red-50 font-semibold">
 
-        </tr>
+{{ $item['alfa'] }}
 
-    @empty
+</td>
 
-        <tr>
+<td class="border text-center font-bold">
 
-            <td colspan="{{ $jumlahHari+10 }}"
-                class="border p-6 text-center text-gray-500">
+{{ $item['persentase'] }}%
 
-                Data absensi belum tersedia
+</td>
 
-            </td>
+</tr>
+@empty
 
-        </tr>
+<tr>
 
-    @endforelse
+<td
+colspan="{{ $jumlahHari+8 }}"
+class="py-12 text-center text-gray-500">
 
-    </tbody>
+Belum ada data absensi.
+
+</td>
+
+</tr>
+
+@endforelse
+
+</tbody>
 
 </table>
-
-</div>
 
 </div>
 

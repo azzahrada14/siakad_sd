@@ -6,144 +6,142 @@
 
     <div class="bg-white rounded-xl shadow p-6">
 
-       <div class="flex justify-between items-center mb-6">
-
+       <div class="flex flex-col lg:flex-row justify-between items-start mb-8">
 <div>
 
-<h2 class="text-3xl font-bold text-gray-800 flex items-center gap-3">
+    <h2 class="text-4xl font-bold text-slate-800 flex items-center gap-3">
 
-<svg xmlns="http://www.w3.org/2000/svg"
-class="w-8 h-8 text-blue-600"
-fill="none"
-viewBox="0 0 24 24"
-stroke="currentColor">
+        <x-heroicon-o-document-text class="w-10 h-10 text-blue-600"/>
 
-<path stroke-linecap="round"
-stroke-linejoin="round"
-stroke-width="2"
-d="M9 12h6m-6 4h6M7 4h10a2 2 0 012 2v12a2 2 0 01-2 2H7a2 2 0 01-2-2V6a2 2 0 012-2z"/>
+        Data Rapor
 
-</svg>
+    </h2>
 
-Data Rapor
+    <p class="text-gray-500 mt-2 ml-[52px]">
 
-</h2>
+        Generate dan cetak rapor siswa.
 
-<p class="text-gray-500 mt-1">
-
-Generate dan kelola rapor siswa
-
-</p>
+    </p>
 
 </div>
 
-</div>
+    <div class="mt-5 lg:mt-0">
 
-        @if(session('success'))
+        <div class="bg-blue-50 border border-blue-200 rounded-xl px-6 py-4 shadow-sm min-w-[280px]">
 
-            <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-5">
+            <p class="text-xs uppercase tracking-wide text-blue-600 font-semibold">
+                Tahun Ajaran Aktif
+            </p>
 
-                {{ session('success') }}
+            <h3 class="text-2xl font-bold text-blue-700 mt-1">
+                {{ $tahunAktif->tahun_ajaran }}
+            </h3>
+
+            <div class="flex justify-between items-center mt-2">
+
+                <span class="text-gray-600">
+                    Semester {{ $tahunAktif->semester }}
+                </span>
+
+                <span class="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs">
+                    Aktif
+                </span>
 
             </div>
 
-        @endif
+        </div>
 
-            @if(Auth::user()->role == 'guru')
-            <div class="mb-5">
+    </div>
 
-<form action="{{ route('rapor.generate') }}" method="POST" class="flex items-end gap-3 flex-wrap">
-@csrf
+</div>
 
-<div class="w-64">
+<div class="bg-slate-50 rounded-xl border p-5 mb-6">
 
-<label class="block text-sm font-semibold text-gray-700 mb-1">
+    <form action="{{ route('rapor.generate') }}" method="POST">
+
+        @csrf
+
+        <input type="hidden"
+               name="tahun_ajaran_id"
+               value="{{ $tahunAktif->id }}">
+
+        <input type="hidden"
+               name="semester"
+               value="{{ $tahunAktif->semester }}">
+
+        <input type="hidden"
+               name="kelas_id"
+               value="{{ $kelasGuru->id }}">
+
+        <div class="grid md:grid-cols-4 gap-5">
+
+          <div>
+
+<label class="block text-sm font-semibold mb-2">
 
 Tahun Ajaran
 
 </label>
 
-<select
-name="tahun_ajaran_id"
-class="w-full rounded-lg border-gray-300 focus:ring-blue-500 focus:border-blue-500">
-
-<option value="">Pilih Tahun Ajaran</option>
-
-@foreach($tahunAjaran as $item)
-
-<option value="{{ $item->id }}">
-
-{{ $item->tahun_ajaran }}
-
-</option>
-
-@endforeach
-
-</select>
-
-</div>
-
-<div class="w-52">
-
-<label class="block text-sm font-semibold text-gray-700 mb-1">
-
-Semester
-
-</label>
-
-<select
-name="semester"
-class="w-full rounded-lg border-gray-300 focus:ring-blue-500 focus:border-blue-500">
-
-<option value="">Pilih Semester</option>
-
-<option value="Ganjil">
-
-Ganjil
-
-</option>
-
-<option value="Genap">
-
-Genap
-
-</option>
-
-</select>
+<input
+type="text"
+readonly
+value="{{ $tahunAktif->tahun_ajaran }}"
+class="w-full rounded-lg bg-gray-100 border-gray-300">
 
 </div>
 
 <div>
 
+<label class="block text-sm font-semibold mb-2">
+
+Semester
+
+</label>
+
+<input
+type="text"
+readonly
+value="{{ $tahunAktif->semester }}"
+class="w-full rounded-lg bg-gray-100 border-gray-300">
+
+</div>
+
+<div>
+
+<label class="block text-sm font-semibold mb-2">
+
+Kelas
+
+</label>
+
+<input
+type="text"
+readonly
+value="{{ $kelasGuru->nama_kelas }}"
+class="w-full rounded-lg bg-gray-100 border-gray-300">
+
+</div>
+
+        
+<div class="flex items-end">
+
 <button
 type="submit"
-class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg flex items-center gap-2">
+class="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg">
 
-<svg xmlns="http://www.w3.org/2000/svg"
-class="w-5 h-5"
-fill="none"
-viewBox="0 0 24 24"
-stroke="currentColor">
+<x-heroicon-o-document-arrow-down class="w-5 h-5"/>
 
-<path stroke-linecap="round"
-stroke-linejoin="round"
-stroke-width="2"
-d="M4 4v6h6M20 20v-6h-6M5.64 17A9 9 0 104.22 9"/>
-
-</svg>
-
-Generate
+Generate Rapor
 
 </button>
 
 </div>
+            </div>
 
-</form>
+        </div>
 
-</div>
-@endif
-           
-            
+    </form>
 
 
         <div class="overflow-x-auto rounded-xl border">
@@ -162,38 +160,34 @@ Generate
 
                         <th class="border p-2">
 
+                            NIPD
+
+                        </th>
+
+                        <th class="border p-2">
+    NISN
+</th>
+
+
+                        <th class="border p-2">
+
                             Nama Siswa
 
                         </th>
 
                         <th class="border p-2">
 
-                            Kelas
+                            Rata -Rata
 
                         </th>
 
-                        <th class="border p-2">
+                
 
-                            Semester
-
-                        </th>
-
-                        <th class="border p-2">
-
-                            Ranking
-
-                        </th>
-                        <th class="border p-2">
+                             <th class="border p-2">
 
 Status
 
 </th>
-
-                        <th class="border p-2">
-
-                            Rata-rata
-
-                        </th>
 
                         <th class="border p-2">
 
@@ -205,85 +199,80 @@ Status
 
                 </thead>
 
-               <tbody>
+<tbody>
 
 @forelse($rapor as $item)
 
 <tr>
 
-<td class="border p-2 text-center">
-    {{ $loop->iteration }}
-</td>
+<td class="border text-center">
+    {{ $loop->iteration }}</td>
 
-<td class="border p-2">
-    {{ $item->siswa->nama_siswa }}
-</td>
-
-<td class="border p-2">
-    Kelas {{ $item->kelas->nama_kelas }}
-</td>
+    <td class="border text-center">
+{{ $item->siswa->nipd }}</td>
 
 <td class="border p-2 text-center">
-    {{ $item->semester }}
+    {{ $item->siswa->nisn }}
 </td>
 
-<td class="border p-2 text-center">
-    {{ $item->ranking }}
+<td class="border text-center">
+    {{ $item->siswa->nama_siswa }}</td>
+
+<td class=" border text-center">
+{{ number_format($item->rata_rata,2) }}
 </td>
 
-<td class="border p-2 text-center">
+
+<td class="border text-center">
 
 @if($item->is_generate)
 
-<span class="bg-green-100 text-green-700 px-2 py-1 rounded">
-    Sudah Generate
+<span class="inline-flex items-center gap-1 bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs">
+
+<x-heroicon-s-check-circle class="w-4 h-4"/>
+
+Sudah Generate
+
 </span>
 
 @else
 
-<span class="bg-red-100 text-red-700 px-2 py-1 rounded">
-    Belum
+<span class="inline-flex items-center gap-1 bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full text-xs">
+
+<x-heroicon-s-clock class="w-4 h-4"/>
+
+Belum Generate
+
 </span>
 
 @endif
 
-</td>
-
-<td class="border p-2 text-center">
-    {{ number_format($item->rata_rata,2) }}
 </td>
 
 <td class="border p-2">
 
 <div class="flex justify-center gap-2">
 
-
-{{-- Semua role boleh lihat --}}
 <a href="{{ route('rapor.show',$item->id) }}"
 class="bg-green-600 hover:bg-green-700 text-white p-2 rounded-lg">
 
-    <x-heroicon-o-eye class="w-5 h-5"/>
+<x-heroicon-o-eye class="w-5 h-5"/>
 
 </a>
-
-{{-- Hanya Guru --}}
-@if(Auth::user()->role == 'guru')
 
 <a href="{{ route('rapor.edit',$item->id) }}"
 class="bg-yellow-500 hover:bg-yellow-600 text-white p-2 rounded-lg">
 
-    <x-heroicon-o-pencil-square class="w-5 h-5"/>
+<x-heroicon-o-pencil-square class="w-5 h-5"/>
 
 </a>
 
 <a href="{{ route('rapor.print',$item->id) }}"
 class="bg-blue-600 hover:bg-blue-700 text-white p-2 rounded-lg">
 
-    <x-heroicon-o-printer class="w-5 h-5"/>
+<x-heroicon-o-printer class="w-5 h-5"/>
 
 </a>
-
-@endif
 
 </div>
 
@@ -295,10 +284,8 @@ class="bg-blue-600 hover:bg-blue-700 text-white p-2 rounded-lg">
 
 <tr>
 
-<td colspan="8" class="border p-4 text-center">
-
+<td colspan="7" class="text-center py-6">
 Belum ada data rapor.
-
 </td>
 
 </tr>
@@ -306,22 +293,85 @@ Belum ada data rapor.
 @endforelse
 
 </tbody>
-
-        
-
-
-
-
-                    
-
-                  
-
             </table>
+
+            <div class="flex justify-between items-center px-5 py-4 bg-gray-50 border-t">
+
+<p class="text-sm text-gray-600">
+
+Menampilkan
+
+<span class="font-semibold">
+
+{{ $rapor->firstItem() ?? 0 }}
+
+</span>
+
+-
+
+<span class="font-semibold">
+
+{{ $rapor->lastItem() ?? 0 }}
+
+</span>
+
+dari
+
+<span class="font-semibold">
+
+{{ $rapor->total() }}
+
+</span>
+
+data rapor
+
+</p>
+
+<div>
+
+{{ $rapor->links('vendor.pagination.tailwind') }}
+
+</div>
+
+</div>
 
         </div>
 
     </div>
 
 </div>
+
+@push('scripts')
+
+<script>
+
+document.getElementById('searchInput')
+.addEventListener('keyup', function(){
+
+    let keyword = this.value.toLowerCase();
+
+    let rows = document.querySelectorAll('tbody tr');
+
+    rows.forEach(function(row){
+
+        let nama = row.children[3]?.innerText.toLowerCase();
+
+        if(nama && nama.includes(keyword)){
+
+            row.style.display='';
+
+        }else{
+
+            row.style.display='none';
+
+        }
+
+    });
+
+});
+
+</script>
+
+@endpush
 
 @endsection

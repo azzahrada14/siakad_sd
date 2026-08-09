@@ -2,59 +2,99 @@
 
 namespace App\Exports;
 
-use App\Models\Jadwal;
+use App\Models\JadwalPelajaran;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 
 class JadwalExport implements FromCollection, WithHeadings
 {
+    protected $tahun;
+    protected $kelas;
+    protected $hari;
+    protected $status;
+
+    public function __construct($tahun, $kelas, $hari, $status)
+    {
+        $this->tahun = $tahun;
+        $this->kelas = $kelas;
+        $this->hari = $hari;
+        $this->status = $status;
+    }
+
     public function collection()
     {
-        return Jadwal::with(
-            'tahunAjaran',
+        $query = JadwalPelajaran::with([
             'kelas',
             'guru',
-            'mapel'
-        )->get()->map(function ($item) {
+            'mapel',
+            'tahunAjaran'
+        ]);
 
-            return [
+        if ($this->tahun) {
+            $query->where('tahun_ajaran_id', $this->tahun);
+        }
 
-                'Hari'           => $item->hari,
+        if ($this->kelas) {
+            $query->where('kelas_id', $this->kelas);
+        }
 
-                'Jam Mulai'      => $item->jam_mulai,
+        if ($this->hari) {
+            $query->where('hari', $this->hari);
+        }
 
-                'Jam Selesai'    => $item->jam_selesai,
+        if ($this->status) {
+            $query->where('status', $this->status);
+        }
 
-                'Kelas'          => $item->kelas->nama_kelas,
+        return $query
+            ->orderBy('kelas_id')
+            ->orderBy('hari')
+            ->orderBy('jam_ke')
+            ->get()
+            ->map(function ($item) {
 
-                'Mata Pelajaran' => $item->mapel->nama_mapel,
+                return [
 
-                'Guru'           => $item->guru->nama_guru,
+                    $item->kelas->nama_kelas,
 
-                'Tahun Ajaran'   => $item->tahunAjaran->tahun_ajaran,
+                    $item->tahunAjaran->tahun_ajaran,
 
-            ];
+                    $item->hari,
 
-        });
+                    $item->jam_ke,
+
+                    $item->jenis_jadwal,
+
+                    $item->mapel->nama_mapel,
+
+                    $item->guru->nama_guru,
+
+                    $item->status,
+
+                ];
+
+            });
     }
 
     public function headings(): array
     {
         return [
 
+            'Kelas',
+
+            'Tahun Ajaran',
+
             'Hari',
 
-            'Jam Mulai',
+            'Jam Ke',
 
-            'Jam Selesai',
-
-            'Kelas',
+            'Jenis Jadwal',
 
             'Mata Pelajaran',
 
             'Guru',
 
-            'Tahun Ajaran',
+            'Status',
 
         ];
     }

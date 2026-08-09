@@ -2,338 +2,619 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Nilai;
-use App\Models\Siswa;
-use App\Models\Kelas;
-use App\Models\TahunAjaran;
-use App\Models\Mapel;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
-use App\Imports\NilaiImport;
-use App\Exports\NilaiExport;
-use Maatwebsite\Excel\Facades\Excel;
+use App\Models\Guru;
+use App\Models\Kelas;
+use App\Models\Mapel;
+use App\Models\Siswa;
+use App\Models\Nilai;
+use App\Models\NilaiTP;
+use App\Models\LingkupMateri;
+use App\Models\TujuanPembelajaran;
+use App\Models\TahunAjaran;
+use App\Models\NilaiAstsDetail;
+use App\Models\AnggotaKelas;
 
 class NilaiController extends Controller
 {
-    public function index(Request $request)
-    {
-        /*
-        |--------------------------------------------------------------------------
-        | DATA FILTER
-        |--------------------------------------------------------------------------
-        */
 
-        $kelas = Kelas::all();
-
-        $tahunajaran = TahunAjaran::all();
-
-        $semester = ['Ganjil', 'Genap'];
-
-        /*
-        |--------------------------------------------------------------------------
-        | AMBIL GURU LOGIN
-        |--------------------------------------------------------------------------
-        */
-
-$guru = Auth::user()->guru ?? null;
-
-if (!$guru) {
-    abort(403, 'Data guru tidak ditemukan');
-}
-
-        /*
-        |--------------------------------------------------------------------------
-        | AMBIL MAPEL BERDASARKAN GURU LOGIN
-        |--------------------------------------------------------------------------
-        */
-if(str_contains(strtoupper($guru->nama_guru), 'PAI'))
+public function index(Request $request)
 {
-    $mapels = Mapel::where('kode_mapel','PAI')->get();
-}
-elseif(str_contains(strtoupper($guru->nama_guru), 'PJOK'))
-{
-    $mapels = Mapel::where('kode_mapel','PJOK')->get();
-}
-else
-{
-    $mapels = Mapel::all();
-}
-        /*
-        |--------------------------------------------------------------------------
-        | SISWA
-        |--------------------------------------------------------------------------
-        */
-
-        $siswas = collect();
-
-        if ($request->kelas) {
-
-            $siswas = Siswa::with('kelas')
-
-                ->where(
-                    'kelas_id',
-                    $request->kelas
-                )
-
-                ->orderBy('nama_siswa')
-
-                ->get();
-        }
-
-        /*
-        |--------------------------------------------------------------------------
-        | NILAI SISWA
-        |--------------------------------------------------------------------------
-        */
-        $mapel = null;
-
-if($request->mapel)
-{
-    $mapel = Mapel::find($request->mapel);
-}
-
-        $nilaiSiswa = collect();
-
-       if (
-    $request->tahun_ajaran_id &&
-    $request->semester &&
-    $mapel
-){
-
-            $nilaiSiswa = Nilai::where(
-
-                    'mapel_id',
-                    $mapel->id
-
-                )
-
-                ->where(
-    'tahun_ajaran_id',
-    $request->tahun_ajaran_id
-)
-
-                ->where(
-
-                    'semester',
-                    $request->semester
-
-                )
-
-                ->get()
-
-                ->keyBy('siswa_id');
-        }
-
-      return view('nilai.index', compact(
-    'kelas',
-    'tahunajaran',
-    'semester',
-    'siswas',
-    'nilaiSiswa',
-    'mapels',
-    'mapel'
-));
-    }
-
     /*
     |--------------------------------------------------------------------------
-    | SIMPAN MASSAL NILAI
+    | GURU LOGIN
     |--------------------------------------------------------------------------
     */
 
-    public function massStore(Request $request)
-    {
-        /*
-        |--------------------------------------------------------------------------
-        | AMBIL GURU LOGIN
-        |--------------------------------------------------------------------------
-        */
+    $guru = Auth::user()->guru;
 
-        $guru = Auth::user()->guru;
+    /*
+    |--------------------------------------------------------------------------
+    | TAHUN AJARAN AKTIF
+    |--------------------------------------------------------------------------
+    */
 
-        /*
-        |--------------------------------------------------------------------------
-        | AMBIL MAPEL GURU
-        |--------------------------------------------------------------------------
-        */
+    $tahunAktif = TahunAjaran::where(
+        'status',
+        'Aktif'
+    )->first();
 
-        $mapel = Mapel::find(
-    $request->mapel_id
-);
+    /*
+    |--------------------------------------------------------------------------
+    | INISIALISASI
+    |--------------------------------------------------------------------------
+    */
 
-        /*
-        |--------------------------------------------------------------------------
-        | VALIDASI MAPEL
-        |--------------------------------------------------------------------------
-        */
+    $kelas = collect();
 
-        if (!$mapel) {
+    $mapels = collect();
 
-            return redirect()
+    $siswas = collect();
 
-                ->back()
+    $lingkupMateris = collect();
 
-                ->with(
+    $tujuanPembelajarans = collect();
 
-                    'error',
+    $nilaiSiswa = [];
 
-                    'Guru belum memiliki mata pelajaran'
+    $nilaiTP = [];
 
-                );
+    $rataFormatif = [];
+
+    $nilaiAkhir = [];
+
+    $asts = [];
+
+    /*
+|--------------------------------------------------------------------------
+| HAK AKSES GURU
+|--------------------------------------------------------------------------
+*/
+
+switch ($guru->jenis_pengajar) {
+
+    case 'Wali Kelas':
+
+        if ($guru->waliKelas) {
+
+            $kelas = collect([
+                $guru->waliKelas
+            ]);
+
         }
 
-        /*
-        |--------------------------------------------------------------------------
-        | LOOP SISWA
-        |--------------------------------------------------------------------------
-        */
+        $mapels = Mapel::where(
+            'status',
+            'Aktif'
+        )
+        ->orderBy('nama_mapel')
+        ->get();
 
-        foreach ($request->siswa_id as $key => $siswa) {
+    break;
 
-            $tugas = $request->tugas[$key] ?? 0;
+    case 'Guru PAI':
 
-            $uts = $request->uts[$key] ?? 0;
+        $kelas = Kelas::orderBy('nama_kelas')->get();
 
-            $uas = $request->uas[$key] ?? 0;
+        $mapels = Mapel::where(
+            'kode_mapel',
+            'PAI'
+        )->get();
 
-            /*
-            |--------------------------------------------------------------------------
-            | HITUNG NILAI
-            |--------------------------------------------------------------------------
-            */
+    break;
 
-            $jumlah = $tugas + $uts + $uas;
+    case 'Guru PJOK':
 
-            $rataRata = $jumlah / 3;
+        $kelas = Kelas::orderBy('nama_kelas')->get();
 
-            /*
-            |--------------------------------------------------------------------------
-            | CEK NILAI
-            |--------------------------------------------------------------------------
-            */
+        $mapels = Mapel::where(
+            'kode_mapel',
+            'PJOK'
+        )->get();
 
-            $nilai = Nilai::where(
+    break;
 
-                    'siswa_id',
-                    $siswa
+    default:
 
-                )
+        $kelas = Kelas::orderBy('nama_kelas')->get();
 
-                ->where(
+        $mapels = Mapel::where(
+            'status',
+            'Aktif'
+        )
+        ->orderBy('nama_mapel')
+        ->get();
 
-                    'mapel_id',
-                    $mapel->id
+}
+/*
+|--------------------------------------------------------------------------
+| FILTER
+|--------------------------------------------------------------------------
+*/
 
-                )
+$kelasId = $request->kelas;
 
-                ->where(
+$mapelId = $request->mapel;
 
-                    'tahun_ajaran_id',
-                    $request->tahun_ajaran_id
+if ($guru->jenis_pengajar == 'Wali Kelas') {
 
-                )
+    $kelasId = $guru->waliKelas?->id;
 
-                ->where(
+}
 
-                    'semester',
-                    $request->semester
+/*
+|--------------------------------------------------------------------------
+| DATA SISWA
+|--------------------------------------------------------------------------
+*/
 
-                )
+if ($kelasId) {
 
-                ->first();
+    $ids = AnggotaKelas::where(
+        'kelas_id',
+        $kelasId
+    )->pluck('siswa_id');
 
-            /*
-            |--------------------------------------------------------------------------
-            | UPDATE
-            |--------------------------------------------------------------------------
-            */
+    $siswas = Siswa::whereIn(
+            'id',
+            $ids
+        )
+        ->orderBy('nama_siswa')
+        ->get();
 
-            if ($nilai) {
+}
 
-                $nilai->update([
+$detailAsts = NilaiAstsDetail::with('header')
 
-                    'tugas' => $tugas,
+    ->whereHas('header', function ($q) use ($request, $tahunAktif) {
 
-                    'uts' => $uts,
+        $q->where('mapel_id', $request->mapel)
+          ->where('tahun_ajaran_id', $tahunAktif->id)
+          ->where('semester', $tahunAktif->semester);
 
-                    'uas' => $uas,
+    })
+    ->get();
 
-                    'jumlah' => $jumlah,
+    foreach($detailAsts as $item){
 
-                    'rata_rata' => $rataRata,
+    $asts[$item->header->siswa_id][$item->lingkup_materi_id]
+        = $item->nilai;
 
-                    'nilai_akhir' => $rataRata,
+}
 
-                    'deskripsi' => $request->deskripsi[$key] ?? null
+/*
+|--------------------------------------------------------------------------
+| MAPEL YANG DIPILIH
+|--------------------------------------------------------------------------
+*/
 
-                ]);
+$mapel = null;
 
-            } else {
+if ($mapelId) {
 
-                /*
-                |--------------------------------------------------------------------------
-                | CREATE
-                |--------------------------------------------------------------------------
-                */
+    $mapel = Mapel::find($mapelId);
 
-                Nilai::create([
 
-                    'siswa_id' => $siswa,
-
-                    'mapel_id' => $mapel->id,
-
-                    'tahun_ajaran_id' => $request->tahun_ajaran_id,
-
-                    'semester' => $request->semester,
-
-                    'tugas' => $tugas,
-
-                    'uts' => $uts,
-
-                    'uas' => $uas,
-
-                    'jumlah' => $jumlah,
-
-                    'rata_rata' => $rataRata,
-
-                    'nilai_akhir' => $rataRata,
-
-                                        'deskripsi' => $request->deskripsi[$key] ?? null
-
-                ]);
-            }
-        }
-
-        return redirect()->route(
-    'nilai.index',
-    [
-        'kelas'            => $request->kelas_id,
-        'mapel'            => $request->mapel_id,
-        'tahun_ajaran_id'  => $request->tahun_ajaran_id,
-        'semester'         => $request->semester
-    ]
-)->with(
-    'success',
-    'Nilai berhasil disimpan'
-);
-
-        
     }
-    public function import(Request $request)
+
+/*
+|--------------------------------------------------------------------------
+| LINGKUP MATERI BERDASARKAN TINGKAT KELAS
+|--------------------------------------------------------------------------
+*/
+
+if ($mapel && $kelasId) {
+
+    $kelasDipilih = Kelas::find($kelasId);
+
+    if ($kelasDipilih) {
+
+        $lingkupMateris = LingkupMateri::with([
+            'tujuanPembelajarans' => function ($query) {
+                $query->where('status', 'Aktif')
+                      ->orderBy('urutan');
+            }
+        ])
+        ->where('mapel_id', $mapel->id)
+
+        // PENTING:
+        // LM mengikuti tingkat kelas,
+        // bukan rombel A/B
+        ->where(
+            'tingkat',
+            $kelasDipilih->tingkat
+        )
+
+        ->where(
+            'status',
+            'Aktif'
+        )
+
+        ->where(
+            'tahun_ajaran_id',
+            $tahunAktif->id
+        )
+
+        ->where(
+            'semester',
+            $tahunAktif->semester
+        )
+
+        ->orderBy('id')
+        ->get();
+
+    }
+
+}
+
+/*
+|--------------------------------------------------------------------------
+| TUJUAN PEMBELAJARAN
+|--------------------------------------------------------------------------
+*/
+
+foreach ($lingkupMateris as $lm) {
+
+    foreach ($lm->tujuanPembelajarans as $tp) {
+
+        $tujuanPembelajarans->push($tp);
+
+    }
+
+}
+
+/*
+|--------------------------------------------------------------------------
+| NILAI SISWA
+|--------------------------------------------------------------------------
+*/
+
+if (
+
+    $kelasId &&
+    $mapel &&
+    $tahunAktif
+
+) {
+
+    foreach ($siswas as $siswa) {
+
+    $nilai = Nilai::with('detailTP')
+
+        ->where('siswa_id', $siswa->id)
+
+        ->where('mapel_id', $mapel->id)
+
+        ->where('tahun_ajaran_id', $tahunAktif->id)
+
+        ->where('semester', $tahunAktif->semester)
+
+        ->first();
+
+    if (!$nilai) {
+        continue;
+    }
+
+    $nilaiSiswa[$siswa->id] = $nilai;
+
+    foreach ($nilai->detailTP as $detail) {
+
+        $nilaiTP[$siswa->id][$detail->tp_id] = $detail->nilai;
+
+    }
+
+    $rataFormatif[$siswa->id] = $nilai->rata_formatif;
+
+    $nilaiAkhir[$siswa->id] = $nilai;
+
+}
+}
+/*
+|--------------------------------------------------------------------------
+| FILTER
+|--------------------------------------------------------------------------
+*/
+
+$filter = [
+
+    'kelas_id' => $kelasId,
+
+    'mapel_id' => $mapelId,
+
+    'tahun_ajaran_id' => $tahunAktif?->id,
+
+    'semester' => $tahunAktif?->semester,
+
+];
+
+return view(
+
+    'nilai.index',
+
+    compact(
+
+        'guru',
+
+        'kelas',
+
+        'mapels',
+
+        'siswas',
+
+        'mapel',
+
+        'lingkupMateris',
+
+        'tujuanPembelajarans',
+
+        'nilaiSiswa',
+
+        'nilaiTP',
+
+        'rataFormatif',
+
+        'nilaiAkhir',
+
+        'tahunAktif',
+
+        'asts',
+
+        'filter'
+
+    )
+
+);
+}
+
+public function massStore(Request $request)
 {
     $request->validate([
-        'file' => 'required|mimes:xlsx,xls'
+        'kelas_id'        => 'required',
+        'mapel_id'        => 'required',
+        'tahun_ajaran_id' => 'required',
+        'semester'        => 'required',
+        'siswa_id'        => 'required|array',
     ]);
 
-    Excel::import(
-        new NilaiImport,
-        $request->file('file')
+    DB::beginTransaction();
+
+    
+    try {
+
+    foreach ($request->siswa_id as $siswaId) {
+
+        $nilai = Nilai::updateOrCreate(
+            [
+                'siswa_id' => $siswaId,
+                'mapel_id' => $request->mapel_id,
+                'tahun_ajaran_id' => $request->tahun_ajaran_id,
+                'semester' => $request->semester,
+            ],
+            [
+                'rata_formatif' => 0,
+                'asts' => 0,
+                'asas' => 0,
+                'asat' => 0,
+                'nilai_akhir' => 0,
+                'deskripsi' => null,
+            ]
+        );
+
+        
+
+/*
+|--------------------------------------------------------------------------
+| SIMPAN ASTS PER LM
+|--------------------------------------------------------------------------
+*/
+
+$rataAsts = 0;
+
+if(isset($request->asts[$siswaId])){
+
+    $nilaiLm = collect($request->asts[$siswaId])
+        ->filter(fn($v) => $v !== null && $v !== '');
+
+        foreach ($request->asts[$siswaId] as $lmId => $nilaiLmItem) {
+
+    // lewati kalau kosong
+    if ($nilaiLmItem === null || $nilaiLmItem === '') {
+        continue;
+    }
+
+    NilaiAstsDetail::updateOrCreate(
+        [
+            'nilai_id' => $nilai->id,
+            'lingkup_materi_id' => $lmId,
+        ],
+        [
+            'nilai' => (float) $nilaiLmItem,
+        ]
     );
+}
+
+  $rataAsts = $nilaiLm->count()
+    ? round($nilaiLm->avg(),2)
+    : 0;
+
+}
+
+            /*
+            |--------------------------------------------------------------------------
+            | SIMPAN NILAI TP
+            |--------------------------------------------------------------------------
+            */
+
+            $total = 0;
+            $jumlah = 0;
+
+            foreach ($request->nilai_tp[$siswaId] ?? [] as $tpId => $nilaiTp) {
+
+                NilaiTP::updateOrCreate(
+
+                    [
+                        'nilai_id' => $nilai->id,
+                        'tp_id'    => $tpId,
+                    ],
+
+                    [
+                        'nilai' => $nilaiTp,
+                    ]
+
+                );
+
+                $total += $nilaiTp;
+                $jumlah++;
+
+            }
+
+            /*
+            |--------------------------------------------------------------------------
+            | HITUNG FORMATIF
+            |--------------------------------------------------------------------------
+            */
+
+            $rataFormatif = $jumlah > 0
+                ? round($total / $jumlah,2)
+                : 0;
+
+        
+
+           /*
+|--------------------------------------------------------------------------
+| ASAS / ASAT
+|--------------------------------------------------------------------------
+*/
+
+$asas = 0;
+$asat = 0;
+
+if ($request->semester == 'Ganjil') {
+
+    $asas = $request->asas[$siswaId] ?? 0;
+
+    $asesmenAkhir = $asas;
+
+} else {
+
+    $asat = $request->asat[$siswaId] ?? 0;
+
+    $asesmenAkhir = $asat;
+
+}
+            /*
+            |--------------------------------------------------------------------------
+            | NILAI AKHIR
+            |--------------------------------------------------------------------------
+            */
+$nilaiAkhir = round(
+    ($rataFormatif + $rataAsts + $asesmenAkhir) / 3
+);
+
+// jika sudah pernah remedial,
+// gunakan nilai yang lebih tinggi
+if ($nilai->nilai_remedial > $nilaiAkhir) {
+    $nilaiAkhir = $nilai->nilai_remedial;
+}
+
+            /*
+            |--------------------------------------------------------------------------
+            | UPDATE NILAI
+            |--------------------------------------------------------------------------
+            */
+
+         $nilai->update([
+
+    'rata_formatif' => $rataFormatif,
+
+    'asts'          => $rataAsts,
+
+    'asas'          => $asas,
+
+    'asat'          => $asat,
+
+    'nilai_akhir'   => $nilaiAkhir,
+
+]);
+
+        }
+
+       
+
+       DB::commit();
+
+return redirect()
+
+->route('nilai.index',[
+
+    'kelas'=>$request->kelas_id,
+
+    'mapel'=>$request->mapel_id
+
+])
+
+->with(
+
+'success',
+
+'Nilai berhasil disimpan.'
+
+);
+
+
+}
+
+
+catch(\Exception $e){
+
+    DB::rollBack();
+
+    return back()
+
+    ->withInput()
+
+    ->with(
+
+        'error',
+
+        $e->getMessage()
+
+    );
+
+}
+
+
+}
+
+public function remedial(Request $request)
+{
+    $request->validate([
+        'nilai_id' => 'required|exists:nilais,id',
+        'nilai_remedial' => 'required|numeric|min:0|max:100',
+    ]);
+
+    $nilai = Nilai::findOrFail($request->nilai_id);
+if (!$nilai->nilai_awal) {
+    $nilai->nilai_awal = $nilai->nilai_akhir;
+}
+
+$nilai->nilai_remedial = $request->nilai_remedial;
+$nilai->tanggal_remedial = now();
+
+$nilai->nilai_akhir = max(
+    $nilai->nilai_akhir,
+    $request->nilai_remedial
+);
+
+$nilai->save();
+
 
     return back()->with(
         'success',
-        'Data nilai berhasil diimport'
+        'Nilai remedial berhasil disimpan.'
     );
 }
 }

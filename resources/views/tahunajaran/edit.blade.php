@@ -2,117 +2,212 @@
 
 @section('content')
 
-<x-slot name="header">
-    <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-        Edit Tahun Ajaran
-    </h2>
-</x-slot>
+<div class="py-6">
 
-<div class="p-6 bg-gray-100 min-h-screen">
+<div class="max-w-5xl mx-auto sm:px-6 lg:px-8">
 
-    <div class="max-w-3xl mx-auto bg-white rounded-xl shadow p-6">
+<div class="flex justify-between items-start mb-6">
 
-        <form action="{{ route('tahunajaran.update', $tahunajaran->id) }}"
-              method="POST">
+    <div>
 
-            @csrf
-            @method('PUT')
+        <h1 class="text-3xl font-bold text-slate-800">
 
-            <div class="mb-4">
+            Edit Tahun Ajaran
 
-                <label class="block mb-1 font-medium">
-                    Tahun Ajaran
-                </label>
+        </h1>
 
-                <input type="text"
-                       name="tahun_ajaran"
-                       value="{{ $tahunajaran->tahun_ajaran }}"
-                       class="w-full border rounded px-3 py-2">
+        <p class="text-gray-500 mt-1">
 
-            </div>
+            Perbarui data tahun ajaran SD Negeri Cimanahayu.
 
-            <div class="mb-4">
+        </p>
 
-                <label class="block mb-1 font-medium">
-                    Semester
-                </label>
+    </div>
 
-                <select name="semester"
-                        class="w-full border rounded px-3 py-2">
+</div>
+<div class="bg-white rounded-xl shadow border border-gray-200">
 
-                    <option value="Ganjil"
-                        {{ $tahunajaran->semester == 'Ganjil' ? 'selected' : '' }}>
-                        Ganjil
-                    </option>
+<div class="px-6 py-5 border-b bg-slate-50">
 
-                    <option value="Genap"
-                        {{ $tahunajaran->semester == 'Genap' ? 'selected' : '' }}>
-                        Genap
-                    </option>
+<h2 class="text-lg font-semibold">
 
-                </select>
+Informasi Tahun Ajaran
 
-            </div>
+</h2>
 
-            <div class="mb-4">
+<p class="text-sm text-gray-500 mt-1">
 
-                <label class="block mb-1 font-medium">
-                    Status
-                </label>
+Perbarui informasi tahun ajaran.
 
-                <select name="status"
-                        class="w-full border rounded px-3 py-2">
+</p>
 
-                    <option value="Aktif"
-                        {{ $tahunajaran->status == 'Aktif' ? 'selected' : '' }}>
-                        Aktif
-                    </option>
+</div>
 
-                    <option value="Tidak Aktif"
-                        {{ $tahunajaran->status == 'Tidak Aktif' ? 'selected' : '' }}>
-                        Tidak Aktif
-                    </option>
+<form
+action="{{ route('tahun-ajaran.update',$tahun->id) }}"
+method="POST">
 
-                </select>
+@csrf
+@method('PUT')
 
-            </div>
+<div class="p-6">
 
-            <div class="flex gap-2">
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
 
-                <button type="submit"
-                        class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
+<div>
 
-                    Update
+<label class="block text-sm font-medium mb-2">
 
-                </button>
+Tahun Ajaran
 
-                <a href="{{ route('tahunajaran.index') }}"
-                   class="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600">
+</label>
 
-                    Kembali
+<input
+type="text"
+name="tahun_ajaran"
+value="{{ old('tahun_ajaran',$tahun->tahun_ajaran) }}"
+class="w-full rounded-lg border-gray-300">
 
-                </a>
+@error('tahun_ajaran')
 
-            </div>
+<p class="text-red-500 text-sm mt-2">
 
-        </form>
-        <form action="{{ route('tahunajaran.destroy', $item->id) }}"
-      method="POST"
-      class="inline">
+{{ $message }}
 
-    @csrf
-    @method('DELETE')
+</p>
 
-    <button class="text-red-600 ml-2 hover:underline"
-        onclick="return confirm('Yakin hapus?')">
+@enderror
 
-        Hapus
+</div>
+<div>
 
-    </button>
+<label class="block text-sm font-medium mb-2">
+
+Semester
+
+</label>
+
+<select
+name="semester"
+class="w-full rounded-lg border-gray-300">
+
+<option
+value="Ganjil"
+{{ old('semester',$tahun->semester)=='Ganjil'?'selected':'' }}>
+
+Ganjil
+
+</option>
+
+<option
+value="Genap"
+{{ old('semester',$tahun->semester)=='Genap'?'selected':'' }}>
+
+Genap
+
+</option>
+
+</select>
+
+</div>
+<div>
+
+<label class="block text-sm font-medium mb-2">
+
+Tanggal Mulai
+
+</label>
+
+<input
+type="date"
+name="tanggal_mulai"
+value="{{ old('tanggal_mulai',$tahun->tanggal_mulai) }}"
+class="w-full rounded-lg border-gray-300">
+
+</div>
+<div>
+
+<label class="block text-sm font-medium mb-2">
+
+Tanggal Selesai
+
+</label>
+
+<input
+type="date"
+name="tanggal_selesai"
+value="{{ old('tanggal_selesai',$tahun->tanggal_selesai) }}"
+class="w-full rounded-lg border-gray-300">
+
+</div>
+<div class="md:col-span-2">
+
+<label class="block text-sm font-medium mb-2">
+
+Status
+
+</label>
+
+<select
+name="status"
+class="w-full rounded-lg border-gray-300">
+
+<option
+value="Aktif"
+{{ old('status',$tahun->status)=='Aktif'?'selected':'' }}>
+
+Aktif
+
+</option>
+
+<option
+value="Nonaktif"
+{{ old('status',$tahun->status)=='Nonaktif'?'selected':'' }}>
+
+Nonaktif
+
+</option>
+
+</select>
+
+</div>
+</div>
+
+</div>
+
+<div class="px-6 py-5 border-t bg-slate-50">
+
+<div class="flex justify-end gap-3">
+
+<a
+href="{{ route('tahun-ajaran.index') }}"
+class="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-gray-500 hover:bg-gray-600 text-white">
+
+<x-heroicon-o-x-mark class="w-5 h-5"/>
+
+Batal
+
+</a>
+
+<button
+type="submit"
+class="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-blue-600 hover:bg-blue-700 text-white">
+
+<x-heroicon-o-check-circle class="w-5 h-5"/>
+
+Simpan Perubahan
+
+</button>
+
+</div>
+
+</div>
 
 </form>
 
-    </div>
+</div>
+
+</div>
 
 </div>
 

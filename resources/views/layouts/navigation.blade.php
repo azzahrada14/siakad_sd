@@ -187,6 +187,14 @@
                     DATA MASTER
 
                 </div>
+                <a href="{{ route('tahun-ajaran.index') }}"
+                     class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-blue-600 transition">
+
+                    <i data-feather="calendar"></i>
+
+                    <span x-show="sidebarOpen">Tahun Ajaran</span>
+
+                </a>
 
                 <a href="{{ route('guru.index') }}"
                      class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-blue-600 transition">
@@ -197,9 +205,9 @@
                 </a>
 
                 <a href="{{ route('siswa.index') }}"
-                    class="flex items-center gap-3 px-4 py-3 hover:bg-blue-600 transition">
+                    class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-blue-600 transition">
 
-                    <i data-feather="users"></i>
+                    <i data-feather="user"></i>
 
                     <span x-show="sidebarOpen">Siswa</span>
 
@@ -214,7 +222,7 @@
                 </a>
 
                 <a href="{{ route('mapel.index') }}"
-                    class="flex items-center gap-3 px-4 py-3 hover:bg-blue-600 transition">
+                     class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-blue-600 transition">
 
                     <i data-feather="book-open"></i>
 
@@ -222,36 +230,40 @@
 
                 </a>
 
-                <a href="{{ route('tahunajaran.index') }}"
-                    class="flex items-center gap-3 px-4 py-3 hover:bg-blue-600 transition">
-
-                    <i data-feather="calendar"></i>
-
-                    <span x-show="sidebarOpen">Tahun Ajaran</span>
-
-                </a>
-
+                    
                 
 
-                <div
-                    x-show="sidebarOpen"
-                    class="mt-6 mb-2 text-xs font-bold text-gray-400">
+                <div x-show="sidebarOpen"
+    class="mt-6 mb-2 text-xs font-bold text-gray-400">
 
-                    AKADEMIK
+    PROSES DATA AKADEMIK
 
-                </div>
+</div>
 
-                <a href="{{ route('ranking.index') }}"
-                    class="flex items-center gap-3 px-4 py-3 hover:bg-blue-600 transition">
+<a href="{{ route('kelola-akademik.index') }}"
+class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-blue-600 transition">
 
-                    <i data-feather="award"></i>
+    <x-heroicon-o-academic-cap class="w-5 h-5"/>
 
-                    <span x-show="sidebarOpen">Ranking</span>
+    <span x-show="sidebarOpen">
+        Pembagian Kelas
+    </span>
 
-                </a>
+</a>
 
-                <a href="{{ route('ekstrakurikuler.index') }}"
-    class="flex items-center gap-3 px-4 py-3 hover:bg-blue-600 transition">
+<a href="{{ route('jadwal.index') }}"
+class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-blue-600 transition">
+
+    <i data-feather="calendar"></i>
+
+    <span x-show="sidebarOpen">
+        Jadwal Pelajaran
+    </span>
+
+</a>
+
+<a href="{{ route('ekstrakurikuler.index') }}"
+class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-blue-600 transition">
 
     <i data-feather="activity"></i>
 
@@ -261,38 +273,95 @@
 
 </a>
 
-</a>
 
-<a href="{{ route('kelulusan.index') }}"
-class="flex items-center gap-3 px-4 py-3 hover:bg-blue-600 transition">
 
-<i data-feather="check-circle"></i>
+                <div
+    x-show="sidebarOpen"
+    class="mt-6 mb-2 text-xs font-bold text-gray-400">
 
-<span x-show="sidebarOpen">
-Kelulusan
-</span>
+    PROSES AKHIR TAHUN AJARAN
 
-</a>
+</div>
 
-<a href="{{ route('jadwal.index') }}"
-class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-blue-600">
+    <a href="{{ route('kenaikan.index') }}"
+ class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-blue-600 transition">
 
-<i data-feather="calendar"></i>
+    <i data-feather="award"></i>
 
-<span x-show="sidebarOpen">
-Jadwal Pelajaran
-</span>
+    <span x-show="sidebarOpen">
+        Kenaikan Kelas
+    </span>
 
 </a>
 
-                <a href="{{ route('rapor.index') }}"
-                    class="flex items-center gap-3 px-4 py-3 hover:bg-blue-600 transition">
+{{-- ========================= --}}
+{{-- Kelulusan --}}
+{{-- ========================= --}}
 
-                   <i data-feather="file-text"></i>
+<div
+    x-data="{openKelulusan:true}"
+    class="mt-1">
 
-                    <span x-show="sidebarOpen">Rapor</span>
+    <button
+        @click="openKelulusan=!openKelulusan"
+        class="w-full flex items-center justify-between px-4 py-3 rounded-xl hover:bg-blue-600 transition">
 
-                </a>
+        <div class="flex items-center gap-3">
+
+            <i data-feather="check-circle"></i>
+
+            <span x-show="sidebarOpen">
+
+                Kelulusan
+
+            </span>
+
+        </div>
+
+        <i
+            x-show="sidebarOpen"
+            data-feather="chevron-down"
+            class="w-4 h-4">
+
+        </i>
+
+    </button>
+
+    {{-- Sub Menu --}}
+
+    <div
+        x-show="openKelulusan"
+        x-transition
+        class="ml-10 mt-2 space-y-1">
+
+        <a
+            href="{{ route('kelulusan.index') }}"
+            class="block px-4 py-2 rounded-lg hover:bg-blue-600">
+
+            <span x-show="sidebarOpen">
+
+                Data Kelulusan
+
+            </span>
+
+        </a>
+
+        <a
+            href="{{ route('alumni.index') }}"
+            class="block px-4 py-2 rounded-lg hover:bg-blue-600">
+
+            <span x-show="sidebarOpen">
+
+                Data Alumni
+
+            </span>
+
+        </a>
+
+    </div>
+
+</div>
+
 
             @endif
 
@@ -303,12 +372,12 @@ Jadwal Pelajaran
                     x-show="sidebarOpen"
                     class="mt-6 mb-2 text-xs font-bold text-gray-400">
 
-                    PENILAIAN
+                    INPUT DATA AKADEMIK
 
                 </div>
 
                 <a href="{{ route('nilai.index') }}"
-                    class="flex items-center gap-3 px-4 py-3 hover:bg-blue-600 transition">
+                     class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-blue-600 transition">
 
                     <i data-feather="edit"></i>
 
@@ -321,8 +390,7 @@ Jadwal Pelajaran
                 </a>
 
                 <a href="{{ route('absensi.index') }}"
-                    class="flex items-center gap-3 px-4 py-3 hover:bg-blue-600 transition">
-
+                     class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-blue-600 transition">
                     <i data-feather="clipboard"></i>
 
                     <span x-show="sidebarOpen">
@@ -337,28 +405,38 @@ Jadwal Pelajaran
                     x-show="sidebarOpen"
                     class="mt-6 mb-2 text-xs font-bold text-gray-400">
 
-                    WALI KELAS
+                    PROSES PEMBELAJARAN
 
                 </div>
 
-               <details>
+ <a href="{{ route('jadwal.index') }}"
+class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-blue-600 transition">
 
-<summary
-    class="cursor-pointer px-4 py-3 rounded-xl hover:bg-blue-600 transition">
-
-    <i data-feather="users"></i>
+    <i data-feather="calendar"></i>
 
     <span x-show="sidebarOpen">
-        Menu Wali Kelas
+        Jadwal Pelajaran
     </span>
 
-</summary>
+</a>
+
+
+               @if(Auth::user()->guru?->jenis_pengajar == 'Wali Kelas')
+
+<div
+x-show="sidebarOpen"
+class="mt-6 mb-2 text-xs font-bold text-gray-400">
+
+HASIL AKADEMIK 
+
+</div>
 
 <div class="ml-5 mt-2">
 
     {{-- Rekap Nilai --}}
-    <a href="{{ route('wali.nilai') }}"
-       class="flex items-center gap-2 py-2 hover:text-blue-300">
+
+    <a href="{{ route('wali.nilai.index') }}"
+ class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-blue-600 transition">
 
         <i data-feather="bar-chart-2"></i>
 
@@ -368,7 +446,7 @@ Jadwal Pelajaran
 
     {{-- Rekap Absensi --}}
     <a href="{{ route('wali.absensi') }}"
-       class="flex items-center gap-2 py-2 hover:text-blue-300">
+ class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-blue-600 transition">
 
         <i data-feather="clipboard"></i>
 
@@ -376,111 +454,53 @@ Jadwal Pelajaran
 
     </a>
 
+    
+
     {{-- Ranking --}}
     <a href="{{ route('ranking.index') }}"
-       class="flex items-center gap-2 py-2 hover:text-blue-300">
-
+        class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-blue-600 transition">
         <i data-feather="award"></i>
 
         Ranking
 
     </a>
 
-    {{-- Ekstrakurikuler --}}
-    <a href="{{ route('ekstrakurikuler.index') }}"
-       class="flex items-center gap-2 py-2 hover:text-blue-300">
-
-        <i data-feather="activity"></i>
-
-        Ekstrakurikuler
-
-    </a>
-
-    
-
 
     {{-- Generate Rapor --}}
     <a href="{{ route('rapor.index') }}"
-   class="flex items-center gap-2 py-2 hover:text-blue-300">
+    class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-blue-600 transition">
 
     <i data-feather="file-text"></i>
-
-    Rapor
-
-
-
-</div>
-
-<a href="{{ route('jadwal.index') }}"
-class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-blue-600">
-
-<i data-feather="calendar"></i>
-
-<span x-show="sidebarOpen">
-Jadwal Pelajaran
-</span>
-
-</a>
-
-</details>
+ <span x-show="sidebarOpen">
+    Rapor </span> </a>
    
 
+@endif
 @endif
 
 @if(Auth::user()->role == 'kepala_sekolah')
 
 <div
-    x-show="sidebarOpen"
-    class="mt-6 mb-2 text-xs font-bold text-gray-400">
+x-show="sidebarOpen"
+class="mt-6 mb-2 text-xs font-bold text-gray-400">
 
-    MONITORING
+INFORMASI AKADEMIK
 
 </div>
 
-<a href="{{ route('ranking.index') }}"
-    class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-blue-600 transition">
-
-    <i data-feather="award"></i>
-    <span x-show="sidebarOpen">Ranking</span>
-
-</a>
-
-<a href="{{ route('rapor.index') }}"
-    class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-blue-600 transition">
-
-    <i data-feather="file-text"></i>
-    <span x-show="sidebarOpen">Rapor</span>
-
-</a>
-
-<a href="{{ route('status-siswa.index') }}"
-   class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-blue-600 transition">
-    <i data-feather="user-check"></i>
-    <span x-show="sidebarOpen">Status Siswa</span>
-
-</a>
-
-<a href="{{ route('kelulusan.index') }}"
+<a href="{{ route('informasi-akademik.index') }}"
 class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-blue-600 transition">
 
-    <i data-feather="check-circle"></i>
-
-    <span x-show="sidebarOpen">
-        Kelulusan
-    </span>
-
-</a>
-
-<a href="{{ route('jadwal.index') }}"
-class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-blue-600">
-
-<i data-feather="calendar"></i>
+<i data-feather="bar-chart-2"></i>
 
 <span x-show="sidebarOpen">
-Jadwal Pelajaran
+
+Informasi Akademik
+
 </span>
 
 </a>
+
 
 @endif
 

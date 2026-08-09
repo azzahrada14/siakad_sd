@@ -43,8 +43,7 @@ window.addEventListener('load', () => {
 
     <script src="https://cdn.jsdelivr.net/npm/alpinejs" defer></script>
 
-@yield('scripts')
+    @stack('scripts')
 
 </body>
-
 </html>

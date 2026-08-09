@@ -25,49 +25,58 @@ class AuthenticatedSessionController extends Controller
      */
     public function store(Request $request): RedirectResponse
     {
-        $user = User::where(
-            'email',
-            $request->email
-        )->first();
+        $request->validate([
+            'email' => ['required', 'email'],
+            'password' => ['required'],
+            'role' => ['required'],
+        ]);
+
+        $user = User::where('email', $request->email)->first();
 
         if (!$user) {
-
             return back()->withErrors([
-                'email' => 'Email tidak ditemukan'
-            ]);
+                'email' => 'Email tidak ditemukan.',
+            ])->withInput();
         }
 
-        if (!Hash::check(
-            $request->password,
-            $user->password
-        )) {
-
+        if (!Hash::check($request->password, $user->password)) {
             return back()->withErrors([
-                'password' => 'Password salah'
-            ]);
+                'password' => 'Password salah.',
+            ])->withInput();
+        }
+
+        // Cek role yang dipilih saat login
+        if ($user->role != $request->role) {
+            return back()->withErrors([
+                'role' => 'Role yang dipilih tidak sesuai dengan akun.',
+            ])->withInput();
         }
 
         Auth::login($user);
 
         $request->session()->regenerate();
 
-        if ($user->role == 'guru') {
+        // Redirect sesuai role
+        
+        switch ($user->role) {
 
-            return redirect()->route(
-                'guru.dashboard'
-            );
+            case 'guru':
+                return redirect()->route('guru.dashboard');
+
+          case 'kepala_sekolah':
+    return redirect()->route('dashboardKepala');
+
+            case 'operator':
+                return redirect()->route('dashboard');
+
+            default:
+                Auth::logout();
+
+                return redirect()->route('login')
+                    ->withErrors([
+                        'email' => 'Role tidak dikenali.',
+                    ]);
         }
-
-        if ($user->role == 'kepala_sekolah') {
-
-            return redirect()->route(
-                'kepala.dashboard'
-            );
-        }
-
-        return redirect()->route(
-            'dashboard'
-        );
     }
 
     /**

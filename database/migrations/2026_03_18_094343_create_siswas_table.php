@@ -16,7 +16,10 @@ return new class extends Migration
     $table->string('nisn', 10)->unique();
     $table->string('nama_siswa');
     $table->enum('jenis_kelamin', ['L', 'P']);
-    $table->foreignId('kelas_id')->constrained('kelas')->cascadeOnDelete();
+    $table->foreignId('kelas_id')
+      ->nullable()
+      ->constrained('kelas')
+      ->nullOnDelete();
     $table->text('alamat')->nullable();
     $table->timestamps();
     });

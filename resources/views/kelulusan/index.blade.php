@@ -2,176 +2,570 @@
 
 @section('content')
 
-<div class="p-6">
+{{-- ================= ALERT ================= --}}
+@if(session('success'))
+<div class="mb-5 rounded-lg bg-green-100 border border-green-300 text-green-700 px-4 py-3">
+    {{ session('success') }}
+</div>
+@endif
 
-<div class="bg-white rounded-xl shadow p-6">
+@if(session('warning'))
+<div class="mb-5 rounded-lg bg-yellow-100 border border-yellow-300 text-yellow-700 px-4 py-3">
+    {{ session('warning') }}
+</div>
+@endif
 
-    {{-- Header --}}
-    <div class="flex justify-between items-center mb-6">
+@if(session('error'))
+<div class="mb-5 rounded-lg bg-red-100 border border-red-300 text-red-700 px-4 py-3">
+    {{ session('error') }}
+</div>
+@endif
 
-        <div>
+{{-- ================= HEADER ================= --}}
+<div class="flex flex-col lg:flex-row lg:justify-between lg:items-start mb-6">
 
-            <h2 class="text-3xl font-bold text-gray-800">
-                Kelulusan Siswa
-            </h2>
+    <div>
 
-            <p class="text-gray-500">
-                Daftar kelulusan siswa kelas VI.
-            </p>
+        <h2 class="flex items-center gap-3 text-3xl font-bold text-gray-800">
+            <x-heroicon-o-academic-cap class="w-8 h-8 text-blue-600"/>
+            Kelulusan Siswa
+        </h2>
 
-        </div>
-
-        @if(Auth::user()->role=='operator')
-
-        <a href="{{ route('kelulusan.create') }}"
-           class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg">
-
-            + Proses Kelulusan
-
-        </a>
-
-        @endif
+        <p class="text-gray-500 mt-2 text-lg">
+            Proses penetapan kelulusan peserta didik kelas VI.
+        </p>
 
     </div>
 
-    {{-- Alert --}}
-    @if(session('success'))
+    @if($tahunAktif)
 
-    <div class="bg-green-100 text-green-700 p-3 rounded mb-5">
+    <div class="mt-5 lg:mt-0">
 
-        {{ session('success') }}
+        <div class="bg-blue-50 border border-blue-200 rounded-xl shadow-sm px-5 py-4 min-w-[280px]">
+
+            <p class="text-xs uppercase tracking-wide text-blue-600 font-semibold">
+                Tahun Ajaran Aktif
+            </p>
+
+            <h2 class="text-2xl font-bold text-blue-700 mt-1">
+                {{ $tahunAktif->tahun_ajaran }}
+            </h2>
+
+            <div class="flex justify-between items-center mt-2">
+
+                <span class="text-gray-600 text-sm">
+                    Semester {{ $tahunAktif->semester }}
+                </span>
+
+                <span class="inline-flex items-center gap-1 rounded-full bg-green-100 px-3 py-1 text-xs font-semibold text-green-700">
+                    <span class="w-2 h-2 rounded-full bg-green-500"></span>
+                    Aktif
+                </span>
+
+            </div>
+
+        </div>
 
     </div>
 
     @endif
 
-    {{-- Tabel --}}
+</div>
+{{-- ===================================================== --}}
+{{-- DASHBOARD --}}
+{{-- ===================================================== --}}
+
+<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5 mb-6">
+
+    {{-- Total Siswa --}}
+    <div class="bg-white rounded-2xl border border-gray-200 shadow-sm p-5">
+
+        <div class="flex items-center justify-between">
+
+            <div>
+
+                <p class="text-sm text-gray-500">
+                    Total Siswa Kelas VI
+                </p>
+
+                <h2 class="text-4xl font-bold text-blue-600 mt-3">
+                    {{ $totalSiswa }}
+                </h2>
+
+            </div>
+
+            <div class="w-14 h-14 rounded-full bg-blue-100 flex items-center justify-center">
+
+                <x-heroicon-o-users
+                    class="w-7 h-7 text-blue-600"/>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    {{-- Lulus --}}
+    <div class="bg-white rounded-2xl border border-gray-200 shadow-sm p-5">
+
+        <div class="flex items-center justify-between">
+
+            <div>
+
+                <p class="text-sm text-gray-500">
+                    Lulus
+                </p>
+
+                <h2 class="text-4xl font-bold text-green-600 mt-3">
+                    {{ $lulus }}
+                </h2>
+
+            </div>
+
+            <div class="w-14 h-14 rounded-full bg-green-100 flex items-center justify-center">
+
+                <x-heroicon-o-check-badge
+                    class="w-7 h-7 text-green-600"/>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    {{-- Belum Lulus --}}
+    <div class="bg-white rounded-2xl border border-gray-200 shadow-sm p-5">
+
+        <div class="flex items-center justify-between">
+
+            <div>
+
+                <p class="text-sm text-gray-500">
+                    Belum Lulus
+                </p>
+
+                <h2 class="text-4xl font-bold text-red-600 mt-3">
+                    {{ $belum }}
+                </h2>
+
+            </div>
+
+            <div class="w-14 h-14 rounded-full bg-red-100 flex items-center justify-center">
+
+                <x-heroicon-o-x-circle
+                    class="w-7 h-7 text-red-600"/>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    {{-- Siap Diproses --}}
+    <div class="bg-white rounded-2xl border border-gray-200 shadow-sm p-5">
+
+        <div class="flex items-center justify-between">
+
+            <div>
+
+                <p class="text-sm text-gray-500">
+                    Siap Diproses
+                </p>
+
+                <h2 class="text-4xl font-bold text-yellow-500 mt-3">
+                    {{ $lulus }}
+                </h2>
+
+            </div>
+
+            <div class="w-14 h-14 rounded-full bg-yellow-100 flex items-center justify-center">
+
+                <x-heroicon-o-arrow-path
+                    class="w-7 h-7 text-yellow-600"/>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+{{-- ================= MANAJEMEN ================= --}}
+
+<div class="flex flex-col lg:flex-row lg:justify-between lg:items-center mb-6">
+
+    <div>
+
+        <h2 class="text-lg font-semibold text-slate-800">
+
+            Manajemen Kelulusan
+
+        </h2>
+
+        <p class="text-sm text-gray-500 mt-1">
+
+            Generate dan export data kelulusan siswa.
+
+        </p>
+
+    </div>
+
+    <div class="flex flex-wrap gap-3 mt-5 lg:mt-0">
+
+        <button
+            onclick="openModal()"
+            class="inline-flex items-center gap-2 px-5 py-3 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition">
+
+            <x-heroicon-o-arrow-path class="w-5 h-5"/>
+
+            Generate Kelulusan
+
+        </button>
+
+        <a
+            href="{{ route('kelulusan.export') }}"
+            class="inline-flex items-center gap-2 px-5 py-3 rounded-lg bg-green-600 text-white hover:bg-green-700 transition">
+
+            <x-heroicon-o-arrow-down-tray class="w-5 h-5"/>
+
+            Export Excel
+
+        </a>
+
+    </div>
+
+</div>
+<div class="bg-white rounded-xl shadow border border-gray-200">
+
+    {{-- Header --}}
+    <div class="flex flex-col lg:flex-row lg:justify-between lg:items-center gap-4 px-6 py-5 border-b bg-slate-50 rounded-t-xl">
+
+        <div>
+
+            <h2 class="text-lg font-semibold text-slate-800">
+
+                Data Kelulusan
+
+            </h2>
+
+            <p class="text-sm text-gray-500 mt-1">
+
+                Daftar siswa kelas VI.
+
+            </p>
+
+        </div>
+
+        <div>
+
+            <span class="inline-flex items-center rounded-full bg-blue-100 px-4 py-2 text-sm font-semibold text-blue-700">
+
+                {{ $totalSiswa }} Siswa
+
+            </span>
+
+        </div>
+
+    </div>
+
     <div class="overflow-x-auto">
 
-        <table class="w-full border">
+        <table class="min-w-full border-collapse">
 
-            <thead class="bg-blue-600 text-white">
+            <thead class="bg-slate-100">
 
                 <tr>
 
-                    <th class="border p-2">No</th>
+                    <th class="border border-gray-300 px-3 py-3 text-center w-16">
 
-                    <th class="border p-2">Nama Siswa</th>
+                        No
 
-                    <th class="border p-2">Kelas</th>
+                    </th>
 
-                    <th class="border p-2">Tahun Ajaran</th>
+                    <th class="border border-gray-300 px-4 py-3 text-center">
 
-                    <th class="border p-2">Status</th>
+                        NISN
 
-                    @if(Auth::user()->role=='operator')
-                    <th class="border p-2">Aksi</th>
-                    @endif
+                    </th>
+
+                    <th class="border border-gray-300 px-4 py-3 text-center">
+
+                        Nama Siswa
+
+                    </th>
+
+                    <th class="border border-gray-300 px-4 py-3 text-center">
+
+                        Status
+
+                    </th>
+
+                    <th class="border border-gray-300 px-4 py-3 text-center">
+
+                        Keterangan
+
+                    </th>
 
                 </tr>
 
             </thead>
 
-            <tbody>
+            <tbody class="divide-y divide-gray-200">
+                @forelse($anggota as $item)
 
-                @forelse($kelulusan as $item)
+<tr class="hover:bg-sky-50 transition duration-150">
 
-                <tr>
+    <td class="border border-gray-300 px-3 py-3 text-center">
 
-                    <td class="border p-2 text-center">
-                        {{ $loop->iteration }}
-                    </td>
+        {{ $loop->iteration }}
 
-                    <td class="border p-2">
-                        {{ $item->siswa->nama_siswa }}
-                    </td>
+    </td>
 
-                    <td class="border p-2">
+    <td class="border border-gray-300 px-4 py-3">
 
-Kelas {{ $item->siswa->kelas->nama_kelas }}
+        {{ $item->siswa->nisn }}
 
-</td>
+    </td>
 
-                    <td class="border p-2">
-                        {{ $item->tahunAjaran->tahun_ajaran }}
-                    </td>
+    <td class="border border-gray-300 px-4 py-3">
 
-                    <td class="border p-2 text-center">
+        <div class="font-semibold text-slate-800">
 
-                        @if($item->status=='Lulus')
+            {{ $item->siswa->nama_siswa }}
 
-                        <span class="bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm">
+        </div>
 
-                            Lulus
+    </td>
 
-                        </span>
+    <td class="border border-gray-300 px-3 py-3 text-center">
 
-                        @else
+        @if($item->status=='Lulus')
 
-                        <span class="bg-red-100 text-red-700 px-3 py-1 rounded-full text-sm">
+            <span class="inline-flex rounded-full bg-green-100 text-green-700 px-3 py-1 text-xs font-semibold">
 
-                            Tidak Lulus
+                Lulus
 
-                        </span>
+            </span>
 
-                        @endif
+        @else
 
-                    </td>
+            <span class="inline-flex rounded-full bg-red-100 text-red-700 px-3 py-1 text-xs font-semibold">
 
-                    @if(Auth::user()->role=='operator')
+                Belum Lulus
 
-                    <td class="border p-2">
+            </span>
 
-                        <div class="flex justify-center">
+        @endif
 
-                            <form action="{{ route('kelulusan.destroy',$item->id) }}"
-                                  method="POST">
+    </td>
 
-                                @csrf
-                                @method('DELETE')
+    <td class="border border-gray-300 px-4 py-3">
 
-                                <button
-                                    type="submit"
-                                    onclick="return confirm('Hapus data kelulusan?')"
-                                    class="bg-red-600 hover:bg-red-700 text-white p-2 rounded">
+        {!! nl2br(e($item->keterangan)) !!}
 
-                                    <x-heroicon-o-trash class="w-5 h-5"/>
+    </td>
 
-                                </button>
+</tr>
 
-                            </form>
+@empty
 
-                        </div>
+<tr>
 
-                    </td>
+    <td colspan="5" class="border border-gray-300 py-12">
 
-                    @endif
+        <div class="text-center">
 
-                </tr>
+            <x-heroicon-o-academic-cap class="mx-auto h-16 w-16 text-gray-300"/>
 
-                @empty
+            <h3 class="mt-4 text-lg font-semibold text-gray-700">
 
-                <tr>
+                Belum Ada Data Kelulusan
 
-                    <td colspan="{{ Auth::user()->role=='operator' ? 6 : 5 }}"
-                        class="text-center p-5">
+            </h3>
 
-                        Belum ada data kelulusan.
+            <p class="mt-2 text-gray-500">
 
-                    </td>
+                Silakan lakukan Generate Kelulusan terlebih dahulu.
 
-                </tr>
+            </p>
 
-                @endforelse
+        </div>
 
-            </tbody>
+    </td>
 
-        </table>
+</tr>
+
+@endforelse
+
+</tbody>
+
+</table>
+
+</div>
+<div class="px-6 py-4 border-t bg-gray-50 rounded-b-xl">
+
+    <div class="text-sm text-gray-600">
+
+        Total Data :
+
+        <span class="font-semibold">
+
+            {{ $totalSiswa }}
+
+        </span>
+
+        siswa
 
     </div>
 
 </div>
 
 </div>
+{{-- ================= MODAL GENERATE ================= --}}
+
+<div
+    id="modalGenerate"
+    class="fixed inset-0 bg-black/40 hidden items-center justify-center z-50">
+
+    <div class="bg-white rounded-xl shadow-xl w-full max-w-lg overflow-hidden">
+
+        {{-- Header --}}
+        <div class="bg-blue-600 px-6 py-5">
+
+            <h2 class="text-xl font-bold text-white">
+
+                Konfirmasi Generate Kelulusan
+
+            </h2>
+
+            <p class="text-blue-100 text-sm mt-1">
+
+                Proses penetapan kelulusan siswa kelas VI
+
+            </p>
+
+        </div>
+
+        {{-- Body --}}
+        <div class="p-6">
+
+            <p class="text-gray-700 mb-5">
+
+                Apakah Anda yakin ingin memproses
+                <strong>Generate Kelulusan</strong>?
+
+            </p>
+
+            <div class="rounded-lg border border-blue-200 bg-blue-50 p-5">
+
+                <p class="font-semibold text-blue-700 mb-3">
+
+                    Proses ini akan:
+
+                </p>
+
+                <ul class="space-y-2 text-gray-700">
+
+                    <li>
+                        ✔ Menentukan status kelulusan siswa.
+                    </li>
+
+                    <li>
+                        ✔ Menyimpan data ke tabel kelulusan.
+                    </li>
+
+                    <li>
+                        ✔ Mengubah status siswa menjadi Lulus.
+                    </li>
+
+                    <li>
+                        ✔ Digunakan pada proses Data Alumni.
+                    </li>
+
+                </ul>
+
+            </div>
+
+            <div class="mt-5 rounded-lg border border-yellow-200 bg-yellow-50 p-4">
+
+                <p class="text-yellow-700 text-sm">
+
+                    Pastikan seluruh nilai siswa telah final sebelum melakukan generate.
+
+                </p>
+
+            </div>
+
+        </div>
+
+        {{-- Footer --}}
+        <div class="border-t bg-gray-50 px-6 py-4 flex justify-end gap-3">
+
+            <button
+                type="button"
+                onclick="closeModal()"
+                class="px-5 py-2 rounded-lg border border-gray-300 hover:bg-gray-100">
+
+                Batal
+
+            </button>
+
+            <form
+                action="{{ route('kelulusan.generate') }}"
+                method="POST">
+
+                @csrf
+
+                <button
+                    class="px-5 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white">
+
+                    Generate
+
+                </button>
+
+            </form>
+
+        </div>
+
+    </div>
+
+</div>
+@push('scripts')
+
+<script>
+
+function openModal(){
+
+    const modal = document.getElementById('modalGenerate');
+
+    modal.classList.remove('hidden');
+
+    modal.classList.add('flex');
+
+}
+
+function closeModal(){
+
+    const modal = document.getElementById('modalGenerate');
+
+    modal.classList.remove('flex');
+
+    modal.classList.add('hidden');
+
+}
+
+document.addEventListener('keydown',function(e){
+
+    if(e.key==='Escape'){
+
+        closeModal();
+
+    }
+
+});
+
+</script>
+
+@endpush
 
 @endsection

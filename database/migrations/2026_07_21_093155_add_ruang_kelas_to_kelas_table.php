@@ -1,0 +1,1 @@
+php artisan make:migration add_ruang_kelas_to_kelas_table --table=kelas

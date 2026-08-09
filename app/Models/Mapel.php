@@ -2,22 +2,44 @@
 
 namespace App\Models;
 
+
 use Illuminate\Database\Eloquent\Model;
 
 class Mapel extends Model
 {
-   protected $fillable = [
+    protected $table='mapels';
+
+    protected $fillable = [
+    'kategori_mapel_id',
+    'guru_id',
     'kode_mapel',
     'nama_mapel',
-    'guru_id'
+    'kelompok',
+    'jenis',
+    'kkm',
+    'status',
 ];
 
-public function absensi()
+    public function kategori()
+    {
+        return $this->belongsTo(
+            KategoriMapel::class,
+            'kategori_mapel_id'
+        );
+    }
+
+    public function guru()
 {
-    return $this->hasMany(Absensi::class);
+    return $this->belongsTo(Guru::class);
 }
-public function details()
+public function mapels()
 {
-    return $this->hasMany(RaporDetail::class);
+    return $this->hasMany(Mapel::class);
 }
+public function lingkupMateris()
+{
+    return $this->hasMany(LingkupMateri::class);
+}
+
+
 }

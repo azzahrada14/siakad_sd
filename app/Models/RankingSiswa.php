@@ -8,14 +8,17 @@ class RankingSiswa extends Model
 {
     protected $fillable = [
 
-        'siswa_id',
-        'kelas_id',
-        'tahun_ajaran_id',
-        'semester',
-        'rata_rata',
-        'ranking'
+    'siswa_id',
+    'kelas_id',
+    'tahun_ajaran_id',
+    'semester',
 
-    ];
+    'rata_rata',
+    'kehadiran',
+
+    'ranking'
+
+];
 
     public function siswa()
     {

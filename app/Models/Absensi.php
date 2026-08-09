@@ -16,8 +16,23 @@ class Absensi extends Model
     'status'
 ];
 
-    public function mapel()
+   public function siswa()
+{
+    return $this->belongsTo(Siswa::class);
+}
+
+public function kelas()
+{
+    return $this->belongsTo(Kelas::class);
+}
+
+public function mapel()
 {
     return $this->belongsTo(Mapel::class);
+}
+
+public function tahunAjaran()
+{
+    return $this->belongsTo(TahunAjaran::class,'tahun_ajaran_id');
 }
 }

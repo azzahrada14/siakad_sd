@@ -2,253 +2,282 @@
 
 @section('content')
 
-<div class="container mx-auto p-6">
+<div class="max-w-7xl mx-auto p-6">
 
-    <div class="bg-white rounded-lg shadow p-6">
-
-<div class="flex justify-between items-center mb-6">
+    <div class="flex justify-between items-center mb-8">
 
     <div>
 
-        <h2 class="text-3xl font-bold text-gray-800 flex items-center gap-2">
+        <h1 class="text-3xl font-bold text-slate-800">
 
-            <i data-feather="file-text"
-               class="w-7 h-7 text-blue-600"></i>
+            Detail Rapor
 
-            Preview Rapor
-
-        </h2>
+        </h1>
 
         <p class="text-gray-500 mt-1">
 
-            Detail rapor siswa
+            Ringkasan hasil belajar peserta didik.
 
         </p>
 
     </div>
-<div class="flex gap-2">
 
-    @if(Auth::user()->role == 'guru')
+    <div class="flex gap-3">
 
-        <a href="{{ route('rapor.edit',$rapor->id) }}"
-           class="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-lg flex items-center gap-2">
+        <a
+            href="{{ route('rapor.index') }}"
+            class="bg-gray-600 hover:bg-gray-700 text-white px-5 py-2 rounded-lg">
 
-            <i data-feather="edit-2"></i>
-
-            Edit
+            ← Kembali
 
         </a>
 
-        <a href="{{ route('rapor.print',$rapor->id) }}"
-           class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2">
+        <a
+            href="{{ route('rapor.print',$rapor->id) }}"
+            class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg">
 
-            <i data-feather="printer"></i>
-
-            Cetak
+            🖨 Cetak Rapor
 
         </a>
 
-    @endif
+    </div>
+
+</div>
+<div class="bg-white rounded-xl shadow mb-6">
+
+<div class="border-b px-6 py-4">
+
+<h2 class="text-lg font-bold">
+
+Identitas Siswa
+
+</h2>
 
 </div>
 
-</div>
-<hr class="my-5">
-
-<div class="grid grid-cols-2 gap-6 mb-8 bg-gray-50 rounded-lg p-5">
-
-<div class="space-y-4">
+<div class="grid grid-cols-2 gap-y-4 px-6 py-6">
 
 <div>
 
-<label class="text-sm text-gray-500">
+<b>Nama Peserta Didik</b>
 
-Nama Siswa
+</div>
 
-</label>
-
-<p class="font-semibold">
+<div>
 
 {{ $rapor->siswa->nama_siswa }}
 
-</p>
-
 </div>
 
 <div>
 
-<label class="text-sm text-gray-500">
+<b>NISN</b>
 
-NISN
+</div>
 
-</label>
-
-<p class="font-semibold">
+<div>
 
 {{ $rapor->siswa->nisn }}
 
-</p>
+</div>
+
+<div>
+
+<b>Kelas</b>
 
 </div>
 
 <div>
 
-<label class="text-sm text-gray-500">
+{{ $rapor->kelas->nama_kelas }}
 
-Semester
+</div>
 
-</label>
+<div>
 
-<p class="font-semibold">
+<b>Semester</b>
+
+</div>
+
+<div>
 
 {{ $rapor->semester }}
 
-</p>
-
-</div>
-
-</div>
-
-<div class="space-y-4">
-
-<div>
-
-<label class="text-sm text-gray-500">
-
-NIPD
-
-</label>
-
-<p class="font-semibold">
-
-{{ $rapor->siswa->nipd }}
-
-</p>
-
 </div>
 
 <div>
 
-<label class="text-sm text-gray-500">
-
-Kelas
-
-</label>
-
-<p class="font-semibold">
-
-Kelas {{ $rapor->kelas->nama_kelas }}
-
-</p>
+<b>Tahun Pelajaran</b>
 
 </div>
 
 <div>
-
-<label class="text-sm text-gray-500">
-
-Tahun Ajaran
-
-</label>
-
-<p class="font-semibold">
 
 {{ $rapor->tahunAjaran->tahun_ajaran }}
 
-</p>
+</div>
 
 <div>
 
-<label class="text-sm text-gray-500">
-Ranking
-</label>
-
-<p class="font-semibold">
-{{ $rapor->ranking }}
-</p>
+<b>Wali Kelas</b>
 
 </div>
 
 <div>
 
-<label class="text-sm text-gray-500">
+{{ $rapor->kelas->waliKelas->nama_guru }}
+
+</div>
+
+</div>
+
+</div>
+<div class="grid md:grid-cols-3 gap-5 mb-6">
+
+<div class="bg-blue-50 rounded-xl shadow p-6">
+
+<div class="text-gray-500">
+
 Rata-rata
-</label>
 
-<p class="font-semibold text-blue-600">
+</div>
+
+<div class="text-3xl font-bold text-blue-700 mt-2">
+
 {{ number_format($rapor->rata_rata,2) }}
-</p>
+
+</div>
+
+</div>
+
+<div class="bg-green-50 rounded-xl shadow p-6">
+
+<div class="text-gray-500">
+
+Ranking
+
+</div>
+
+<div class="text-3xl font-bold text-green-700 mt-2">
+
+{{ $rapor->ranking }}
+
+</div>
+
+</div>
+
+<div class="bg-yellow-50 rounded-xl shadow p-6">
+
+<div class="text-gray-500">
+
+Jumlah Mapel
+
+</div>
+
+<div class="text-3xl font-bold text-yellow-700 mt-2">
+
+{{ $rapor->details->count() }}
 
 </div>
 
 </div>
 
 </div>
+<div class="bg-white rounded-xl shadow mb-6">
+
+<div class="border-b px-6 py-4">
+
+<h2 class="font-bold">
+
+Daftar Nilai
+
+</h2>
 
 </div>
 
+<table class="w-full">
 
-<hr class="my-5">
-
-<h3 class="font-bold text-lg text-gray-700 mb-3">
-    Nilai Akademik
-</h3>
-
-<table class="w-full rounded-lg overflow-hidden border border-gray-300 shadow-sm">
-
-<thead class="bg-gradient-to-r from-blue-600 to-blue-700 text-white">
+<thead class="bg-gray-100">
 
 <tr>
 
-<th class="border p-3">No</th>
+<th class="p-3 border text-center w-16">
+No
+</th>
 
-<th class="border p-3">Mata Pelajaran</th>
+<th class="p-3 border">
+Mata Pelajaran
+</th>
 
-<th class="border p-3">Nilai</th>
+<th class="p-3 border text-center w-28">
+Nilai Akhir
+</th>
 
-<th class="border p-3">Capaian Kompetensi</th>
+<th class="p-3 border text-center w-28">
+Predikat
+</th>
 
 </tr>
 
 </thead>
-
 <tbody>
 
 @foreach($rapor->details as $detail)
 
 <tr>
 
-<td class="border border border-gray-300 p-3 text-center">
+<td class="border p-3 text-center">
 
 {{ $loop->iteration }}
 
 </td>
 
-<td class="border border-gray-300 p-3 text center">
-    {{ $detail->mapel->nama_mapel }}
-</td>
+<td class="border p-3">
 
-<td class="border border border-gray-300 p-3 text-center">
-
-{{ $detail->nilai_akhir }}
+{{ $detail->mapel->nama_mapel }}
 
 </td>
 
-<td class="border border-gray-300 p-3 align-top">
-    <b>Pengetahuan</b>
+<td class="border p-3 text-center font-bold">
 
-<br>
+{{ number_format($detail->nilai_akhir,0) }}
 
-{!! nl2br(e($detail->capaian_pengetahuan)) !!}
-
-<br><br>
-
-<b>Keterampilan</b>
-
-<br>
-
-{!! nl2br(e($detail->capaian_keterampilan)) !!}
 </td>
+
+<td class="border p-3 text-center">
+
+@php
+    $nilai = $detail->nilai_akhir;
+@endphp
+
+@if($nilai >= 90)
+
+<span class="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-semibold">
+A
+</span>
+
+@elseif($nilai >= 80)
+
+<span class="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-xs font-semibold">
+B
+</span>
+
+@elseif($nilai >= 70)
+
+<span class="bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full text-xs font-semibold">
+C
+</span>
+
+@else
+
+<span class="bg-red-100 text-red-700 px-3 py-1 rounded-full text-xs font-semibold">
+D
+</span>
+
+@endif
+
+</td>
+
 </tr>
 
 @endforeach
@@ -257,227 +286,106 @@ Rata-rata
 
 </table>
 
-<div class="my-8"></div>
+</div>
+<div class="grid md:grid-cols-3 gap-6">
+    <div class="bg-white rounded-xl shadow p-6">
 
-<h3 class="font-bold text-lg text-gray-700 mb-3">
-    Ekstrakurikuler
+<h3 class="font-bold mb-4">
+
+Ekstrakurikuler
+
 </h3>
 
-<table class="w-full rounded-lg overflow-hidden border border-gray-300 shadow-sm">
+@forelse($ekstrakurikuler as $item)
 
-    <thead class="bg-blue-600 text-white">
+<div class="mb-4">
 
-        <tr>
+<div class="font-semibold">
 
-            <th class="border border-gray-300 p-3 text-center">
-                No
-            </th>
+{{ $item->masterEkstrakurikuler->nama_ekstrakurikuler }}
 
-            <th class="border border-gray-300 p-3 text-center">
-                Kegiatan
-            </th>
+</div>
 
-            <th class="border border-gray-300 p-3 text-center">
-                Keterangan
-            </th>
+<div class="text-gray-600">
 
-        </tr>
+{{ $item->catatan_guru }}
 
-    </thead>
+</div>
 
-    <tbody>
+</div>
 
-        @forelse($ekstrakurikuler as $item)
+@empty
 
-        <tr>
+-
 
-            <td class="border border-gray-300 p-3 text-center">
-                {{ $loop->iteration }}
-            </td>
+@endforelse
 
-            <td class="border border-gray-300 p-3 text center">
-                {{ $item->nama_kegiatan }}
-            </td>
+</div>
+<div class="bg-white rounded-xl shadow p-6">
 
-            <td class="border border-gray-300 p-3 text center">
-                {{ $item->keterangan }}
-            </td>
+<h3 class="font-bold mb-4">
 
-        </tr>
+Kehadiran
 
-        @empty
+</h3>
 
-        <tr>
-
-            <td colspan="3"
-                class="border border-gray-300 p-3 text-center text-gray-500">
-
-                Tidak ada data ekstrakurikuler.
-
-            </td>
-
-        </tr>
-
-        @endforelse
-
-    </tbody>
-
-</table>
-
-<div class="my-8"></div>
-
-<div class="grid grid-cols-2 gap-8">
+<div class="space-y-3">
 
 <div>
 
-<h3 class="font-bold text-lg text-gray-700 mb-3">
-    Ketidakhadiran
-</h3>
+Sakit :
+<b>{{ $rapor->sakit }}</b> Hari
 
-
-
-<div class="border rounded-lg p-4">
-<table class="w-full rounded-lg overflow-hidden border border-gray-300 shadow-sm">
-
-<tr>
-
-<td class="border border border-gray-300 p-3 text-center">
-
-Sakit
-
-</td>
-
-<td class="border border-gray-300 p-3 text-center">
-
-{{ $rapor->sakit }}
-
-</td>
-
-</tr>
-
-<tr>
-
-<td class="border border-gray-300 p-3 text-center">
-
-Izin
-
-</td>
-
-<td class="border border-gray-300 p-3 text-center">
-
-{{ $rapor->izin }}
-
-</td>
-
-</tr>
-
-<tr>
-
-<td class="border border-gray-300 p-3 text-center">
-
-Alfa
-
-</td>
-
-<td class="border border-gray-300 p-3 text-center">
-
-{{ $rapor->alfa }}
-
-</td>
-
-</tr>
-
-</table>
-
-</div>
 </div>
 
 <div>
 
+Izin :
+<b>{{ $rapor->izin }}</b> Hari
 
-<h3 class="font-bold mb-3">
+</div>
+
+<div>
+
+Tanpa Keterangan :
+<b>{{ $rapor->alfa }}</b> Hari
+
+</div>
+
+</div>
+
+</div>
+<div class="bg-white rounded-xl shadow p-6">
+
+<h3 class="font-bold mb-4">
 
 Keputusan
 
 </h3>
 
-<table class="w-full border border-gray-300">
+@if($rapor->naik_kelas)
 
-<tr>
+<div class="text-green-700 font-semibold">
 
-<td class="border p-2" colspan="4">
-
-Berdasarkan capaian kompetensi pada semester
-
-{{ $rapor->semester_ke }}
-
-maka peserta didik dinyatakan:
-
-</td>
-
-</tr>
-
-<tr>
-
-<td class="border p-2">
-
-Naik ke Kelas
-
-</td>
-
-<td class="border p-2 text-center">
-
-:
-
-</td>
-
-<td class="border p-2">
+Naik ke kelas
 
 {{ $rapor->naik_kelas }}
 
-</td>
+</div>
 
-</tr>
+@else
 
-<tr>
+<div class="text-red-700 font-semibold">
 
-<td class="border p-2">
-
-Tinggal di Kelas
-
-</td>
-
-<td class="border p-2 text-center">
-
-:
-
-</td>
-
-<td class="border p-2">
+Tinggal di kelas
 
 {{ $rapor->tinggal_kelas }}
 
-</td>
-
-</tr>
-
-</table>
 </div>
 
-</div>
-
-<div class="my-8"></div>
-
-<h3 class="font-bold text-lg text-gray-700 mb-3">
-    Catatan Wali Kelas
-</h3>
-
-<div class="border rounded-lg p-4 min-h-[120px] bg-gray-50 whitespace-pre-line">
-
-{{ $rapor->catatan ?? '-' }}
+@endif
 
 </div>
-
 </div>
 
 </div>

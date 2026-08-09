@@ -2,101 +2,182 @@
 
 @section('content')
 
-<x-slot name="header">
-    <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-        Tambah Tahun Ajaran
-    </h2>
-</x-slot>
+<div class="py-6">
 
-<div class="p-6 bg-gray-100 min-h-screen">
+<div class="max-w-5xl mx-auto sm:px-6 lg:px-8">
 
-    <div class="max-w-3xl mx-auto bg-white rounded-xl shadow p-6">
+<div class="flex justify-between items-start mb-6">
 
-        <form action="{{ route('tahunajaran.store') }}"
-              method="POST">
+    <div>
 
-            @csrf
+        <h1 class="text-3xl font-bold text-slate-800">
 
-            @if ($errors->any())
+            Tambah Tahun Ajaran
 
-<div class="mb-4 p-4 bg-red-100 text-red-700 rounded">
+        </h1>
 
-    <ul>
-        @foreach ($errors->all() as $error)
-            <li>{{ $error }}</li>
-        @endforeach
-    </ul>
+        <p class="text-gray-500 mt-1">
+
+            Tambahkan data tahun ajaran SD Negeri Cimanahayu.
+
+        </p>
+
+    </div>
+
+</div>
+<div class="bg-white rounded-xl shadow border border-gray-200">
+
+<div class="px-6 py-5 border-b bg-slate-50">
+
+<h2 class="text-lg font-semibold">
+
+Informasi Tahun Ajaran
+
+</h2>
+
+<p class="text-sm text-gray-500 mt-1">
+
+Lengkapi data tahun ajaran.
+
+</p>
 
 </div>
 
-@endif
+<form
+action="{{ route('tahun-ajaran.store') }}"
+method="POST">
 
-            <div class="mb-4">
+@csrf
 
-                <label class="block mb-1 font-medium">
-                    Tahun Ajaran
-                </label>
+<div class="p-6">
 
-                <input type="text"
-                       name="tahun_ajaran"
-                       class="w-full border rounded px-3 py-2"
-                       placeholder="2025/2026">
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <div>
 
-            </div>
+<label class="block text-sm font-medium mb-2">
 
-            <div class="mb-4">
+Tahun Ajaran
 
-                <label class="block mb-1 font-medium">
-                    Semester
-                </label>
+</label>
 
-                <select name="semester"
-                        class="w-full border rounded px-3 py-2">
+<input
+type="text"
+name="tahun_ajaran"
+value="{{ old('tahun_ajaran') }}"
+placeholder="2026/2027"
+class="w-full rounded-lg border-gray-300">
 
-                    <option value="Ganjil">Ganjil</option>
-                    <option value="Genap">Genap</option>
+@error('tahun_ajaran')
 
-                </select>
+<p class="text-red-500 text-sm mt-2">
 
-            </div>
+{{ $message }}
 
-            <div class="mb-4">
+</p>
 
-                <label class="block mb-1 font-medium">
-                    Status
-                </label>
+@enderror
 
-                <select name="status"
-                        class="w-full border rounded px-3 py-2">
+</div>
+<div>
 
-                    <option value="Aktif">Aktif</option>
-                    <option value="Tidak Aktif">Tidak Aktif</option>
+<label class="block text-sm font-medium mb-2">
 
-                </select>
+Semester
 
-            </div>
+</label>
 
-            <div class="flex gap-2">
+<select
+name="semester"
+class="w-full rounded-lg border-gray-300">
 
-                <button type="submit"
-                        class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
+<option value="">
 
-                    Simpan
+Pilih Semester
 
-                </button>
+</option>
 
-                <a href="{{ route('tahunajaran.index') }}"
-                   class="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600">
+<option value="Ganjil">
 
-                    Kembali
+Ganjil
 
-                </a>
+</option>
 
-            </div>
+<option value="Genap">
 
-        </form>
+Genap
 
-    </div>
+</option>
+
+</select>
+
+</div>
+<div>
+
+<label class="block text-sm font-medium mb-2">
+
+Tanggal Mulai
+
+</label>
+
+<input
+type="date"
+name="tanggal_mulai"
+value="{{ old('tanggal_mulai') }}"
+class="w-full rounded-lg border-gray-300">
+
+</div>
+<div>
+
+<label class="block text-sm font-medium mb-2">
+
+Tanggal Selesai
+
+</label>
+
+<input
+type="date"
+name="tanggal_selesai"
+value="{{ old('tanggal_selesai') }}"
+class="w-full rounded-lg border-gray-300">
+
+</div>
+</div>
+
+</div>
+
+<div class="px-6 py-5 border-t bg-slate-50">
+
+<div class="flex justify-end gap-3">
+
+<a
+href="{{ route('tahun-ajaran.index') }}"
+class="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-gray-500 hover:bg-gray-600 text-white">
+
+<x-heroicon-o-x-mark class="w-5 h-5"/>
+
+Batal
+
+</a>
+
+<button
+type="submit"
+class="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-blue-600 hover:bg-blue-700 text-white">
+
+<x-heroicon-o-check-circle class="w-5 h-5"/>
+
+Simpan
+
+</button>
+
+</div>
+
+</div>
+
+</form>
+
+</div>
+
+</div>
 
 </div>
 

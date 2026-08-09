@@ -1,344 +1,140 @@
-<!DOCTYPE html>
-<html lang="id">
-<head>
+{{-- =========================== --}}
+{{-- COVER RAPOR --}}
+{{-- =========================== --}}
 
-<meta charset="UTF-8">
+<div style="width:100%; height:245mm; position:relative;">
 
-<title>Cover Rapor</title>
-
-<style>
-
-body{
-
-    font-family:"Times New Roman", serif;
-    margin:0;
-    padding:0;
-    background:white;
-
-}
-
-.cover{
-
-    width:210mm;
-    height:297mm;
-    margin:auto;
-    padding:40px;
-    box-sizing:border-box;
-    position:relative;
-
-}
-
-.center{
-
-    text-align:center;
-
-}
-
-.logo{
-
-    width:120px;
-    margin-top:20px;
-    margin-bottom:25px;
-
-}
-
-.judul{
-
-    font-size:28px;
-    font-weight:bold;
-    letter-spacing:1px;
-
-}
-
-.subjudul{
-
-    font-size:18px;
-    margin-top:10px;
-    line-height:30px;
-
-}
-
-.nama{
-
-    margin-top:80px;
-    font-size:22px;
-    font-weight:bold;
-    text-decoration:underline;
-
-}
-
-.kotak{
-
-    margin-top:70px;
-    border:2px solid black;
-    padding:20px;
-    width:80%;
-    margin-left:auto;
-    margin-right:auto;
-
-}
-
-table{
-
-    width:100%;
-    border-collapse:collapse;
-    font-size:16px;
-
-}
-
-td{
-
-    padding:8px;
-
-}
-
-.footer{
-
-    position:absolute;
-    bottom:40px;
-    left:0;
-    right:0;
-    text-align:center;
-    line-height:28px;
-
-}
-
-</style>
-
-</head>
-
-<body>
-
-<div class="cover">
-
-<div style="display:flex;
-justify-content:center;
-align-items:center;
-gap:80px;
-margin-top:30px;
-margin-bottom:40px;">
+    {{-- LOGO --}}
+    <div style="text-align:center; margin-top:35px; margin-bottom:25px;">
 
     <img
         src="{{ asset('logo.png') }}"
-        width="120">
+        style="width:160px; height:auto;">
 
-    <img
-        src="{{ asset('logo-sekolah.png') }}"
-        width="120">
+</div>
 
-<div class="center">
-
+    {{-- JUDUL --}}
     <div
         style="
-        font-size:42px;
-        font-weight:bold;
-        margin-top:20px;">
+            text-align:center;
+            margin-top:30px;
+            line-height:1.8;
+            font-family:'Times New Roman',serif;
+        ">
 
-        RAPOR
+        <div style="font-size:22pt; font-weight:bold;">
+            RAPOR SUMATIF TENGAH SEMESTER
+        </div>
+
+        <div style="font-size:18pt; font-weight:bold;">
+            PESERTA DIDIK
+        </div>
+
+        <div style="font-size:18pt; font-weight:bold;">
+            SEKOLAH DASAR
+        </div>
+
+        <div style="font-size:18pt; font-weight:bold;">
+            (SD)
+        </div>
 
     </div>
 
+    {{-- NAMA --}}
+    <div style="margin-top:90px;">
+
+        <div
+            style="
+                text-align:center;
+                font-size:16pt;
+                margin-bottom:10px;
+            ">
+
+            Nama Peserta Didik :
+
+        </div>
+
+        <table style="width:70%; margin:auto; border-collapse:collapse;">
+
+            <tr>
+
+                <td
+                    style="
+                        border:2px solid #000;
+                        padding:14px;
+                        text-align:center;
+                        font-size:18pt;
+                        font-weight:bold;
+                    ">
+
+                    {{ strtoupper($rapor->siswa->nama_siswa) }}
+
+                </td>
+
+            </tr>
+
+        </table>
+
+    </div>
+
+    {{-- NIPD NISN --}}
+    <div style="margin-top:40px;">
+
+       <div
+    style="
+        text-align:center;
+        font-size:16pt;
+        margin-bottom:10px;
+    ">
+
+    NIPD / NISN
+
+</div>
+
+        <table style="width:70%; margin:auto; border-collapse:collapse;">
+
+            <tr>
+
+                <td
+                    style="
+                        border:2px solid #000;
+                        padding:14px;
+                        text-align:center;
+                        font-size:18pt;
+                        font-weight:bold;
+                    ">
+
+                    {{ $rapor->siswa->nipd }}
+
+                    /
+
+                    {{ $rapor->siswa->nisn }}
+
+                </td>
+
+            </tr>
+
+        </table>
+
+    </div>
+
+    {{-- FOOTER --}}
     <div
         style="
-        font-size:22px;
-        margin-top:10px;
-        line-height:35px;">
+            position:absolute;
+            bottom:45px;
+            width:100%;
+            text-align:center;
+            font-family:'Times New Roman',serif;
+            font-size:15pt;
+            font-weight:bold;
+            line-height:1.7;
+        ">
 
-        LAPORAN HASIL BELAJAR
-
+        KEMENTERIAN PENDIDIKAN DAN KEBUDAYAAN
         <br>
-
-        PESERTA DIDIK
-
-        <br>
-
-        SEKOLAH DASAR
+        REPUBLIK INDONESIA
 
     </div>
 
 </div>
-<div
-style="
-margin-top:90px;
-border:2px solid black;
-padding:25px;">
-
-<table
-style="
-width:100%;
-font-size:18px;">
-
-<tr>
-
-<td width="35%">
-
-Nama Peserta Didik
-
-</td>
-
-<td width="5%">
-
-:
-
-</td>
-
-<td>
-
-<b>
-
-{{ $rapor->siswa->nama_siswa }}
-
-</b>
-
-</td>
-
-</tr>
-
-<tr>
-
-<td>
-
-NIS
-
-</td>
-
-<td>
-
-:
-
-</td>
-
-<td>
-
-{{ $rapor->siswa->nis }}
-
-</td>
-
-</tr>
-
-<tr>
-
-<td>
-
-NISN
-
-</td>
-
-<td>
-
-:
-
-</td>
-
-<td>
-
-{{ $rapor->siswa->nisn }}
-
-</td>
-
-</tr>
-
-<tr>
-
-<td>
-
-Kelas
-
-</td>
-
-<td>
-
-:
-
-</td>
-
-<td>
-
-{{ $rapor->kelas->nama_kelas }}
-
-</td>
-
-</tr>
-
-<tr>
-
-<td>
-
-Semester
-
-</td>
-
-<td>
-
-:
-
-</td>
-
-<td>
-
-{{ $rapor->semester }}
-
-</td>
-
-</tr>
-
-<tr>
-
-<td>
-
-Tahun Pelajaran
-
-</td>
-
-<td>
-
-:
-
-</td>
-
-<td>
-
-{{ $rapor->tahunAjaran->tahun_ajaran }}
-
-</td>
-
-</tr>
-
-</table>
-
-</div>
-<div
-style="
-position:absolute;
-bottom:50px;
-left:0;
-right:0;
-text-align:center;">
-
-<div
-style="
-font-size:22px;
-font-weight:bold;">
-
-SD NEGERI CIMANAHAYU
-
-</div>
-
-<div
-style="
-font-size:18px;">
-
-Kabupaten Bandung Barat
-
-</div>
-
-<div
-style="
-font-size:18px;">
-
-Provinsi Jawa Barat
-
-</div>
-
-</div>
-

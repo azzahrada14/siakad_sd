@@ -3,15 +3,43 @@
 namespace App\Imports;
 
 use App\Models\Mapel;
-use Maatwebsite\Excel\Concerns\ToModel;
+use Illuminate\Support\Collection;
+use Maatwebsite\Excel\Concerns\ToCollection;
+use Maatwebsite\Excel\Concerns\WithHeadingRow;
 
-class MapelImport implements ToModel
+class MapelImport implements ToCollection, WithHeadingRow
 {
-    public function model(array $row)
+    public function collection(Collection $rows)
     {
-        return new Mapel([
-            'kode_mapel' => $row[0],
-            'nama_mapel' => $row[1],
-        ]);
+        foreach ($rows as $row) {
+
+            if (empty($row['kode_mapel'])) {
+                continue;
+            }
+
+            if (Mapel::where(
+                'kode_mapel',
+                $row['kode_mapel']
+            )->exists()) {
+
+                continue;
+
+            }
+
+            Mapel::create([
+
+                'kode_mapel' => trim($row['kode_mapel']),
+
+                'nama_mapel' => trim($row['nama_mata_pelajaran']),
+
+                'kelompok' => trim($row['kelompok']),
+
+                'kkm' => $row['kkm'],
+
+                'status' => 'Aktif'
+
+            ]);
+
+        }
     }
 }

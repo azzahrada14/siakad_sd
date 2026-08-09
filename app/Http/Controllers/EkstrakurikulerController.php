@@ -6,7 +6,8 @@ use Illuminate\Http\Request;
 use App\Models\Ekstrakurikuler;
 use App\Models\Siswa;
 use App\Models\TahunAjaran;
-
+use App\Models\Kelas;
+use App\Models\MasterEkstrakurikuler;
 class EkstrakurikulerController extends Controller
 {
     /*
@@ -14,47 +15,74 @@ class EkstrakurikulerController extends Controller
     | INDEX
     |--------------------------------------------------------------------------
     */
-
-   public function index()
+public function index(Request $request)
 {
-    $ekstrakurikuler = Ekstrakurikuler::with([
-        'siswa',
-        'tahunAjaran'
-    ])
-    ->latest()
+    $tahunAktif = TahunAjaran::where(
+        'status',
+        'Aktif'
+    )->first();
+
+    $kelas = Kelas::where(
+        'status',
+        'Aktif'
+    )
+    ->orderBy('nama_kelas')
     ->get();
+
+    $masterEkstrakurikuler = MasterEkstrakurikuler::where(
+        'status',
+        'Aktif'
+    )
+    ->orderBy('nama_ekstrakurikuler')
+    ->get();
+
+   $siswas = collect();
+
+if ($request->filled('kelas_id')) {
+
+    $siswas = Siswa::with([
+            'ekstrakurikulers',
+            'anggotaKelas'
+        ])
+        ->whereHas('anggotaKelas', function ($q) use ($request, $tahunAktif) {
+
+            $q->where('kelas_id', $request->kelas_id)
+              ->where('tahun_ajaran_id', $tahunAktif->id);
+
+        })
+        ->orderBy('nama_siswa')
+        ->get();
+
+}
 
     return view(
         'ekstrakurikuler.index',
-        compact('ekstrakurikuler')
-    );
-}
-   
-
-    /*
-    |--------------------------------------------------------------------------
-    | CREATE
-    |--------------------------------------------------------------------------
-    */
-
-   public function create()
-{
-    if(auth()->user()->role != 'operator')
-{
-    abort(403);
-}
-
-    $siswa = Siswa::orderBy('nama_siswa')->get();
-
-    $tahunAjaran = TahunAjaran::orderBy('id','desc')->get();
-
-    return view(
-        'ekstrakurikuler.create',
         compact(
-            'siswa',
-            'tahunAjaran'
+            'tahunAktif',
+            'kelas',
+            'masterEkstrakurikuler',
+            'siswas'
         )
     );
+}
+
+public function getData(Siswa $siswa, Request $request)
+{
+    $data = Ekstrakurikuler::where(
+            'siswa_id',
+            $siswa->id
+        )
+        ->where(
+            'tahun_ajaran_id',
+            $request->tahun_ajaran_id
+        )
+        ->where(
+            'semester',
+            $request->semester
+        )
+        ->get();
+
+    return response()->json($data);
 }
 
     /*
@@ -63,123 +91,54 @@ class EkstrakurikulerController extends Controller
     |--------------------------------------------------------------------------
     */
 
-    public function store(Request $request)
+   
+           public function store(Request $request)
 {
-    if(auth()->user()->role != 'operator')
-    {
-        abort(403);
-    }
-
     $request->validate([
+
         'siswa_id' => 'required',
+
         'tahun_ajaran_id' => 'required',
-        'semester' => 'required',
-        'nama_kegiatan' => 'required',
-        'keterangan' => 'required'
+
+        'semester' => 'required'
+
     ]);
 
-    Ekstrakurikuler::create($request->all());
+    foreach ($request->ekstrakurikuler as $item) {
+
+        if (isset($item['dipilih'])) {
+
+            Ekstrakurikuler::updateOrCreate(
+
+                [
+
+                    'siswa_id' => $request->siswa_id,
+
+                    'master_ekstrakurikuler_id' => $item['master_id'],
+
+                    'tahun_ajaran_id' => $request->tahun_ajaran_id,
+
+                    'semester' => $request->semester
+
+                ],
+
+                [
+
+                    'catatan_guru' => $item['catatan_guru']
+
+                ]
+
+            );
+
+        }
+
+    }
 
     return redirect()
-        ->route('ekstrakurikuler.index')
+        ->back()
         ->with(
             'success',
-            'Data ekstrakurikuler berhasil ditambahkan.'
+            'Data ekstrakurikuler berhasil disimpan.'
         );
 }
-      
-    /*
-    |--------------------------------------------------------------------------
-    | EDIT
-    |--------------------------------------------------------------------------
-    */
-
-    public function edit($id)
-{
-    if(auth()->user()->role != 'operator')
-    {
-        abort(403);
-    }
-
-    $ekstrakurikuler = Ekstrakurikuler::findOrFail($id);
-
-    $siswa = Siswa::orderBy('nama_siswa')->get();
-
-    $tahunAjaran = TahunAjaran::orderBy('id','desc')->get();
-
-    return view(
-        'ekstrakurikuler.edit',
-        compact(
-            'ekstrakurikuler',
-            'siswa',
-            'tahunAjaran'
-        )
-    );
-}
-
-    /*
-    |--------------------------------------------------------------------------
-    | UPDATE
-    |--------------------------------------------------------------------------
-    */
-
-    public function update(Request $request, $id)
-    {
-        if(auth()->user()->role != 'operator')
-        {
-            abort(403);
-        }
-        $request->validate([
-
-            'siswa_id' => 'required',
-
-            'tahun_ajaran_id' => 'required',
-
-            'semester' => 'required',
-
-            'nama_kegiatan' => 'required',
-
-            'keterangan' => 'required'
-
-        ]);
-
-        $ekstrakurikuler = Ekstrakurikuler::findOrFail($id);
-
-        $ekstrakurikuler->update(
-
-            $request->all()
-
-        );
-
-        return redirect()
-            ->route('ekstrakurikuler.index')
-            ->with(
-                'success',
-                'Data ekstrakurikuler berhasil diubah.'
-            );
-    }
-
-    /*
-    |--------------------------------------------------------------------------
-    | DESTROY
-    |--------------------------------------------------------------------------
-    */
-
-    public function destroy($id)
-    {
-        if(auth()->user()->role != 'operator')
-        {
-            abort(403);
-        }
-        $ekstrakurikuler = Ekstrakurikuler::findOrFail($id);
-
-        $ekstrakurikuler->delete();
-
-        return redirect()
-            ->route('ekstrakurikuler.index')
-            ->with(
-                'success',
-                'Data ekstrakurikuler berhasil dihapus.'
-            );
-    }
 }

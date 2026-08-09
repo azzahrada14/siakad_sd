@@ -2,173 +2,164 @@
 
 @section('content')
 
-<div class="py-10">
 
-    <div class="max-w-4xl mx-auto px-6">
+<div class="max-w-5xl mx-auto px-6 py-6">
 
-        {{-- CARD --}}
-        <div class="bg-white rounded-2xl shadow-lg p-8">
+<div class="flex justify-between items-center mb-6">
 
-            {{-- TITLE --}}
-            <div class="mb-8">
+<div>
 
-                <h1 class="text-3xl font-bold text-gray-800">
+<h1 class="text-3xl font-bold">
 
-                    Edit Kelas
+Edit Data Kelas
 
-                </h1>
+</h1>
 
-                <p class="text-gray-500 mt-2">
+<p class="text-gray-500 mt-1">
 
-                    Edit data kelas dan wali kelas.
+Perbarui informasi kelas.
 
-                </p>
+</p>
 
-            </div>
+</div>
+</div>
 
-            {{-- ALERT SUCCESS --}}
-            @if(session('success'))
+<div class="bg-white rounded-xl shadow-sm border mt-6 p-6">
 
-                <div class="mb-6 bg-green-100 border border-green-300
-                text-green-700 px-4 py-3 rounded-xl">
+    <form
+    action="{{ route('kelas.update', $kelas->id) }}"
+    method="POST">
 
-                    {{ session('success') }}
+    @csrf
+    @method('PUT')
+<div class="grid md:grid-cols-2 gap-6">
 
-                </div>
+<div>
 
-            @endif
+<label class="block mb-2 font-medium">
 
-            {{-- ERROR --}}
-            @if ($errors->any())
+Nama Kelas
 
-                <div class="mb-6 bg-red-100 border border-red-300
-                text-red-700 px-4 py-3 rounded-xl">
+</label>
 
-                    <ul class="list-disc ml-5">
+<input
+type="text"
+name="nama_kelas"
+value="{{ old('nama_kelas',$kelas->nama_kelas) }}"
+class="w-full rounded-lg border-gray-300">
 
-                        @foreach ($errors->all() as $error)
+</div>
+<div>
 
-                            <li>{{ $error }}</li>
+<label class="block mb-2 font-medium">
 
-                        @endforeach
+Tingkat
 
-                    </ul>
+</label>
 
-                </div>
+<select
+name="tingkat"
+class="w-full rounded-lg border-gray-300">
 
-            @endif
+@for($i=1;$i<=6;$i++)
 
-            {{-- FORM --}}
-            <form action="{{ route('kelas.update', $kelas->id) }}"
-                  method="POST">
+<option
+value="{{ $i }}"
+@selected($kelas->tingkat==$i)>
 
-                @csrf
-                @method('PUT')
+{{ $i }}
 
-                {{-- NAMA KELAS --}}
-                <div class="mb-6">
+</option>
 
-                    <label class="block text-sm font-semibold
-                    text-gray-700 mb-2">
+@endfor
 
-                        Nama Kelas
+</select>
 
-                    </label>
+</div>
+<div class="md:col-span-2">
 
-                    <input type="text"
-                           name="edit_kelas"
-                           value="{{ old('edit_kelas', $kelas->edit_kelas) }}"
-                           class="w-full border border-gray-300 rounded-xl
-                           px-4 py-3 focus:ring-2 focus:ring-blue-400
-                           focus:outline-none"
-                           required>
+<label class="block mb-2 font-medium">
 
-                </div>
+Wali Kelas
 
-                {{-- TINGKAT --}}
-                <div class="mb-6">
+</label>
 
-                    <label class="block text-sm font-semibold
-                    text-gray-700 mb-2">
+<select
+name="wali_kelas_id"
+class="w-full rounded-lg border-gray-300">
 
-                        Tingkat Kelas
+<option value="">
 
-                    </label>
+Belum Ditentukan
 
-                    <input type="text"
-                           name="tingkat_kelas"
-                           value="{{ old('tingkat_kelas', $kelas->tingkat_kelas) }}"
-                           class="w-full border border-gray-300 rounded-xl
-                           px-4 py-3 focus:ring-2 focus:ring-blue-400
-                           focus:outline-none"
-                           required>
+</option>
 
-                </div>
+@foreach($guru as $g)
 
-                {{-- WALI KELAS --}}
-                <div class="mb-8">
+<option
+value="{{ $g->id }}"
+@selected($kelas->wali_kelas_id==$g->id)>
 
-                    <label class="block text-sm font-semibold
-                    text-gray-700 mb-2">
+{{ $g->nama_guru }}
 
-                        Wali Kelas
+</option>
 
-                    </label>
+@endforeach
 
-                    <select name="wali_kelas_id"
-                            class="w-full border border-gray-300 rounded-xl
-                            px-4 py-3 focus:ring-2 focus:ring-blue-400
-                            focus:outline-none">
+</select>
 
-                        <option value="">
+</div>
+<div>
+    <label class="block text-sm font-medium mb-2">
+        Ruang Kelas
+    </label>
 
-                            -- Pilih Wali Kelas --
+    <input
+        type="text"
+        name="ruang_kelas"
+        value="{{ old('ruang_kelas', $kelas->ruang_kelas ?? '') }}"
+        placeholder="Contoh: R04"
+        class="w-full rounded-lg border-gray-300">
+</div>
 
-                        </option>
+</div>
+{{-- Footer Form --}}
+<br>
+    <div class="flex justify-end gap-3">
 
-                        @foreach($guru as $g)
+        {{-- Batal --}}
+        <a
+            href="{{ route('kelas.index') }}"
+            class="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-red-500 hover:bg-red-600 text-white transition">
 
-                            <option value="{{ $g->id }}"
-                                {{ $kelas->wali_kelas_id == $g->id ? 'selected' : '' }}>
+            <x-heroicon-o-x-mark class="w-5 h-5"/>
 
-                                {{ $g->nama_guru }}
+            Batal
 
-                            </option>
+        </a>
 
-                        @endforeach
+        {{-- Simpan --}}
+         <div class="flex gap-2">
+                    <button
+            type="submit"
+            class="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition">
 
-                    </select>
+            <x-heroicon-o-check-circle class="w-5 h-5"/>
 
-                </div>
+            Simpan Perubahan
 
-                {{-- BUTTON --}}
-                <div class="flex items-center gap-3">
-
-                    <button type="submit"
-                            class="bg-blue-600 hover:bg-blue-700
-                            text-white px-6 py-3 rounded-xl
-                            shadow-md transition">
-
-                        Update
-
-                    </button>
-
-                    <a href="{{ route('kelas.index') }}"
-                       class="bg-gray-500 hover:bg-gray-600
-                       text-white px-6 py-3 rounded-xl
-                       shadow-md transition">
-
-                        Kembali
-
-                    </a>
-
-                </div>
-
-            </form>
-
-        </div>
+        </button>
+      
 
     </div>
+
+</div>
+
+</form>
+
+</div>
+
+</div>
 
 </div>
 

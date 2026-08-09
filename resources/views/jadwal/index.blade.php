@@ -1,217 +1,784 @@
 @extends('layouts.app')
 
+@section('title', 'Jadwal Pelajaran')
+
 @section('content')
 
-<div class="p-6">
+{{-- =========================================================
+     HEADER
+========================================================= --}}
+<div class="flex flex-col lg:flex-row lg:justify-between lg:items-start mb-6">
 
-   <div class="bg-white rounded-xl shadow-md border border-gray-200 p-6">
+    <div>
 
-        {{-- Header --}}
-        <div class="flex justify-between items-center mb-6">
+        <h1 class="flex items-center gap-3 text-3xl font-bold text-gray-800">
 
-            <div>
-               <h2 class="text-3xl font-bold text-gray-800 flex items-center gap-3">
+            <x-heroicon-o-calendar-days class="w-8 h-8 text-blue-600"/>
 
-<x-heroicon-o-calendar-days class="w-8 h-8 text-blue-600"/>
+            Jadwal Pelajaran
 
-Jadwal Pelajaran
+        </h1>
 
-</h2>
+        <p class="mt-2 text-gray-500">
+            Kelola data jadwal pelajaran sekolah.
+        </p>
 
-                <p class="text-gray-500 mt-1">
-                    Jadwal Pelajaran SDN Cimanahayu
+    </div>
+
+
+    {{-- Tahun Ajaran Aktif --}}
+    @if($tahunAktif)
+
+        <div class="mt-5 lg:mt-0">
+
+            <div class="bg-blue-50 border border-blue-200 rounded-xl shadow-sm px-6 py-4 min-w-[290px]">
+
+                <p class="text-xs uppercase tracking-wide text-blue-600 font-semibold">
+                    Tahun Ajaran Aktif
                 </p>
+
+                <h2 class="mt-1 text-2xl font-bold text-blue-700">
+                    {{ $tahunAktif->tahun_ajaran }}
+                </h2>
+
+                <div class="flex justify-between items-center mt-2">
+
+                    <span class="text-sm text-gray-600">
+                        Semester {{ $tahunAktif->semester }}
+                    </span>
+
+                    <span class="inline-flex items-center gap-2 rounded-full bg-green-100 px-3 py-1 text-xs font-semibold text-green-700">
+
+                        <span class="w-2 h-2 rounded-full bg-green-500"></span>
+
+                        Aktif
+
+                    </span>
+
+                </div>
+
             </div>
-
-            @if(Auth::user()->role=='operator')
-            <div class="flex gap-3">
-
-                <a href="{{ route('jadwal.export') }}"
-                    class="bg-green-600 text-white px-4 py-2 rounded-lg">
-                    Export Excel
-                </a>
-
-                <a href="{{ route('jadwal.create') }}"
-                    class="bg-blue-600 text-white px-4 py-2 rounded-lg">
-                    + Tambah Jadwal
-                </a>
-
-            </div>
-            @endif
 
         </div>
 
-        {{-- Filter --}}
-      <form method="GET"
-class="flex flex-wrap items-end gap-4 mb-6 bg-gray-50 border rounded-lg p-4">
+    @endif
 
-    <div class="w-64">
-        <label class="block text-sm font-semibold mb-2">
-            Tahun Ajaran
-        </label>
+</div>
 
-        <select
-            name="tahun_ajaran_id"
-            class="w-full border rounded-lg px-3 py-2">
 
-            @foreach($tahun as $t)
+{{-- =========================================================
+     FILTER
+========================================================= --}}
+<div class="bg-white rounded-xl shadow border border-gray-200 mb-6">
 
-            <option
-                value="{{ $t->id }}"
-                {{ request('tahun_ajaran_id')==$t->id ? 'selected' : '' }}>
+    <div class="px-6 py-4 border-b bg-slate-50 rounded-t-xl">
 
-                {{ $t->tahun_ajaran }}
+        <div class="flex items-center gap-2">
 
-            </option>
+            <x-heroicon-o-funnel class="w-5 h-5 text-blue-600"/>
 
-            @endforeach
+            <h2 class="font-semibold text-gray-800">
+                Filter Jadwal Pelajaran
+            </h2>
 
-        </select>
+        </div>
+
     </div>
 
-    <div class="w-52">
-        <label class="block text-sm font-semibold mb-2">
-            Kelas
-        </label>
 
-        <select
-            name="kelas_id"
-            class="w-full border rounded-lg px-3 py-2">
+    <form method="GET" class="p-6">
 
-            @foreach($kelas as $k)
-
-            <option
-                value="{{ $k->id }}"
-                {{ request('kelas_id')==$k->id ? 'selected' : '' }}>
-
-                {{ $k->nama_kelas }}
-
-            </option>
-
-            @endforeach
-
-        </select>
-    </div>
-
-    <button
-type="submit"
-class="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg">
-
-<x-heroicon-o-funnel class="w-5 h-5"/>
-
-Tampilkan
-
-</button>
-</form>
-
-        <div class="overflow-x-auto">
+        <div class="grid grid-cols-1 md:grid-cols-5 gap-5">
 
 
-<div class="overflow-x-auto">
+            {{-- =================================================
+                 TAHUN AJARAN
+            ================================================== --}}
+            <div>
 
-<table class="w-full table-fixed border-collapse text-sm">
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                    Tahun Ajaran
+                </label>
 
-<thead class="bg-gray-100">
+                <select
+                    name="tahun_ajaran_id"
+                    class="w-full rounded-lg border-gray-300">
 
-<tr>
+                    <option value="">
+                        Semua Tahun
+                    </option>
 
-<th class="border border-gray-300 py-3 font-semibold text-gray-700 text-center">Jam</th>
+                    @foreach($tahunAjarans as $tahun)
 
-<th class="border border-gray-300 py-3 font-semibold text-gray-700 text-center">Senin</th>
+                        <option
+                            value="{{ $tahun->id }}"
+                            {{ request('tahun_ajaran_id') == $tahun->id ? 'selected' : '' }}>
 
-<th class="border border-gray-300 py-3 font-semibold text-gray-700 text-center">Selasa</th>
+                            {{ $tahun->tahun_ajaran }}
 
-<th class="border border-gray-300 py-3 font-semibold text-gray-700 text-center">Rabu</th>
+                        </option>
 
-<th class="border border-gray-300 py-3 font-semibold text-gray-700 text-center">Kamis</th>
+                    @endforeach
 
-<th class="border border-gray-300 py-3 font-semibold text-gray-700 text-center">Jumat</th>
+                </select>
 
-</tr>
-
-</thead>
-
-<tbody>
-
-@foreach($jam as $waktu)
-
-<tr>
-
-<td class="border border-gray-200 bg-gray-50 font-semibold text-center">
-<div class="font-semibold">
-
-{{ $waktu }}
-
-</div>
-</td>
-
-@foreach(['Senin','Selasa','Rabu','Kamis','Jumat'] as $hari)
-
-<td class="border border-gray-200 h-32 align-top p-2">
-
-@php
-$item = $jadwalGrid[$hari][$waktu] ?? null;
-@endphp
-
-@if($item)
-
-<div class="bg-blue-50 border border-blue-200 rounded-lg p-2 shadow-sm">
-
-<div class="font-semibold text-sm text-blue-800">
-{{ $item->mapel->nama_mapel }}
-</div>
-
-<div class="text-xs text-gray-500">
-{{ $item->guru->nama_guru }}
-</div>
-</div>
-
-@if(Auth::user()->role=='operator')
+            </div>
 
 
-   <div class="flex justify-center gap-1 mt-2">
+            {{-- =================================================
+                 KELAS
+            ================================================== --}}
+            <div>
 
-    <a href="{{ route('jadwal.edit',$item->id) }}"
-      class="bg-yellow-500 hover:bg-yellow-600 text-white p-1.5 rounded-md">
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                    Kelas
+                </label>
 
-        <x-heroicon-o-pencil-square class="w-4 h-4"/>
+                <select
+                    name="kelas_id"
+                    class="w-full rounded-lg border-gray-300">
 
-    </a>
+                    <option value="">
+                        Semua Kelas
+                    </option>
 
-    <form action="{{ route('jadwal.destroy',$item->id) }}"
-          method="POST">
+                    @foreach($kelas as $item)
 
-        @csrf
-        @method('DELETE')
+                        <option
+                            value="{{ $item->id }}"
+                            {{ request('kelas_id') == $item->id ? 'selected' : '' }}>
 
-        <button
-            type="submit"
-            onclick="return confirm('Hapus jadwal ini?')"
-class="bg-red-500 hover:bg-red-600 text-white p-1.5 rounded-md">
+                            {{ $item->nama_kelas }}
 
-            <x-heroicon-o-trash class="w-4 h-4"/>
+                        </option>
 
-        </button>
+                    @endforeach
+
+                </select>
+
+            </div>
+
+
+            {{-- =================================================
+                 HARI
+            ================================================== --}}
+            <div>
+
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                    Hari
+                </label>
+
+                <select
+                    name="hari"
+                    class="w-full rounded-lg border-gray-300">
+
+                    <option value="">
+                        Semua Hari
+                    </option>
+
+                    @foreach([
+                        'Senin',
+                        'Selasa',
+                        'Rabu',
+                        'Kamis',
+                        'Jumat'
+                    ] as $hari)
+
+                        <option
+                            value="{{ $hari }}"
+                            {{ request('hari') == $hari ? 'selected' : '' }}>
+
+                            {{ $hari }}
+
+                        </option>
+
+                    @endforeach
+
+                </select>
+
+            </div>
+
+
+            {{-- =================================================
+                 STATUS
+            ================================================== --}}
+            <div>
+
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                    Status
+                </label>
+
+                <select
+                    name="status"
+                    class="w-full rounded-lg border-gray-300">
+
+                    <option value="">
+                        Semua Status
+                    </option>
+
+                    <option
+                        value="Aktif"
+                        {{ request('status') == 'Aktif' ? 'selected' : '' }}>
+
+                        Aktif
+
+                    </option>
+
+                    <option
+                        value="Nonaktif"
+                        {{ request('status') == 'Nonaktif' ? 'selected' : '' }}>
+
+                        Nonaktif
+
+                    </option>
+
+                </select>
+
+            </div>
+
+
+            {{-- =================================================
+                 SEARCH
+            ================================================== --}}
+            <div>
+
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                    Cari Guru / Mata Pelajaran / Kegiatan
+                </label>
+
+                <div class="flex gap-2">
+
+                    <input
+                        type="text"
+                        name="search"
+                        value="{{ request('search') }}"
+                        placeholder="Cari..."
+                        class="w-full rounded-lg border-gray-300">
+
+                    <button
+                        type="submit"
+                        class="inline-flex items-center justify-center rounded-lg bg-blue-600 hover:bg-blue-700 px-4 text-white">
+
+                        <x-heroicon-o-magnifying-glass class="w-5 h-5"/>
+
+                    </button>
+
+                </div>
+
+            </div>
+
+        </div>
 
     </form>
 
 </div>
 
+
+{{-- =========================================================
+     MANAJEMEN DATA
+========================================================= --}}
+<div class="flex flex-col lg:flex-row lg:justify-between lg:items-center mb-6">
+
+    <div>
+
+        <h2 class="text-xl font-semibold text-gray-800">
+            Jadwal Pelajaran
+        </h2>
+
+        <p class="mt-1 text-sm text-gray-500">
+            Lihat data jadwal pelajaran sekolah.
+        </p>
+
+    </div>
+
+
+    {{-- Hanya Operator --}}
+    @if(auth()->user()->role === 'operator')
+
+        <div class="flex flex-wrap gap-3 mt-4 lg:mt-0">
+
+
+            {{-- EXPORT --}}
+            <a
+                href="{{ route('jadwal.export', request()->query()) }}"
+                class="inline-flex items-center gap-2 rounded-lg bg-green-600 hover:bg-green-700 px-4 py-2 text-white transition">
+
+                <x-heroicon-o-arrow-down-tray class="w-5 h-5"/>
+
+                Export Excel
+
+            </a>
+
+
+            {{-- TAMBAH --}}
+            <a
+                href="{{ route('jadwal.create') }}"
+                class="inline-flex items-center gap-2 rounded-lg bg-blue-600 hover:bg-blue-700 px-4 py-2 text-white transition">
+
+                <x-heroicon-o-plus class="w-5 h-5"/>
+
+                Tambah Jadwal
+
+            </a>
+
+        </div>
+
+    @endif
+
+</div>
+
+
+{{-- =========================================================
+     TABEL
+========================================================= --}}
+<div class="bg-white rounded-xl shadow border border-gray-200 overflow-hidden">
+
+
+    {{-- HEADER TABEL --}}
+    <div class="px-6 py-4 border-b bg-slate-50">
+
+        <div class="flex flex-col md:flex-row md:justify-between md:items-center">
+
+            <div>
+
+                <h2 class="text-lg font-semibold text-gray-800">
+                    Data Jadwal Pelajaran
+                </h2>
+
+                <p class="text-sm text-gray-500 mt-1">
+
+                    Menampilkan
+
+                    {{ $jadwals->firstItem() ?? 0 }}
+
+                    -
+
+                    {{ $jadwals->lastItem() ?? 0 }}
+
+                    dari
+
+                    {{ $jadwals->total() }}
+
+                    data.
+
+                </p>
+
+            </div>
+
+
+            <span class="mt-3 md:mt-0 inline-flex items-center rounded-full bg-blue-100 px-4 py-1 text-sm font-semibold text-blue-700">
+
+                {{ $jadwals->total() }} Data
+
+            </span>
+
+        </div>
+
+    </div>
+
+
+    {{-- =====================================================
+         TABLE
+    ====================================================== --}}
+    <div class="overflow-x-auto">
+
+        <table class="min-w-full divide-y divide-gray-200">
+
+            <thead class="bg-slate-50">
+
+                <tr class="text-sm font-semibold text-gray-700">
+
+                    <th class="border px-4 py-3 text-center">
+                        No
+                    </th>
+
+                    <th class="border px-4 py-3">
+                        Tahun Ajaran
+                    </th>
+
+                    <th class="border px-4 py-3">
+                        Kelas
+                    </th>
+
+                    <th class="border px-4 py-3">
+                        Hari
+                    </th>
+
+                    <th class="border px-4 py-3 text-center">
+                        Jam Ke
+                    </th>
+
+                    <th class="border px-4 py-3 text-center">
+                        Waktu
+                    </th>
+
+                    <th class="border px-4 py-3">
+                        Mata Pelajaran / Kegiatan
+                    </th>
+
+                    <th class="border px-4 py-3">
+                        Guru
+                    </th>
+
+                    <th class="border px-4 py-3 text-center">
+                        Jenis Jadwal
+                    </th>
+
+                    <th class="border px-4 py-3 text-center">
+                        Status
+                    </th>
+
+                    @if(auth()->user()->role === 'operator')
+
+                        <th class="border px-4 py-3 text-center">
+                            Aksi
+                        </th>
+
+                    @endif
+
+                </tr>
+
+            </thead>
+
+
+            <tbody class="divide-y divide-gray-100 bg-white">
+
+
+                @forelse($jadwals as $jadwal)
+
+                    <tr class="hover:bg-slate-50 transition">
+
+
+                        {{-- =================================================
+                             NO
+                        ================================================== --}}
+                        <td class="border px-4 py-3 text-center">
+
+                            {{ $loop->iteration + ($jadwals->firstItem() - 1) }}
+
+                        </td>
+
+
+                        {{-- =================================================
+                             TAHUN AJARAN
+                        ================================================== --}}
+                        <td class="border px-4 py-3">
+
+                            {{ $jadwal->tahunAjaran->tahun_ajaran ?? '-' }}
+
+                        </td>
+
+
+                        {{-- =================================================
+                             KELAS
+                        ================================================== --}}
+                        <td class="border px-4 py-3">
+
+                            {{ $jadwal->kelas->nama_kelas ?? '-' }}
+
+                        </td>
+
+
+                        {{-- =================================================
+                             HARI
+                        ================================================== --}}
+                        <td class="border px-4 py-3">
+
+                            {{ $jadwal->hari }}
+
+                        </td>
+
+
+                        {{-- =================================================
+                             JAM KE
+                        ================================================== --}}
+                        <td class="border px-4 py-3 text-center">
+
+                            {{ $jadwal->jam_ke }}
+
+                        </td>
+
+
+                        {{-- =================================================
+                             WAKTU
+                        ================================================== --}}
+                        <td class="border px-4 py-3 text-center">
+
+                            {{ $jadwal->waktu ?? '-' }}
+
+                        </td>
+
+
+                        {{-- =================================================
+                             MAPEL / KEGIATAN
+                        ================================================== --}}
+                        <td class="border px-4 py-3">
+
+                            @if(
+                                in_array(
+                                    $jadwal->jenis_jadwal,
+                                    ['Wajib', 'Kokurikuler']
+                                )
+                            )
+
+                                {{-- JADWAL PELAJARAN --}}
+                                <span class="font-medium text-gray-800">
+
+                                    {{ $jadwal->mapel->nama_mapel ?? '-' }}
+
+                                </span>
+
+                            @elseif(
+                                $jadwal->jenis_jadwal === 'Kegiatan'
+                            )
+
+                                {{-- KEGIATAN SEKOLAH --}}
+                                <span class="font-medium text-gray-800">
+
+                                    {{ $jadwal->nama_kegiatan ?? '-' }}
+
+                                </span>
+
+                            @else
+
+                                -
+
+                            @endif
+
+                        </td>
+
+
+                        {{-- =================================================
+                             GURU
+                        ================================================== --}}
+                        <td class="border px-4 py-3">
+
+                            @if(
+                                in_array(
+                                    $jadwal->jenis_jadwal,
+                                    ['Wajib', 'Kokurikuler']
+                                )
+                            )
+
+                                {{ $jadwal->guru->nama_guru ?? '-' }}
+
+                            @else
+
+                                -
+
+                            @endif
+
+                        </td>
+
+
+                        {{-- =================================================
+                             JENIS JADWAL
+                        ================================================== --}}
+                        <td class="border px-4 py-3 text-center">
+
+                            @switch($jadwal->jenis_jadwal)
+
+
+                                {{-- Wajib --}}
+                                @case('Wajib')
+
+                                    <span class="inline-flex rounded-full bg-blue-100 px-3 py-1 text-xs font-semibold text-blue-700">
+
+                                        Wajib
+
+                                    </span>
+
+                                @break
+
+
+                                {{-- Kokurikuler --}}
+                                @case('Kokurikuler')
+
+                                    <span class="inline-flex rounded-full bg-indigo-100 px-3 py-1 text-xs font-semibold text-indigo-700">
+
+                                        Kokurikuler
+
+                                    </span>
+
+                                @break
+
+
+                                {{-- Kegiatan --}}
+                                @case('Kegiatan')
+
+                                    <span class="inline-flex rounded-full bg-purple-100 px-3 py-1 text-xs font-semibold text-purple-700">
+
+                                        Kegiatan
+
+                                    </span>
+
+                                @break
+
+
+                                {{-- Default --}}
+                                @default
+
+                                    <span class="inline-flex rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-700">
+
+                                        -
+
+                                    </span>
+
+                            @endswitch
+
+                        </td>
+
+
+                        {{-- =================================================
+                             STATUS
+                        ================================================== --}}
+                        <td class="border px-4 py-3 text-center">
+
+                            @if($jadwal->status === 'Aktif')
+
+                                <span class="inline-flex rounded-full bg-green-100 px-3 py-1 text-xs font-semibold text-green-700">
+
+                                    Aktif
+
+                                </span>
+
+                            @else
+
+                                <span class="inline-flex rounded-full bg-red-100 px-3 py-1 text-xs font-semibold text-red-700">
+
+                                    Nonaktif
+
+                                </span>
+
+                            @endif
+
+                        </td>
+
+
+                        {{-- =================================================
+                             AKSI
+                        ================================================== --}}
+                        @if(auth()->user()->role === 'operator')
+
+                            <td class="border px-4 py-3">
+
+                                <div class="flex justify-center gap-2">
+
+
+                                    {{-- EDIT --}}
+                                    <a
+                                        href="{{ route('jadwal.edit', $jadwal->id) }}"
+                                        class="inline-flex items-center gap-1 rounded-lg bg-yellow-500 hover:bg-yellow-600 px-3 py-2 text-white">
+
+                                        <x-heroicon-o-pencil-square class="w-4 h-4"/>
+
+                                        Edit
+
+                                    </a>
+
+
+                                    {{-- TOGGLE STATUS --}}
+                                    <form
+                                        action="{{ route('jadwal.toggleStatus', $jadwal->id) }}"
+                                        method="POST">
+
+                                        @csrf
+
+                                        @method('PATCH')
+
+                                        <button
+                                            type="submit"
+                                            class="inline-flex items-center gap-1 rounded-lg px-3 py-2 text-white
+                                            {{ $jadwal->status === 'Aktif'
+                                                ? 'bg-red-600 hover:bg-red-700'
+                                                : 'bg-green-600 hover:bg-green-700' }}">
+
+                                            @if($jadwal->status === 'Aktif')
+
+                                                <x-heroicon-o-x-circle class="w-4 h-4"/>
+
+                                                Nonaktif
+
+                                            @else
+
+                                                <x-heroicon-o-check-circle class="w-4 h-4"/>
+
+                                                Aktif
+
+                                            @endif
+
+                                        </button>
+
+                                    </form>
+
+                                </div>
+
+                            </td>
+
+                        @endif
+
+
+                    </tr>
+
+
+                @empty
+
+
+                    {{-- =================================================
+                         KOSONG
+                    ================================================== --}}
+                    <tr>
+
+                        <td
+                            colspan="{{ auth()->user()->role === 'operator' ? 11 : 10 }}"
+                            class="border px-6 py-12 text-center">
+
+                            <div class="flex flex-col items-center">
+
+                                <x-heroicon-o-calendar-days class="w-16 h-16 text-gray-300"/>
+
+                                <h3 class="mt-4 text-lg font-semibold text-gray-700">
+
+                                    Belum Ada Data Jadwal
+
+                                </h3>
+
+                                <p class="mt-1 text-sm text-gray-500">
+
+                                    Silakan tambahkan jadwal pelajaran terlebih dahulu.
+
+                                </p>
+
+                            </div>
+
+                        </td>
+
+                    </tr>
+
+
+                @endforelse
+
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+</div>
+
+
+{{-- =========================================================
+     PAGINATION
+========================================================= --}}
+@if($jadwals->hasPages())
+
+    <div class="mt-6">
+
+        {{ $jadwals->withQueryString()->links() }}
+
+    </div>
+
 @endif
-@endif
-</td>
-@endforeach
-</tr>
-@endforeach
-</tbody>
-
-
-</table>
-
-</div>   {{-- overflow --}}
-
-</div>   {{-- card --}}
-
-</div>   {{-- p-6 --}}
 
 @endsection
