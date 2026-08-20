@@ -231,8 +231,11 @@
 
     {{-- Daftar Siswa --}}
     <form method="POST" action="{{ route('kenaikan.proses') }}">
+    @csrf
 
-        @csrf
+    @if($kelasAsal)
+        <input type="hidden" name="kelas_id" value="{{ $kelasAsal->id }}">
+    @endif
 
         <div class="bg-white rounded-xl shadow border">
 
