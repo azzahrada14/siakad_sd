@@ -12,15 +12,25 @@ use Illuminate\Support\Facades\DB;
 
 class KenaikanKelasController extends Controller
 {
-    public function index(Request $request)
-    {
-        /*
-        |--------------------------------------------------------------------------
-        | Tahun Ajaran Aktif
-        |--------------------------------------------------------------------------
-        */
+public function index(Request $request)
+{
+    $tahunAktif = $request->filled('tahun_ajaran_id')
+        ? TahunAjaran::findOrFail($request->tahun_ajaran_id)
+        : TahunAjaran::where('status', 'Aktif')->first();
 
-        $tahunAktif = TahunAjaran::where('status', 'Aktif')->first();
+    if (!$tahunAktif) {
+        return back()->with(
+            'error',
+            'Belum ada tahun ajaran yang tersedia.'
+        );
+    }
+
+    $modeArsip = $tahunAktif->status !== 'Aktif';
+
+    $bolehProses = (
+    $tahunAktif->status === 'Aktif'
+    && strtolower($tahunAktif->semester) === 'genap'
+);
 
         /*
         |--------------------------------------------------------------------------
@@ -31,13 +41,13 @@ class KenaikanKelasController extends Controller
         $kelas = collect();
 
         if ($tahunAktif) {
-            $kelas = Kelas::where(
-                'tahun_ajaran_id',
-                $tahunAktif->id
-            )
-            ->orderBy('tingkat')
-            ->orderBy('nama_kelas')
-            ->get();
+           $kelas = Kelas::where(
+    'tahun_ajaran_id',
+    $tahunAktif->id
+)
+->orderByDesc('tingkat')
+->orderBy('nama_kelas')
+->get();
         }
 
         /*
@@ -97,10 +107,13 @@ class KenaikanKelasController extends Controller
         |
         */
 
-        $siapNaik = 0;
+   $siapNaik = 0;
 
-        foreach ($anggotaAktif as $anggota) {
+if ($bolehProses) {
 
+    foreach ($anggotaAktif as $anggota) {
+
+        
             // Pastikan kelas tersedia
             if (!$anggota->kelas) {
                 continue;
@@ -159,6 +172,7 @@ class KenaikanKelasController extends Controller
                 $siapNaik++;
             }
         }
+}
 
         /*
         |--------------------------------------------------------------------------
@@ -330,19 +344,23 @@ class KenaikanKelasController extends Controller
         |--------------------------------------------------------------------------
         */
 
-        return view(
-            'kenaikan.index',
-            compact(
-                'tahunAktif',
-                'kelas',
-                'totalSiswa',
-                'totalKelas',
-                'siapNaik',
-                'kelasAsal',
-                'kelasTujuan',
-                'anggota'
-            )
-        );
+        
+           return view(
+    'kenaikan.index',
+    compact(
+        'tahunAktif',
+        'modeArsip',
+        'bolehProses',
+        'kelas',
+        'totalSiswa',
+        'totalKelas',
+        'siapNaik',
+        'kelasAsal',
+        'kelasTujuan',
+        'anggota'
+    )
+);
+    
     }
 
 public function proses(Request $request)
@@ -352,17 +370,29 @@ public function proses(Request $request)
     ]);
 
     $tahunAktif = TahunAjaran::where(
-        'status',
-        'Aktif'
-    )->first();
+    'status',
+    'Aktif'
+)->first();
 
-    if (!$tahunAktif) {
+if (!$tahunAktif) {
 
-        return back()->with(
-            'error',
-            'Tahun ajaran aktif tidak ditemukan.'
-        );
-    }
+    return back()->with(
+        'error',
+        'Tahun ajaran aktif tidak ditemukan.'
+    );
+
+}
+
+if (strtolower($tahunAktif->semester) !== 'genap') {
+
+    return back()->with(
+        'error',
+        'Proses kenaikan kelas hanya dapat dilakukan pada semester Genap.'
+    );
+
+
+}
+
 
     DB::beginTransaction();
 
@@ -376,15 +406,19 @@ public function proses(Request $request)
 
         $kelasAsal = Kelas::find($request->kelas_id);
 
-        if (!$kelasAsal) {
+       if (
+    !$kelasAsal ||
+    $kelasAsal->tahun_ajaran_id != $tahunAktif->id
+) {
 
-            DB::rollBack();
+    DB::rollBack();
 
-            return back()->with(
-                'error',
-                'Kelas asal tidak ditemukan.'
-            );
-        }
+    return back()->with(
+        'error',
+        'Kelas yang dipilih tidak sesuai dengan tahun ajaran aktif.'
+    );
+
+}
 
         /*
         |--------------------------------------------------------------------------
@@ -613,11 +647,13 @@ public function proses(Request $request)
         DB::commit();
 
         return redirect()
-            ->route('kenaikan.index')
-            ->with(
-                'success',
-                'Generate kenaikan kelas berhasil diproses. Data kelas tujuan siswa telah berhasil disimpan dan akan digunakan pada proses Pembagian Kelas.'
-            );
+    ->route('kenaikan.index', [
+        'tahun_ajaran_id' => $tahunAktif->id
+    ])
+    ->with(
+        'success',
+        'Generate kenaikan kelas berhasil diproses. Data kelas tujuan siswa telah berhasil disimpan dan akan digunakan pada proses Pembagian Kelas.'
+    );
 
     } catch (\Exception $e) {
 

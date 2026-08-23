@@ -54,39 +54,78 @@ Generate pembagian kelas berdasarkan Tahun Ajaran Aktif.
 
 </div>
 
-@if($tahunAktif)
+ @if($tahunAjaran)
 
-    <div class="mt-5 lg:mt-0">
+<div class="mt-5 lg:mt-0">
 
-        <div class="bg-blue-50 border border-blue-200 rounded-xl shadow-sm px-5 py-4 min-w-[280px]">
+    <div class="bg-blue-50 border border-blue-200 rounded-xl shadow-sm px-5 py-4 min-w-[280px]">
 
-            <p class="text-xs uppercase tracking-wide text-blue-600 font-semibold">
+        <p class="text-xs uppercase tracking-wide text-blue-600 font-semibold">
+            Periode Akademik
+        </p>
 
-                Tahun Ajaran Aktif
+        <h2 class="text-2xl font-bold text-blue-700 mt-1">
+            {{ $tahunAjaran->tahun_ajaran }}
+        </h2>
 
-            </p>
+        <div class="flex justify-between items-center mt-2">
 
-            <h2 class="text-2xl font-bold text-blue-700 mt-1">
+            <span class="text-gray-600 text-sm">
+                Semester {{ $tahunAjaran->semester }}
+            </span>
 
-                {{ $tahunAktif->tahun_ajaran }}
+            @if($modeArsip)
 
-            </h2>
-
-            <div class="flex justify-between items-center mt-2">
-
-                <span class="text-gray-600 text-sm">
-
-                    Semester {{ $tahunAktif->semester }}
-
+                <span class="inline-flex items-center gap-1 rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-600">
+                    <span class="w-2 h-2 rounded-full bg-gray-400"></span>
+                    Arsip
                 </span>
+
+            @else
 
                 <span class="inline-flex items-center gap-1 rounded-full bg-green-100 px-3 py-1 text-xs font-semibold text-green-700">
-
                     <span class="w-2 h-2 rounded-full bg-green-500"></span>
-
                     Aktif
-
                 </span>
+
+            @endif
+
+        </div>
+
+    </div>
+
+</div>
+
+@endif
+
+     
+
+</div>
+
+@if($modeArsip)
+
+    <div class="bg-yellow-50 border border-yellow-300 rounded-xl px-5 py-4 mb-6">
+
+        <div class="flex items-start gap-3">
+
+            <x-heroicon-o-exclamation-triangle
+                class="w-6 h-6 text-yellow-600 flex-shrink-0"
+            />
+
+            <div>
+
+                <h3 class="font-semibold text-yellow-800">
+                    Periode Tahun Ajaran Diarsipkan
+                </h3>
+
+                <p class="text-sm text-yellow-700 mt-1">
+                    Data pembagian kelas pada tahun ajaran
+                    <strong>{{ $tahunAjaran->tahun_ajaran }}</strong>
+                    semester
+                    <strong>{{ $tahunAjaran->semester }}</strong>
+                    merupakan data arsip.
+                    Data hanya dapat dilihat dan tidak dapat diubah.
+                </p>
 
             </div>
 
@@ -94,9 +133,8 @@ Generate pembagian kelas berdasarkan Tahun Ajaran Aktif.
 
     </div>
 
-    @endif
+@endif
 
-</div>
 {{-- ====================================================== --}}
 {{-- STATISTIK --}}
 {{-- ====================================================== --}}
@@ -162,36 +200,43 @@ Belum Ada Rombel
 </div>
 
 <form
-action="{{ route('kelola-akademik.generate') }}"
-method="POST"
-class="mt-6">
+    action="{{ route('kelola-akademik.generate') }}"
+    method="POST"
+    class="mt-6">
 
-@csrf
+    @csrf
 
-<input
-type="hidden"
-name="tingkat"
-value="{{ $item['tingkat'] }}">
+    <input
+    type="hidden"
+    name="tahun_ajaran_id"
+    value="{{ $tahunAjaran->id }}"
+>
 
-@if($item['jumlah']==0)
 
-<button
-disabled
-class="w-full py-3 rounded-lg bg-gray-300 text-gray-600">
+    @if(!$modeArsip && $tahunAjaran->semester === 'Ganjil')
 
-Tidak Ada Siswa
+    <button
+        type="submit"
+        class="w-full inline-flex items-center justify-center gap-2 px-5 py-3 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-semibold">
 
-</button>
+        <x-heroicon-o-arrow-path class="w-5 h-5"/>
+
+        Generate Pembagian Kelas
+
+    </button>
 
 @else
 
-<button
-onclick="return confirm('Generate ulang akan menghapus pembagian sebelumnya. Lanjutkan?')"
-class="w-full py-3 rounded-lg bg-blue-600 hover:bg-blue-700 text-white">
+    <button
+        type="button"
+        disabled
+        class="w-full inline-flex items-center justify-center gap-2 px-5 py-3 rounded-lg bg-gray-200 text-gray-400 font-semibold cursor-not-allowed">
 
-Generate Pembagian
+        <x-heroicon-o-lock-closed class="w-5 h-5"/>
 
-</button>
+        Pembagian Kelas Terkunci
+
+    </button>
 
 @endif
 
@@ -313,10 +358,9 @@ Aksi
 <td class="border px-4 py-4">
 
 <select
-
-name="wali_kelas[{{ $item->id }}]"
-
-class="w-full rounded-lg border-gray-300">
+    name="wali_kelas[{{ $item->id }}]"
+    class="w-full rounded-lg border-gray-300"
+    {{ ($modeArsip || $tahunAjaran->semester !== 'Ganjil') ? 'disabled' : '' }}>
 
 <option value="">
 
@@ -343,12 +387,14 @@ value="{{ $g->id }}"
 </td>
 <td class="border px-4 py-3 align-middle">
     <div class="flex justify-center">
-        <input
-            type="text"
-            name="ruang_kelas[{{ $item->id }}]"
-            value="{{ old('ruang_kelas.'.$item->id, $item->ruang_kelas) }}"
-            placeholder="R01"
-            class="w-24 rounded-lg border border-gray-300 px-3 py-2 text-center focus:border-blue-500 focus:ring-2 focus:ring-blue-200">
+       <input
+    type="text"
+    name="ruang_kelas[{{ $item->id }}]"
+    value="{{ old('ruang_kelas.'.$item->id, $item->ruang_kelas) }}"
+    placeholder="R01"
+    class="w-24 rounded-lg border border-gray-300 px-3 py-2 text-center
+           focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+    {{ ($modeArsip || $tahunAjaran->semester !== 'Ganjil') ? 'disabled' : '' }}>
     </div>
 </td>
 
@@ -461,16 +507,33 @@ Belum ada pembagian kelas.
 </div>
 </div>
 <br>
-<button
-type="submit"
-class="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-green-600 hover:bg-green-700 text-white">
+@if(!$modeArsip && $tahunAjaran->semester === 'Ganjil')
 
-<x-heroicon-o-check-circle
-class="w-5 h-5"/>
+    <button
+        type="submit"
+        class="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-green-600 hover:bg-green-700 text-white">
 
-Simpan Wali Kelas
+        <x-heroicon-o-check-circle class="w-5 h-5"/>
 
-</button>
+        Simpan Wali Kelas
+
+    </button>
+
+@elseif($modeArsip)
+
+    <div class="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-gray-200 text-gray-500">
+        <x-heroicon-o-lock-closed class="w-5 h-5"/>
+        Periode Arsip — Hanya Melihat
+    </div>
+
+@else
+
+    <div class="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-gray-200 text-gray-500">
+        <x-heroicon-o-lock-closed class="w-5 h-5"/>
+        Semester Genap — Terkunci
+    </div>
+
+@endif
 
 </div>
 
@@ -504,9 +567,8 @@ Kelas {{ $item->nama_kelas }}
 
 Tahun Ajaran
 
-{{ $tahunAktif->tahun_ajaran }}
-
-Semester {{ $tahunAktif->semester }}
+{{ $tahunAjaran->tahun_ajaran }}
+Semester {{ $tahunAjaran->semester }}
 
 </p>
 

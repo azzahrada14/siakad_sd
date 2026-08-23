@@ -1,4 +1,7 @@
 <div>
+    @php
+    $periodeId = request()->query('tahun_ajaran_id');
+@endphp
 
     {{-- HEADER --}}
     <header
@@ -164,18 +167,20 @@
         <div class="p-4">
 
             {{-- DASHBOARD --}}
-            <a href="{{ route('dashboard') }}"
-               class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-blue-600 transition">
+           {{-- DASHBOARD --}}
+<a href="{{ Auth::user()->role === 'guru'
+    ? route('guru.dashboard', request()->only('tahun_ajaran_id'))
+    : route('dashboard', request()->only('tahun_ajaran_id'))
+}}"
+    class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-blue-600 transition">
 
-                <i data-feather="home"></i>
+    <i data-feather="home"></i>
 
-                <span x-show="sidebarOpen">
+    <span x-show="sidebarOpen">
+        Dashboard
+    </span>
 
-                    Dashboard
-
-                </span>
-
-            </a>
+</a>
 
             {{-- OPERATOR / ADMIN --}}
             @if(Auth::user()->role == 'operator')
@@ -196,7 +201,7 @@
 
                 </a>
 
-                <a href="{{ route('guru.index') }}"
+                <a href="{{ route('guru.index', request()->only('tahun_ajaran_id')) }}"
                      class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-blue-600 transition">
                     <i data-feather="users"></i>
 
@@ -204,7 +209,7 @@
 
                 </a>
 
-                <a href="{{ route('siswa.index') }}"
+                <a href="{{ route('siswa.index', request()->only('tahun_ajaran_id')) }}"
                     class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-blue-600 transition">
 
                     <i data-feather="user"></i>
@@ -213,7 +218,7 @@
 
                 </a>
 
-                <a href="{{ route('kelas.index') }}"
+                <a href="{{ route('kelas.index', request()->only('tahun_ajaran_id')) }}"
                      class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-blue-600 transition">
 
                     <i data-feather="grid"></i>
@@ -221,7 +226,7 @@
 
                 </a>
 
-                <a href="{{ route('mapel.index') }}"
+                <a href="{{ route('mapel.index', request()->only('tahun_ajaran_id')) }}"
                      class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-blue-600 transition">
 
                     <i data-feather="book-open"></i>
@@ -240,7 +245,7 @@
 
 </div>
 
-<a href="{{ route('kelola-akademik.index') }}"
+<a href="{{ route('kelola-akademik.index', request()->only('tahun_ajaran_id')) }}"
 class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-blue-600 transition">
 
     <x-heroicon-o-academic-cap class="w-5 h-5"/>
@@ -251,7 +256,7 @@ class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-blue-600 transition
 
 </a>
 
-<a href="{{ route('jadwal.index') }}"
+<a href="{{ route('jadwal.index', request()->only('tahun_ajaran_id')) }}"
 class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-blue-600 transition">
 
     <i data-feather="calendar"></i>
@@ -262,7 +267,7 @@ class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-blue-600 transition
 
 </a>
 
-<a href="{{ route('ekstrakurikuler.index') }}"
+<a href="{{ route('ekstrakurikuler.index', request()->only('tahun_ajaran_id')) }}"
 class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-blue-600 transition">
 
     <i data-feather="activity"></i>
@@ -283,7 +288,7 @@ class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-blue-600 transition
 
 </div>
 
-    <a href="{{ route('kenaikan.index') }}"
+    <a href="{{ route('kenaikan.index', request()->only('tahun_ajaran_id')) }}"
  class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-blue-600 transition">
 
     <i data-feather="award"></i>
@@ -334,8 +339,7 @@ class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-blue-600 transition
         x-transition
         class="ml-10 mt-2 space-y-1">
 
-        <a
-            href="{{ route('kelulusan.index') }}"
+        <a href="{{ route('kelulusan.index', request()->only('tahun_ajaran_id')) }}"
             class="block px-4 py-2 rounded-lg hover:bg-blue-600">
 
             <span x-show="sidebarOpen">
@@ -346,8 +350,7 @@ class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-blue-600 transition
 
         </a>
 
-        <a
-            href="{{ route('alumni.index') }}"
+        <a href="{{ route('alumni.index', request()->only('tahun_ajaran_id')) }}"
             class="block px-4 py-2 rounded-lg hover:bg-blue-600">
 
             <span x-show="sidebarOpen">
@@ -376,7 +379,7 @@ class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-blue-600 transition
 
                 </div>
 
-                <a href="{{ route('nilai.index') }}"
+           <a href="{{ route('nilai.index', request()->only('tahun_ajaran_id')) }}"
                      class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-blue-600 transition">
 
                     <i data-feather="edit"></i>
@@ -389,7 +392,7 @@ class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-blue-600 transition
 
                 </a>
 
-                <a href="{{ route('absensi.index') }}"
+                <a href="{{ route('absensi.index', request()->only('tahun_ajaran_id')) }}"
                      class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-blue-600 transition">
                     <i data-feather="clipboard"></i>
 
@@ -409,7 +412,7 @@ class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-blue-600 transition
 
                 </div>
 
- <a href="{{ route('jadwal.index') }}"
+ <a href="{{ route('jadwal.index', request()->only('tahun_ajaran_id')) }}"
 class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-blue-600 transition">
 
     <i data-feather="calendar"></i>
@@ -435,7 +438,7 @@ HASIL AKADEMIK
 
     {{-- Rekap Nilai --}}
 
-    <a href="{{ route('wali.nilai.index') }}"
+    <a href="{{ route('wali.nilai.index', request()->only('tahun_ajaran_id')) }}"
  class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-blue-600 transition">
 
         <i data-feather="bar-chart-2"></i>
@@ -445,7 +448,7 @@ HASIL AKADEMIK
     </a>
 
     {{-- Rekap Absensi --}}
-    <a href="{{ route('wali.absensi') }}"
+    <a href="{{ route('wali.absensi', request()->only('tahun_ajaran_id')) }}"
  class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-blue-600 transition">
 
         <i data-feather="clipboard"></i>
@@ -457,7 +460,7 @@ HASIL AKADEMIK
     
 
     {{-- Ranking --}}
-    <a href="{{ route('ranking.index') }}"
+    <a href="{{ route('ranking.index', request()->only('tahun_ajaran_id')) }}"
         class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-blue-600 transition">
         <i data-feather="award"></i>
 
@@ -467,7 +470,7 @@ HASIL AKADEMIK
 
 
     {{-- Generate Rapor --}}
-    <a href="{{ route('rapor.index') }}"
+    <a href="{{ route('rapor.index', request()->only('tahun_ajaran_id')) }}"
     class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-blue-600 transition">
 
     <i data-feather="file-text"></i>
@@ -488,7 +491,7 @@ INFORMASI AKADEMIK
 
 </div>
 
-<a href="{{ route('informasi-akademik.index') }}"
+<a href="{{ route('informasi-akademik.index', request()->only('tahun_ajaran_id')) }}"
 class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-blue-600 transition">
 
 <i data-feather="bar-chart-2"></i>

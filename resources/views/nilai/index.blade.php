@@ -31,33 +31,86 @@
         </div>
 
         {{-- KANAN --}}
-        @if($tahunAktif)
-            <div class="bg-blue-50 border border-blue-200 rounded-xl shadow-sm px-5 py-4 min-w-[220px]">
+       @if($tahunAjaran)
 
-                <p class="text-xs uppercase tracking-wide text-blue-600 font-semibold">
-                    Tahun Ajaran Aktif
-                </p>
+    <div class="bg-blue-50 border border-blue-200 rounded-xl shadow-sm px-5 py-4 min-w-[220px]">
 
-                <h2 class="text-2xl font-bold text-blue-700 mt-1">
-                    {{ $tahunAktif->tahun_ajaran }}
-                </h2>
+        <p class="text-xs uppercase tracking-wide text-blue-600 font-semibold">
+            Tahun Ajaran
+        </p>
 
-                <div class="flex justify-between items-center mt-2">
-                    <span class="text-gray-600 text-sm">
-                        Semester {{ $tahunAktif->semester }}
-                    </span>
+        <h2 class="text-2xl font-bold text-blue-700 mt-1">
+           {{ $tahunAjaran->tahun_ajaran }}
+        </h2>
 
-                    <span class="inline-flex items-center gap-1 rounded-full bg-green-100 px-3 py-1 text-xs font-semibold text-green-700">
-                        <span class="w-2 h-2 rounded-full bg-green-500"></span>
-                        Aktif
-                    </span>
-                </div>
+        <div class="flex justify-between items-center mt-2">
 
-            </div>
-        @endif
+            <span class="text-gray-600 text-sm">
+                Semester {{ $tahunAjaran->semester }}
+            </span>
+
+            @if($modeArsip)
+
+                <span class="inline-flex items-center gap-1 rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-600">
+                    <span class="w-2 h-2 rounded-full bg-gray-400"></span>
+                    Arsip
+                </span>
+
+            @else
+
+                <span class="inline-flex items-center gap-1 rounded-full bg-green-100 px-3 py-1 text-xs font-semibold text-green-700">
+                    <span class="w-2 h-2 rounded-full bg-green-500"></span>
+                    Aktif
+                </span>
+
+            @endif
+
+        </div>
 
     </div>
+
+@endif
+    </div>
 </div>
+
+@if($modeArsip)
+
+    <div class="mb-5 rounded-xl border border-yellow-300 bg-yellow-50 px-5 py-4">
+
+        <div class="flex items-start gap-3">
+
+            <x-heroicon-o-exclamation-triangle
+                class="w-6 h-6 text-yellow-600 flex-shrink-0"/>
+
+            <div>
+
+                <h3 class="font-semibold text-yellow-800">
+                    Periode Telah Diarsipkan
+                </h3>
+
+                <p class="text-sm text-yellow-700 mt-1">
+                    Tahun ajaran
+                    <strong>{{ $tahunAjaran->tahun_ajaran }}</strong>
+semester
+<strong>{{ $tahunAjaran->semester }}</strong>
+                    sudah tidak aktif.
+                </p>
+
+                <p class="text-sm text-yellow-700 mt-1">
+                    Input nilai dan remedial tidak dapat dilakukan
+                    pada periode arsip. Gunakan menu
+                    <strong>Rekap Nilai</strong>
+                    untuk melihat data.
+                </p>
+
+            </div>
+
+        </div>
+
+    </div>
+
+@endif
+
 <div class="bg-white rounded-2xl shadow border p-5 mb-5">
 
 <form
@@ -171,7 +224,7 @@ Tahun Ajaran
 <input
 type="text"
 readonly
-value="{{ $tahunAktif->tahun_ajaran }}"
+value="{{ $tahunAjaran->tahun_ajaran }}"
 class="w-full h-11 rounded-xl bg-gray-100 border-gray-300">
 
 </div>
@@ -188,7 +241,7 @@ Semester
 <input
 type="text"
 readonly
-value="{{ $tahunAktif->semester }}"
+value="{{ $tahunAjaran->semester }}"
 class="w-full h-11 rounded-xl bg-gray-100 border-gray-300">
 
 </div>
@@ -210,228 +263,228 @@ class="w-full h-11 rounded-xl bg-gray-100 border-gray-300">
 </form>
 
 </div>
-<form
-method="POST"
-action="{{ route('nilai.mass.store') }}">
 
-@csrf
+@if(!$modeArsip)
 
-<input
-type="hidden"
-name="kelas_id"
-value="{{ $filter['kelas_id'] }}">
+    <form
+        method="POST"
+        action="{{ route('nilai.mass.store') }}">
 
-<input
-type="hidden"
-name="tahun_ajaran_id"
-value="{{ $filter['tahun_ajaran_id'] }}">
+        @csrf
 
-<input
-type="hidden"
-name="semester"
-value="{{ $filter['semester'] }}">
+        <input
+            type="hidden"
+            name="kelas_id"
+            value="{{ $filter['kelas_id'] }}">
 
-<input
-type="hidden"
-name="mapel_id"
-value="{{ $filter['mapel_id'] }}">
+        <input
+            type="hidden"
+            name="tahun_ajaran_id"
+            value="{{ $filter['tahun_ajaran_id'] }}">
 
-@if(!$filter['mapel_id'])
+        <input
+            type="hidden"
+            name="semester"
+            value="{{ $filter['semester'] }}">
 
-<div class="bg-white rounded-xl shadow border p-10 text-center">
+        <input
+            type="hidden"
+            name="mapel_id"
+            value="{{ $filter['mapel_id'] }}">
 
-    <i data-feather="book-open"
-       class="w-12 h-12 mx-auto text-gray-400 mb-4"></i>
 
-    <h3 class="text-lg font-semibold text-gray-700">
-        Pilih Mata Pelajaran
-    </h3>
+        {{-- ===================================================== --}}
+        {{-- JIKA MAPEL BELUM DIPILIH --}}
+        {{-- ===================================================== --}}
 
-    <p class="text-gray-500 mt-2">
-        Silakan pilih mata pelajaran terlebih dahulu untuk mulai menginput nilai.
-    </p>
+        @if(!$filter['mapel_id'])
 
-</div>
+            <div class="bg-white rounded-xl shadow border p-10 text-center">
 
-@else
+                <i data-feather="book-open"
+                   class="w-12 h-12 mx-auto text-gray-400 mb-4"></i>
 
-@if($siswas->count())
+                <h3 class="text-lg font-semibold text-gray-700">
+                    Pilih Mata Pelajaran
+                </h3>
 
-<div class="mt-6 flex justify-end">
-
-<button
-
-type="submit"
-
-class="px-8 py-3 bg-blue-600 hover:bg-blue-700 rounded-xl text-white font-semibold">
-
-Simpan Nilai
-
-</button>
-
-</div>
-
-@endif
-<br>
-
-<div class="bg-white rounded-2xl shadow border overflow-hidden">
-
-    @if($filter['kelas_id'])
-
-    @php
-        $kelasTerpilih = $kelas->firstWhere(
-            'id',
-            $filter['kelas_id']
-        );
-    @endphp
-
-    @if($kelasTerpilih)
-
-        <div class="px-5 py-3 bg-slate-50 border-b">
-
-            <div class="flex items-center gap-2">
-
-                <span class="text-sm text-gray-500">
-                    Kelas:
-                </span>
-
-                <span class="font-semibold text-slate-700">
-                    {{ $kelasTerpilih->nama_kelas }}
-                </span>
-
-                <span class="text-gray-400">
-                    |
-                </span>
-
-                <span class="text-sm text-gray-500">
-                    Tingkat:
-                </span>
-
-                <span class="inline-flex items-center px-3 py-1 rounded-full bg-purple-100 text-purple-700 text-xs font-semibold">
-                    Kelas {{ $kelasTerpilih->tingkat }}
-                </span>
+                <p class="text-gray-500 mt-2">
+                    Silakan pilih mata pelajaran terlebih dahulu
+                    untuk mulai menginput nilai.
+                </p>
 
             </div>
 
-        </div>
 
-    @endif
+        @else
 
-@endif
 
-   <div class="w-full overflow-x-auto">
+            {{-- ===================================================== --}}
+            {{-- DATA KELAS --}}
+            {{-- ===================================================== --}}
+
+            <div class="bg-white rounded-2xl shadow border overflow-hidden">
+
+                @if($filter['kelas_id'])
+
+                    @php
+                        $kelasTerpilih = $kelas->firstWhere(
+                            'id',
+                            $filter['kelas_id']
+                        );
+                    @endphp
+
+                    @if($kelasTerpilih)
+
+                        <div class="px-5 py-3 bg-slate-50 border-b">
+
+                            <div class="flex items-center gap-2">
+
+                                <span class="text-sm text-gray-500">
+                                    Kelas:
+                                </span>
+
+                                <span class="font-semibold text-slate-700">
+                                    {{ $kelasTerpilih->nama_kelas }}
+                                </span>
+
+                                <span class="text-gray-400">
+                                    |
+                                </span>
+
+                                <span class="text-sm text-gray-500">
+                                    Tingkat:
+                                </span>
+
+                                <span class="inline-flex items-center px-3 py-1 rounded-full bg-purple-100 text-purple-700 text-xs font-semibold">
+                                    Kelas {{ $kelasTerpilih->tingkat }}
+                                </span>
+
+                            </div>
+
+                        </div>
+
+                    @endif
+
+                @endif
+
+  <div class="w-full overflow-x-auto">
 
 <table class="nilai-table border-collapse text-[10px]">
 <thead>
 
-    {{-- BARIS 1 --}}
-    <tr class="bg-slate-700 text-white">
+{{-- BARIS 1 --}}
+<tr class="bg-slate-700 text-white">
 
-        <th rowspan="3"
-    class="border border-white/30 px-1 py-2 text-center whitespace-nowrap w-[30px]">
-    No
+    <th rowspan="3"
+class="border border-white/30 px-1 py-2 text-center whitespace-nowrap w-[30px]">
+No
+
 </th>
 
-        <th rowspan="3"
-    class="border border-white/30 px-1 py-2 text-center whitespace-nowrap w-[70px]">
-    NIPD
+    <th rowspan="3"
+class="border border-white/30 px-1 py-2 text-center whitespace-nowrap w-[70px]">
+NIPD
+
 </th>
 
-        <th rowspan="3"
-    class="border border-white/30 px-1 py-2 text-center whitespace-nowrap w-[120px]">
-    Nama Siswa
+    <th rowspan="3"
+class="border border-white/30 px-1 py-2 text-center whitespace-nowrap w-[120px]">
+Nama Siswa
+
 </th>
 
-        {{-- FORMATIF --}}
-        <th colspan="{{ $tujuanPembelajarans->count() }}"
-            class="border border-white/30 px-1 py-2 text-center whitespace-nowrap">
-            FORMATIF HARIAN
-        </th>
+    {{-- FORMATIF --}}
+    <th colspan="{{ $tujuanPembelajarans->count() }}"
+        class="border border-white/30 px-1 py-2 text-center whitespace-nowrap">
+        FORMATIF HARIAN
+    </th>
 
-        <th rowspan="3"
-            class="border border-white/30 px-1 py-2 text-center whitespace-nowrap">
-            Jumlah
-        </th>
+    <th rowspan="3"
+        class="border border-white/30 px-1 py-2 text-center whitespace-nowrap">
+        Jumlah
+    </th>
 
-        <th rowspan="3"
-            class="border border-white/30 px-1 py-2 text-center whitespace-nowrap">
-            Rata Formatif
-        </th>
+    <th rowspan="3"
+        class="border border-white/30 px-1 py-2 text-center whitespace-nowrap">
+        Rata Formatif
+    </th>
 
-        {{-- ASTS --}}
-        <th colspan="{{ $lingkupMateris->count() + 2 }}"
-            class="border border-white/30 px-1 py-2 text-center whitespace-nowrap">
-            ASTS
-        </th>
+    {{-- ASTS --}}
+    <th colspan="{{ $lingkupMateris->count() + 2 }}"
+        class="border border-white/30 px-1 py-2 text-center whitespace-nowrap">
+        ASTS
+    </th>
 
-        <th rowspan="3"
-            class="border border-white/30 px-3 py-3 text-center whitespace-nowrap">
-            {{ $tahunAktif->semester == 'Ganjil' ? 'ASAS' : 'ASAT' }}
-        </th>
+    <th rowspan="3"
+        class="border border-white/30 px-3 py-3 text-center whitespace-nowrap">
+        {{ $tahunAjaran->semester == 'Ganjil' ? 'ASAS' : 'ASAT' }}
+    </th>
 
-        <th rowspan="3"
-    class="col-akhir border border-white/30 px-2 py-3 text-center whitespace-nowrap">
-    Nilai Akhir
+    <th rowspan="3"
+class="col-akhir border border-white/30 px-2 py-3 text-center whitespace-nowrap">
+Nilai Akhir
+
 </th>
 
-
-    </tr>
-
-
-    {{-- BARIS 2 --}}
-    <tr class="bg-slate-700 text-white">
-
-        {{-- LM FORMATIF --}}
-        @foreach($lingkupMateris as $lm)
-
-            <th colspan="{{ $lm->tujuanPembelajarans->count() }}"
-                class="border border-white/30 px-3 py-2 text-center whitespace-nowrap">
-                LM {{ $loop->iteration }}
-            </th>
-
-        @endforeach
+</tr>
 
 
-        {{-- ASTS --}}
-        @foreach($lingkupMateris as $lm)
+{{-- BARIS 2 --}}
+<tr class="bg-slate-700 text-white">
 
-            <th rowspan="2"
-                class="border border-white/30 px-3 py-2 text-center whitespace-nowrap">
-                LM {{ $loop->iteration }}
-            </th>
+    {{-- LM FORMATIF --}}
+    @foreach($lingkupMateris as $lm)
 
-        @endforeach
+        <th colspan="{{ $lm->tujuanPembelajarans->count() }}"
+            class="border border-white/30 px-3 py-2 text-center whitespace-nowrap">
+            LM {{ $loop->iteration }}
+        </th>
+
+    @endforeach
+
+
+    {{-- ASTS --}}
+    @foreach($lingkupMateris as $lm)
 
         <th rowspan="2"
             class="border border-white/30 px-3 py-2 text-center whitespace-nowrap">
-            Jumlah
+            LM {{ $loop->iteration }}
         </th>
 
-        <th rowspan="2"
-            class="border border-white/30 px-3 py-2 text-center whitespace-nowrap">
-            Rata-rata
-        </th>
+    @endforeach
 
-    </tr>
+    <th rowspan="2"
+        class="border border-white/30 px-3 py-2 text-center whitespace-nowrap">
+        Jumlah
+    </th>
+
+    <th rowspan="2"
+        class="border border-white/30 px-3 py-2 text-center whitespace-nowrap">
+        Rata-rata
+    </th>
+
+</tr>
 
 
-    {{-- BARIS 3 --}}
-    <tr class="bg-slate-500 text-white">
+{{-- BARIS 3 --}}
+<tr class="bg-slate-500 text-white">
 
-        {{-- TP FORMATIF --}}
-        @foreach($lingkupMateris as $lm)
+    {{-- TP FORMATIF --}}
+    @foreach($lingkupMateris as $lm)
 
-            @foreach($lm->tujuanPembelajarans as $tp)
+        @foreach($lm->tujuanPembelajarans as $tp)
 
-               <th class="col-tp border border-white/30 px-1 py-2 text-center whitespace-nowrap">
-    {{ $tp->kode_tp }}
+           <th class="col-tp border border-white/30 px-1 py-2 text-center whitespace-nowrap">
+{{ $tp->kode_tp }}
+
 </th>
-
-            @endforeach
 
         @endforeach
 
-    </tr>
+    @endforeach
+
+</tr>
 
 </thead>
 
@@ -441,68 +494,68 @@ Simpan Nilai
 
 <tr class="hover:bg-slate-50">
 
-    {{-- No --}}
-    <td class="border px-1 py-2 text-center">
+{{-- No --}}
+<td class="border px-1 py-2 text-center">
 
-        {{ $loop->iteration }}
+    {{ $loop->iteration }}
 
-    </td>
+</td>
 
-    {{-- NIPD --}}
-    <td class="border px-1 py-2 text-center">
+{{-- NIPD --}}
+<td class="border px-1 py-2 text-center">
 
-        {{ $siswa->nipd }}
+    {{ $siswa->nipd }}
 
-    </td>
+</td>
 
-    {{-- Nama --}}
-    <td class="border px-4 py-3">
+{{-- Nama --}}
+<td class="border px-4 py-3">
 
-        <div class="font-semibold">
+    <div class="font-semibold">
 
-            {{ $siswa->nama_siswa }}
+        {{ $siswa->nama_siswa }}
 
-        </div>
+    </div>
 
-        <div class="text-xs text-gray-500">
+    <div class="text-xs text-gray-500">
 
-            NISN : {{ $siswa->nisn }}
+        NISN : {{ $siswa->nisn }}
 
-        </div>
+    </div>
 
-        <input
-            type="hidden"
-            name="siswa_id[]"
-            value="{{ $siswa->id }}">
+    <input
+        type="hidden"
+        name="siswa_id[]"
+        value="{{ $siswa->id }}">
 
-    </td>
+</td>
 
-    {{-- NILAI TP --}}
-    @foreach($lingkupMateris as $lm)
+{{-- NILAI TP --}}
+@foreach($lingkupMateris as $lm)
 
-        @foreach($lm->tujuanPembelajarans as $tp)
+    @foreach($lm->tujuanPembelajarans as $tp)
 
 <td class="border border-gray-200 text-center">
 
-           <input
-    type="number"
-    min="0"
-    max="100"
-    name="nilai_tp[{{ $siswa->id }}][{{ $tp->id }}]"
-    value="{{ $nilaiTP[$siswa->id][$tp->id] ?? '' }}"
-    class="tp-input w-10 h-7 rounded-md border border-gray-300 text-center text-[10px]"
-    data-siswa="{{ $siswa->id }}"
-    data-lm="{{ $loop->parent->iteration }}">
+       <input
+type="number"
+min="0"
+max="100"
+name="nilai_tp[{{ $siswa->id }}][{{ $tp->id }}]"
+value="{{ $nilaiTP[$siswa->id][$tp->id] ?? '' }}"
+class="tp-input w-10 h-7 rounded-md border border-gray-300 text-center text-[10px]"
+data-siswa="{{ $siswa->id }}"
+data-lm="{{ $loop->parent->iteration }}">
 
-        </td>
-
-        @endforeach
+    </td>
 
     @endforeach
 
+@endforeach
+
    <td class="border border-gray-200 text-center">
 
-   <span
+<span
 id="jumlah{{ $siswa->id }}"
 class="inline-flex px-3 py-1 rounded-full bg-gray-100 text-gray-700 font-semibold">
 
@@ -512,171 +565,177 @@ class="inline-flex px-3 py-1 rounded-full bg-gray-100 text-gray-700 font-semibol
 
 </td>
 
-    {{-- RATA FORMATIF --}}
+{{-- RATA FORMATIF --}}
+
    <td class="border border-gray-200 text-center">
 
-        <span
-            id="formatif{{ $siswa->id }}"
-            class="font-semibold text-blue-600">
+    <span
+        id="formatif{{ $siswa->id }}"
+        class="font-semibold text-blue-600">
 
-            {{ $nilaiSiswa[$siswa->id]->rata_formatif ?? 0 }}
+        {{ $nilaiSiswa[$siswa->id]->rata_formatif ?? 0 }}
 
-        </span>
+    </span>
 
-    </td>
+</td>
 
-    {{-- ASTS --}}
-  
+{{-- ASTS --}}
+
 {{-- ASTS --}}
 @foreach($lingkupMateris as $lm)
 
 <td class="border border-gray-200 text-center">
 
-    <input
-        type="number"
-        min="0"
-        max="100"
-        step="0.01"
-        name="asts[{{ $siswa->id }}][{{ $lm->id }}]"
-        value="{{ $asts[$siswa->id][$lm->id] ?? '' }}"
-        class="asts w-10 h-7 rounded-md border border-gray-300 text-center text-[10px]"
-        data-siswa="{{ $siswa->id }}">
+<input
+    type="number"
+    min="0"
+    max="100"
+    step="0.01"
+    name="asts[{{ $siswa->id }}][{{ $lm->id }}]"
+    value="{{ $asts[$siswa->id][$lm->id] ?? '' }}"
+    class="asts w-10 h-7 rounded-md border border-gray-300 text-center text-[10px]"
+    data-siswa="{{ $siswa->id }}">
 
 </td>
 
 @endforeach
 
 {{-- Jumlah ASTS --}}
+
 <td class="border border-gray-200 text-center">
 
-    <span id="jumlahAsts{{ $siswa->id }}"
-          class="font-semibold text-gray-700">
-        0
-    </span>
+<span id="jumlahAsts{{ $siswa->id }}"
+      class="font-semibold text-gray-700">
+    0
+</span>
 
 </td>
 
 {{-- Rata-rata ASTS --}}
+
 <td class="border border-gray-200 text-center">
 
-    <span id="rataAsts{{ $siswa->id }}"
-          class="font-semibold text-blue-600">
-        0.00
-    </span>
+<span id="rataAsts{{ $siswa->id }}"
+      class="font-semibold text-blue-600">
+    0.00
+</span>
 
 </td>
 
+{{-- ASAS / ASAT --}}
 
-    {{-- ASAS / ASAT --}}
 <td class="border border-gray-200 text-center">
 
-@if($tahunAktif->semester == 'Ganjil')
+@if($tahunAjaran->semester == 'Ganjil')
 
 <input
-    type="number"
-    name="asas[{{ $siswa->id }}]"
+ type="number"
+ name="asas[{{ $siswa->id }}]"
 class="asat w-10 h-7 rounded-md border-gray-300 text-center text-[10px]"
-    data-siswa="{{ $siswa->id }}"
-    min="0"
-    max="100"
-    step="0.01"
-    value="{{ $nilaiSiswa[$siswa->id]->asas ?? '' }}">
+ data-siswa="{{ $siswa->id }}"
+ min="0"
+ max="100"
+ step="0.01"
+ value="{{ $nilaiSiswa[$siswa->id]->asas ?? '' }}">
 
 @else
 
 <input
-    type="number"
-    name="asat[{{ $siswa->id }}]"
- class="asat w-10 h-7 rounded-md border-gray-300 text-center text-[10px]"
-    data-siswa="{{ $siswa->id }}"
-    min="0"
-    max="100"
-    step="0.01"
-    value="{{ $nilaiSiswa[$siswa->id]->asat ?? '' }}">
+ type="number"
+ name="asat[{{ $siswa->id }}]"
+class="asat w-10 h-7 rounded-md border-gray-300 text-center text-[10px]"
+ data-siswa="{{ $siswa->id }}"
+ min="0"
+ max="100"
+ step="0.01"
+ value="{{ $nilaiSiswa[$siswa->id]->asat ?? '' }}">
 
 @endif
 
 </td>
 
 {{-- NILAI AKHIR --}}
+
 <td class="border border-gray-200">
     <div class="flex items-center justify-center gap-2">
 
-        @php
-            $nilai = $nilaiSiswa[$siswa->id] ?? null;
+    @php
+        $nilai = $nilaiSiswa[$siswa->id] ?? null;
 
-            $nilaiAwal = $nilai->nilai_akhir ?? 0;
-            $nilaiRemedial = $nilai->nilai_remedial ?? 0;
+        $nilaiAwal = $nilai->nilai_akhir ?? 0;
+        $nilaiRemedial = $nilai->nilai_remedial ?? 0;
 
-            // Nilai akhir menggunakan nilai tertinggi
-            // antara nilai awal dan nilai remedial
-            $akhir = max($nilaiAwal, $nilaiRemedial);
+        // Nilai akhir menggunakan nilai tertinggi
+        // antara nilai awal dan nilai remedial
+        $akhir = max($nilaiAwal, $nilaiRemedial);
 
-            if ($akhir >= 86) {
-                $badge = 'bg-green-100 text-green-700';
-            } elseif ($akhir >= 76) {
-                $badge = 'bg-blue-100 text-blue-700';
-            } elseif ($akhir >= 66) {
-                $badge = 'bg-yellow-100 text-yellow-700';
-            } elseif ($akhir >= 56) {
-                $badge = 'bg-orange-100 text-orange-700';
-            } else {
-                $badge = 'bg-red-100 text-red-700';
-            }
-        @endphp
+        if ($akhir >= 86) {
+            $badge = 'bg-green-100 text-green-700';
+        } elseif ($akhir >= 76) {
+            $badge = 'bg-blue-100 text-blue-700';
+        } elseif ($akhir >= 66) {
+            $badge = 'bg-yellow-100 text-yellow-700';
+        } elseif ($akhir >= 56) {
+            $badge = 'bg-orange-100 text-orange-700';
+        } else {
+            $badge = 'bg-red-100 text-red-700';
+        }
+    @endphp
 
-        <span
-            id="akhir{{ $siswa->id }}"
-            data-db="{{ $nilaiAwal }}"
-            class="inline-flex px-2 py-1 rounded-full {{ $badge }}">
+    <span
+        id="akhir{{ $siswa->id }}"
+        data-db="{{ $nilaiAwal }}"
+        class="inline-flex px-2 py-1 rounded-full {{ $badge }}">
 
-            {{ $akhir }}
-        </span>
+        {{ $akhir }}
+    </span>
 
-        @if($nilaiRemedial > 0)
-            <div class="mt-1">
-                <span class="text-xs text-amber-800 font-semibold">
-                    Remedial
-                </span>
-            </div>
-        @endif
+    @if($nilaiRemedial > 0)
+        <div class="mt-1">
+            <span class="text-xs text-amber-800 font-semibold">
+                Remedial
+            </span>
+        </div>
+    @endif
 
-        {{-- Tombol remedial hanya jika sudah ada data nilai --}}
-        @if(
-            $nilai &&
-            $nilaiRemedial == 0 &&
-            $akhir < 75
-        )
-            <button
-                type="button"
-                onclick="openRemedial(
-                    {{ $nilai->id }},
-                    '{{ $siswa->nama_siswa }}',
-                    {{ $akhir }},
-                    '{{ $nilaiRemedial }}'
-                )"
-                class="inline-flex items-center justify-center
-                       w-8 h-8 rounded-lg
-                       bg-yellow-100 hover:bg-yellow-200
-                       text-yellow-600 transition"
-                title="Input Nilai Remedial">
+    {{-- Tombol remedial hanya jika sudah ada data nilai --}}
+   @if(
+!$modeArsip &&
+$nilai &&
+$nilaiRemedial == 0 &&
+$akhir < 75
 
-                <svg xmlns="http://www.w3.org/2000/svg"
-                     fill="none"
-                     viewBox="0 0 24 24"
-                     stroke-width="1.5"
-                     stroke="currentColor"
-                     class="w-5 h-5">
+)
+<button
+             type="button"
+             onclick="openRemedial(
+                 {{ $nilai->id }},
+                 '{{ $siswa->nama_siswa }}',
+                 {{ $akhir }},
+                 '{{ $nilaiRemedial }}'
+             )"
+             class="inline-flex items-center justify-center
+                    w-8 h-8 rounded-lg
+                    bg-yellow-100 hover:bg-yellow-200
+                    text-yellow-600 transition"
+             title="Input Nilai Remedial">
 
-                    <path stroke-linecap="round"
-                          stroke-linejoin="round"
-                          d="M16.862 4.487l2.651 2.651M16.862 4.487L7.5 13.85V17.25h3.4l9.362-9.363m-3.4-3.4a2.25 2.25 0 113.182 3.182"/>
-                </svg>
+            <svg xmlns="http://www.w3.org/2000/svg"
+                 fill="none"
+                 viewBox="0 0 24 24"
+                 stroke-width="1.5"
+                 stroke="currentColor"
+                 class="w-5 h-5">
 
-            </button>
-        @endif
+                <path stroke-linecap="round"
+                      stroke-linejoin="round"
+                      d="M16.862 4.487l2.651 2.651M16.862 4.487L7.5 13.85V17.25h3.4l9.362-9.363m-3.4-3.4a2.25 2.25 0 113.182 3.182"/>
+            </svg>
 
-    </div>
+        </button>
+    @endif
+
+</div>
 </td>
 </tr>
 
@@ -703,27 +762,61 @@ Belum ada data siswa.
 
 </div>
 
-@if($siswas->count())
+ {{-- ===================================================== --}}
+            {{-- TOMBOL SIMPAN --}}
+            {{-- ===================================================== --}}
 
-<div class="mt-6 flex justify-end">
+            @if($siswas->count())
 
-<button
+                <div class="mt-6 flex justify-end">
 
-type="submit"
+                    <button
+                        type="submit"
+                        class="px-8 py-3 bg-blue-600 hover:bg-blue-700 rounded-xl text-white font-semibold">
 
-class="px-8 py-3 bg-blue-600 hover:bg-blue-700 rounded-xl text-white font-semibold">
+                        Simpan Nilai
 
-Simpan Nilai
+                    </button>
 
-</button>
+                </div>
 
-</div>
+            @endif
 
-@endif
 
-</form>
+        @endif
 
-</div>
+    </form>
+
+
+@else
+
+ {{-- ===================================================== --}}
+    {{-- MODE ARSIP --}}
+    {{-- ===================================================== --}}
+
+
+      <div class="bg-white rounded-2xl shadow border p-10 text-center">
+
+        <x-heroicon-o-lock-closed
+            class="w-12 h-12 mx-auto text-gray-400 mb-4"/>
+
+        <h3 class="text-lg font-semibold text-gray-700">
+            Input Nilai Tidak Tersedia
+        </h3>
+
+        <p class="text-gray-500 mt-2">
+            Periode tahun ajaran ini sudah diarsipkan.
+            Data nilai tidak dapat ditambahkan atau diubah.
+        </p>
+
+        <p class="text-sm text-gray-500 mt-2">
+            Silakan gunakan menu
+            <strong>Rekap Nilai</strong>
+            untuk melihat data nilai.
+        </p>
+
+    </div>
+
 @endif
 
 <div

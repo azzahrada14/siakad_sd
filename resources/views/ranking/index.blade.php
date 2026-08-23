@@ -31,21 +31,19 @@
                 </div>
 
                 {{-- Kanan --}}
-                @if($tahunAktif)
+                @if($tahunAjaran)
 
                     <div>
 
                         <div class="bg-blue-50 border border-blue-200 rounded-xl shadow-sm px-5 py-4 min-w-[280px]">
 
                             <p class="text-xs uppercase tracking-wide text-blue-600 font-semibold">
-
-                                Tahun Ajaran Aktif
-
-                            </p>
+    Tahun Ajaran
+</p>
 
                             <h2 class="text-2xl font-bold text-blue-700 mt-1">
 
-                                {{ $tahunAktif->tahun_ajaran }}
+                                {{ $tahunAjaran->tahun_ajaran }}
 
                             </h2>
 
@@ -53,17 +51,31 @@
 
                                 <span class="text-gray-600 text-sm">
 
-                                    Semester {{ $tahunAktif->semester }}
+                                    Semester {{ $tahunAjaran->semester }}
 
                                 </span>
 
-                                <span class="inline-flex items-center gap-1 rounded-full bg-green-100 px-3 py-1 text-xs font-semibold text-green-700">
+                 @if($modeArsip)
 
-                                    <span class="w-2 h-2 rounded-full bg-green-500"></span>
+    <span class="inline-flex items-center gap-1 rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-600">
 
-                                    Aktif
+        <span class="w-2 h-2 rounded-full bg-gray-400"></span>
 
-                                </span>
+        Arsip
+
+    </span>
+
+@else
+
+    <span class="inline-flex items-center gap-1 rounded-full bg-green-100 px-3 py-1 text-xs font-semibold text-green-700">
+
+        <span class="w-2 h-2 rounded-full bg-green-500"></span>
+
+        Aktif
+
+    </span>
+
+@endif
 
                             </div>
 
@@ -76,6 +88,40 @@
             </div>
 
         </div>
+
+        {{-- ================= PERINGATAN ARSIP ================= --}}
+@if($modeArsip)
+
+<div class="bg-yellow-50 border border-yellow-300 rounded-xl px-5 py-4 mb-5">
+
+    <div class="flex items-start gap-3">
+
+        <x-heroicon-o-exclamation-triangle
+            class="w-6 h-6 text-yellow-600 flex-shrink-0"
+        />
+
+        <div>
+
+            <h3 class="font-semibold text-yellow-800">
+                Periode Tahun Ajaran Diarsipkan
+            </h3>
+
+            <p class="text-sm text-yellow-700 mt-1">
+                Ranking siswa pada tahun ajaran
+                <strong>{{ $tahunAjaran->tahun_ajaran }}</strong>
+                semester
+                <strong>{{ $tahunAjaran->semester }}</strong>
+                merupakan data arsip.
+                Data hanya dapat dilihat dan tidak dapat diubah.
+            </p>
+
+        </div>
+
+    </div>
+
+</div>
+
+@endif
 
 
         {{-- ================= INFORMASI RANKING ================= --}}
@@ -99,16 +145,31 @@
 
                 </div>
 
-                <button
-                    id="btnGenerate"
-                    type="button"
-                    class="inline-flex items-center gap-2 px-5 py-3 rounded-lg bg-green-600 hover:bg-green-700 text-white transition">
+                @if(!$modeArsip)
 
-                    <x-heroicon-o-calculator class="w-5 h-5"/>
+    <button
+        id="btnGenerate"
+        type="button"
+        class="inline-flex items-center gap-2 px-5 py-3 rounded-lg bg-green-600 hover:bg-green-700 text-white transition">
 
-                    Generate Ranking
+        <x-heroicon-o-calculator class="w-5 h-5"/>
 
-                </button>
+        Generate Ranking
+
+    </button>
+
+@else
+
+    <span
+        class="inline-flex items-center gap-2 px-5 py-3 rounded-lg bg-gray-400 text-white cursor-not-allowed">
+
+        <x-heroicon-o-lock-closed class="w-5 h-5"/>
+
+        Arsip
+
+    </span>
+
+@endif
 
             </div>
 
@@ -130,7 +191,7 @@
                         <input
                             type="text"
                             readonly
-                            value="{{ $tahunAktif?->tahun_ajaran ?? '-' }}"
+                            value="{{ $tahunAjaran?->tahun_ajaran ?? '-' }}"
                             class="w-full rounded-lg border-gray-300 bg-gray-100">
 
                     </div>
@@ -148,7 +209,7 @@
                         <input
                             type="text"
                             readonly
-                            value="{{ $tahunAktif?->semester ?? '-' }}"
+                            value="{{ $tahunAjaran?->semester ?? '-' }}"
                             class="w-full rounded-lg border-gray-300 bg-gray-100">
 
                     </div>

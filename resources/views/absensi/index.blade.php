@@ -36,34 +36,98 @@
        {{-- Informasi Kanan --}}
         <div class="flex flex-col lg:flex-row gap-4">
 
-            @if($tahunAktif)
-            <div class="bg-blue-50 border border-blue-200 rounded-xl px-6 py-4 shadow-sm min-w-[260px]">
+           @if($tahunAjaran)
 
-                <p class="text-xs uppercase tracking-wide text-blue-600 font-semibold">
-                    Tahun Ajaran Aktif
-                </p>
+    <div class="bg-blue-50 border border-blue-200 rounded-xl px-6 py-4 shadow-sm min-w-[260px]">
 
-                <h3 class="text-2xl font-bold text-blue-700 mt-1">
-                    {{ $tahunAktif->tahun_ajaran }}
-                </h3>
+        <p class="text-xs uppercase tracking-wide text-blue-600 font-semibold">
+            Tahun Ajaran
+        </p>
 
-                <div class="flex justify-between items-center mt-2">
+        <h3 class="text-2xl font-bold text-blue-700 mt-1">
+            {{ $tahunAjaran->tahun_ajaran }}
+        </h3>
 
-                    <span class="text-gray-600">
-                        Semester {{ $tahunAktif->semester }}
-                    </span>
+        <div class="flex justify-between items-center mt-2">
 
-                    <span class="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-semibold">
-                        Aktif
-                    </span>
+            <span class="text-gray-600">
+                Semester {{ $tahunAjaran->semester }}
+            </span>
 
-                </div>
+            @if($modeArsip)
 
-            </div>
+                <span class="inline-flex items-center gap-1 rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-600">
+                    <span class="w-2 h-2 rounded-full bg-gray-400"></span>
+                    Arsip
+                </span>
+
+            @else
+
+                <span class="inline-flex items-center gap-1 rounded-full bg-green-100 px-3 py-1 text-xs font-semibold text-green-700">
+                    <span class="w-2 h-2 rounded-full bg-green-500"></span>
+                    Aktif
+                </span>
+
             @endif
+
+        </div>
+
+    </div>
+
+@endif
         </div>
     </div>
 </div>
+
+{{-- ===================================================== --}}
+{{-- PERINGATAN ARSIP --}}
+{{-- ===================================================== --}}
+
+@if($modeArsip)
+
+    <div class="bg-yellow-50 border border-yellow-200
+                rounded-xl p-4 mb-6">
+
+        <div class="flex items-start gap-3">
+
+            <div class="flex-shrink-0">
+
+                <x-heroicon-o-exclamation-triangle
+                    class="w-6 h-6 text-yellow-600"/>
+
+            </div>
+
+            <div>
+
+                <h3 class="font-semibold text-yellow-800">
+                    Periode Tahun Ajaran Diarsipkan
+                </h3>
+
+                <p class="text-sm text-yellow-700 mt-1">
+
+                    Data absensi pada tahun ajaran
+                    <strong>
+                        {{ $tahunAjaran->tahun_ajaran }}
+                    </strong>
+                    semester
+                    <strong>
+                        {{ $tahunAjaran->semester }}
+                    </strong>
+                    merupakan data arsip.
+
+                    Data absensi hanya dapat dilihat dan
+                    tidak dapat ditambahkan atau diubah.
+
+                </p>
+
+            </div>
+
+        </div>
+
+    </div>
+
+@endif
+
 {{-- ===================================================== --}}
 {{-- INFORMASI JADWAL --}}
 {{-- ===================================================== --}}
@@ -81,10 +145,8 @@
             </p>
 
             <h3 class="font-bold text-lg">
-
-                {{ now()->translatedFormat('l') }}
-
-            </h3>
+    {{ now()->locale('id')->translatedFormat('l') }}
+</h3>
 
         </div>
 
@@ -97,10 +159,8 @@
             </p>
 
             <h3 class="font-bold text-lg">
-
-                {{ now()->format('d M Y') }}
-
-            </h3>
+    {{ now()->locale('id')->translatedFormat('d F Y') }}
+</h3>
 
         </div>
 
@@ -113,7 +173,7 @@
             </p>
 
         <h3 class="font-bold text-lg">
-    {{ $tahunAktif->tahun_ajaran ?? '-' }}
+    {{ $tahunAjaran->tahun_ajaran ?? '-' }}
 </h3>
 
         </div>
@@ -128,7 +188,7 @@
 
             <h3 class="font-bold text-lg">
 
-                {{ $tahunAktif->semester ?? '-' }}
+                {{ $tahunAjaran->semester ?? '-' }}
 
             </h3>
 
@@ -238,13 +298,13 @@
     <input
         type="text"
         readonly
-        value="{{ $tahunAktif->tahun_ajaran }}"
+        value="{{ $tahunAjaran->tahun_ajaran }}"
         class="w-full rounded-xl bg-gray-100 border-gray-300">
 
     <input
         type="hidden"
         name="tahun_ajaran_id"
-        value="{{ $tahunAktif->id }}">
+        value="{{ $tahunAjaran->id }}">
 </div>
 
 
@@ -260,13 +320,13 @@
     <input
         type="text"
         readonly
-        value="{{ $tahunAktif->semester }}"
+        value="{{ $tahunAjaran->semester }}"
         class="w-full rounded-xl bg-gray-100 border-gray-300">
 
     <input
         type="hidden"
         name="semester"
-        value="{{ $tahunAktif->semester }}">
+        value="{{ $tahunAjaran->semester }}">
 </div>
 
 
@@ -333,11 +393,13 @@
 </form>
 
 </div>
+@if(!$modeArsip)
+
 <form
     method="POST"
     action="{{ route('absensi.mass.store') }}">
 
-@csrf
+    @csrf
 
 <input type="hidden"
        name="kelas_id"
@@ -367,22 +429,25 @@
       {{-- BUTTON --}}
 
             <div class="mt-6 flex justify-between items-center">
-    @if($siswas->count())
+    
 
-        <button
-            type="submit"
-            class="inline-flex items-center gap-2 px-8 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white">
+       @if($siswas->count())
 
-            <x-heroicon-o-check-circle class="w-5 h-5"/>
+    <button
+        type="submit"
+        class="inline-flex items-center gap-2 px-8 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white">
 
-            Simpan Absensi
+        <x-heroicon-o-check-circle class="w-5 h-5"/>
 
-        </button>
+        Simpan Absensi
 
-    @endif
+    </button>
+
+@endif
 
 </div>
 <br>
+
         {{-- TABLE --}}
         <div class="bg-white rounded-2xl shadow overflow-hidden">
 
@@ -599,22 +664,52 @@
         {{-- BUTTON --}}
 
             <div class="mt-6 flex justify-between items-center">
-    @if($siswas->count())
+   @if($siswas->count())
 
-        <button
-            type="submit"
-            class="inline-flex items-center gap-2 px-8 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white">
+    <button
+        type="submit"
+        class="inline-flex items-center gap-2 px-8 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white">
 
-            <x-heroicon-o-check-circle class="w-5 h-5"/>
+        <x-heroicon-o-check-circle class="w-5 h-5"/>
 
-            Simpan Absensi
+        Simpan Absensi
 
-        </button>
+    </button>
 
-    @endif
+@endif
 
 </div>
+
 </form>
 
+@else
+
+{{-- ===================================================== --}}
+{{-- MODE ARSIP --}}
+{{-- ===================================================== --}}
+
+<div class="bg-white rounded-2xl shadow border p-10 text-center mt-6">
+
+    <x-heroicon-o-lock-closed
+        class="w-12 h-12 mx-auto text-gray-400 mb-4"/>
+
+    <h3 class="text-lg font-semibold text-gray-700">
+        Input Absensi Tidak Tersedia
+    </h3>
+
+    <p class="text-gray-500 mt-2">
+        Periode tahun ajaran ini sudah diarsipkan.
+        Data absensi tidak dapat ditambahkan atau diubah.
+    </p>
+
+    <p class="text-sm text-gray-500 mt-2">
+        Silakan gunakan menu
+        <strong>Rekap Absensi</strong>
+        untuk melihat data absensi.
+    </p>
+
+</div>
+
+@endif
 
 @endsection

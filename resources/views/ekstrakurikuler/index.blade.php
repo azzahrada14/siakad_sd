@@ -26,47 +26,49 @@
     </div>
 
     {{-- Tahun Aktif --}}
-    @if($tahunAktif)
+    @if($tahunAjaran)
 
-    <div class="mt-5 lg:mt-0">
+<div class="mt-5 lg:mt-0">
 
-        <div class="bg-blue-50 border border-blue-200 rounded-xl shadow-sm px-5 py-4 min-w-[280px]">
+    <div class="bg-blue-50 border border-blue-200 rounded-xl shadow-sm px-5 py-4 min-w-[280px]">
 
-            <p class="text-xs uppercase tracking-wide text-blue-600 font-semibold">
+        <p class="text-xs uppercase tracking-wide text-blue-600 font-semibold">
+            Tahun Ajaran
+        </p>
 
-                Tahun Ajaran Aktif
+        <h2 class="text-2xl font-bold text-blue-700 mt-1">
+            {{ $tahunAjaran->tahun_ajaran }}
+        </h2>
 
-            </p>
+        <div class="flex justify-between items-center mt-2">
 
-            <h2 class="text-2xl font-bold text-blue-700 mt-1">
+            <span class="text-gray-600 text-sm">
+                Semester {{ $tahunAjaran->semester }}
+            </span>
 
-                {{ $tahunAktif->tahun_ajaran }}
-
-            </h2>
-
-            <div class="flex justify-between items-center mt-2">
-
-                <span class="text-gray-600 text-sm">
-
-                    Semester {{ $tahunAktif->semester }}
-
-                </span>
+            @if($tahunAjaran->status === 'Aktif')
 
                 <span class="inline-flex items-center gap-1 rounded-full bg-green-100 px-3 py-1 text-xs font-semibold text-green-700">
-
                     <span class="w-2 h-2 rounded-full bg-green-500"></span>
-
                     Aktif
-
                 </span>
 
-            </div>
+            @else
+
+                <span class="inline-flex items-center gap-1 rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-600">
+                    <span class="w-2 h-2 rounded-full bg-gray-400"></span>
+                    Arsip
+                </span>
+
+            @endif
 
         </div>
 
     </div>
 
-    @endif
+</div>
+
+@endif
 
 </div>
 
@@ -258,23 +260,33 @@
 
                     <td class="border px-4 py-3 text-center">
 
-                  <button
-    type="button"
-    class="btn-modal inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white"
+                 @if(!$modeArsip)
 
-    data-id="{{ $item->id }}"
+    <button
+        type="button"
+        class="btn-modal inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white"
+        data-id="{{ $item->id }}"
+        data-nama="{{ $item->nama_siswa }}"
+        data-tahun="{{ $tahunAjaran->id }}"
+data-semester="{{ $tahunAjaran->semester }}">
 
-    data-nama="{{ $item->nama_siswa }}"
+        <x-heroicon-o-pencil-square class="w-5 h-5"/>
 
-    data-tahun="{{ $tahunAktif->id }}"
+        Kelola
 
-    data-semester="{{ request('semester') }}">
+    </button>
 
-    <x-heroicon-o-pencil-square class="w-5 h-5"/>
+@else
 
-    Kelola
+    <span class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-100 text-gray-500">
 
-</button>
+        <x-heroicon-o-lock-closed class="w-5 h-5"/>
+
+        Arsip
+
+    </span>
+
+@endif
 
                     </td>
 
@@ -354,15 +366,16 @@
                 id="siswa_id">
 
             <input
-                type="hidden"
-                name="tahun_ajaran_id"
-                value="{{ $tahunAktif->id }}">
+    type="hidden"
+    name="tahun_ajaran_id"
+    value="{{ $tahunAjaran->id }}"
+>
 
             <input
-                type="hidden"
-                name="semester"
-                value="{{ request('semester') }}">
-
+    type="hidden"
+    name="semester"
+    value="{{ $tahunAjaran->semester }}"
+>
             <div class="p-6">
 
                 {{-- Nama Siswa --}}

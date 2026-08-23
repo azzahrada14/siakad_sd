@@ -30,6 +30,9 @@ use App\Http\Controllers\LingkupMateriController;
 use App\Http\Controllers\TujuanPembelajaranController;
 use App\Http\Controllers\MasterEkstrakurikulerController;
 use App\Http\Controllers\AlumniController;
+use App\Http\Controllers\RekapNilaiOperatorController;
+use App\Http\Controllers\DashboardController;
+use Illuminate\Http\Request;
 
 /*
 |--------------------------------------------------------------------------
@@ -77,25 +80,30 @@ Route::middleware('guest')->group(function () {
 Route::middleware(['auth'])->group(function () {
 
     /*
-    |--------------------------------------------------------------------------
-    | DASHBOARD ADMIN
-    |--------------------------------------------------------------------------
-    */
+|--------------------------------------------------------------------------
+| DASHBOARD ADMIN / OPERATOR
+|--------------------------------------------------------------------------
+*/
 
-  Route::get('/dashboard', function () {
+Route::get('/dashboard', [
+    DashboardController::class,
+    'index'
+])->name('dashboard');
 
-    if (Auth::user()->role == 'guru') {
-        return redirect()->route('guru.dashboard');
-    }
 
-    if (Auth::user()->role == 'kepala_sekolah') {
-        return redirect()->route('dashboardKepala');
-    }
+Route::get('/tahun-ajaran', [TahunAjaranController::class, 'index'])
+    ->name('tahun-ajaran.index');
 
-    return view('dashboard');
+Route::get('/tahun-ajaran/create', [TahunAjaranController::class, 'create'])
+    ->name('tahun-ajaran.create');
 
-})->name('dashboard');
+Route::post('/tahun-ajaran', [TahunAjaranController::class, 'store'])
+    ->name('tahun-ajaran.store');
 
+Route::get('/tahun-ajaran/{id}/dashboard', [
+    TahunAjaranController::class,
+    'dashboard'
+])->name('tahun-ajaran.dashboard');
     /*
     |--------------------------------------------------------------------------
     | DASHBOARD GURU
@@ -118,6 +126,8 @@ Route::get(
     '/kepala-sekolah',
     [DashboardKepalaSekolahController::class, 'index']
 )->name('dashboardKepala');
+
+
 
 Route::get(
     '/informasi-akademik',
@@ -150,6 +160,11 @@ Route::post(
     | RESOURCE
     |--------------------------------------------------------------------------
     */
+
+    Route::get(
+    '/operator/rekap-nilai',
+    [RekapNilaiOperatorController::class, 'index']
+)->name('operator.rekap-nilai');
 
 Route::get('/kenaikan', [KenaikanKelasController::class,'index'])
     ->name('kenaikan.index');
@@ -299,6 +314,11 @@ Route::get('/tahunajaran', [TahunAjaranController::class,'index'])
     
 Route::get('/tahunajaran/export', [TahunAjaranController::class,'export'])
     ->name('tahun-ajaran.export');
+
+    Route::get(
+    '/tahunajaran/{tahunajaran}/riwayat',
+    [TahunAjaranController::class, 'riwayat']
+)->name('tahun-ajaran.riwayat');
 
 
 Route::get('/tahunajaran/create', [TahunAjaranController::class,'create'])

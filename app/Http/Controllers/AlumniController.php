@@ -18,31 +18,38 @@ use App\Exports\AlumniExport;
 
 class AlumniController extends Controller
 {
-    public function index()
+    public function index(Request $request)
 {
-    /*
-    |--------------------------------------------------------------------------
-    | Tahun Ajaran Aktif
-    |--------------------------------------------------------------------------
-    */
+    $tahunAktif = $request->filled('tahun_ajaran_id')
+        ? TahunAjaran::findOrFail($request->tahun_ajaran_id)
+        : TahunAjaran::where('status', 'Aktif')->first();
 
-    $tahunAktif = TahunAjaran::where(
-        'status',
-        'Aktif'
-    )->first();
+    if (!$tahunAktif) {
+        return back()->with(
+            'error',
+            'Belum ada tahun ajaran yang tersedia.'
+        );
+    }
 
-    /*
-    |--------------------------------------------------------------------------
-    | Data Alumni
-    |--------------------------------------------------------------------------
-    */
+    $modeArsip = $tahunAktif->status !== 'Aktif';
+
+    $bolehProses = (
+        $tahunAktif->status === 'Aktif'
+        && strtolower($tahunAktif->semester) === 'genap'
+    );
 
     $alumni = Alumni::with([
         'siswa',
         'tahunAjaran'
     ])
+    ->where(
+        'tahun_ajaran_id',
+        $tahunAktif->id
+    )
     ->orderByDesc('tanggal_lulus')
     ->get();
+
+
 
     /*
     |--------------------------------------------------------------------------
@@ -67,37 +74,60 @@ class AlumniController extends Controller
     return view(
         'alumni.index',
         compact(
-            'tahunAktif',
-            'alumni',
-            'totalAlumni',
-            'laki',
-            'perempuan'
-        )
+    'tahunAktif',
+    'modeArsip',
+    'bolehProses',
+    'alumni',
+    'totalAlumni',
+    'laki',
+    'perempuan'
+)
     );
 }
-public function generate()
+
+
+public function generate(Request $request)
 {
     DB::beginTransaction();
 
     try {
 
-        $tahunAktif = TahunAjaran::where(
-            'status',
-            'Aktif'
-        )->first();
+        $tahunAktif = $request->filled('tahun_ajaran_id')
+            ? TahunAjaran::findOrFail($request->tahun_ajaran_id)
+            : TahunAjaran::where('status', 'Aktif')->first();
 
         if (!$tahunAktif) {
 
             return back()->with(
                 'error',
-                'Tahun ajaran aktif tidak ditemukan.'
+                'Tahun ajaran tidak ditemukan.'
+            );
+
+        }
+
+        // Periode arsip tidak boleh diproses
+        if ($tahunAktif->status !== 'Aktif') {
+
+            return back()->with(
+                'error',
+                'Data pada periode arsip tidak dapat diproses.'
+            );
+
+        }
+
+        // Alumni hanya diproses pada semester Genap
+        if (strtolower($tahunAktif->semester) !== 'genap') {
+
+            return back()->with(
+                'error',
+                'Proses Alumni hanya dapat dilakukan pada semester Genap.'
             );
 
         }
 
         /*
         |--------------------------------------------------------------------------
-        | Ambil seluruh siswa yang Lulus
+        | Ambil siswa yang sudah Lulus
         |--------------------------------------------------------------------------
         */
 
@@ -118,7 +148,7 @@ public function generate()
 
             /*
             |--------------------------------------------------------------------------
-            | Cegah data ganda
+            | Cegah data alumni ganda
             |--------------------------------------------------------------------------
             */
 
@@ -128,9 +158,7 @@ public function generate()
                     $row->siswa_id
                 )->exists()
             ) {
-
                 continue;
-
             }
 
             /*
@@ -148,28 +176,29 @@ public function generate()
 
             Alumni::create([
 
-                'siswa_id'          => $row->siswa_id,
+                'siswa_id'        => $row->siswa_id,
 
-                'tahun_ajaran_id'   => $tahunAktif->id,
+                'tahun_ajaran_id' => $tahunAktif->id,
 
-                'tanggal_lulus'     => $row->tanggal_kelulusan,
+                'tanggal_lulus'   => $row->tanggal_kelulusan,
 
-                'nomor_ijazah'      => $nomorIjazah,
+                'nomor_ijazah'    => $nomorIjazah,
 
-                'nomor_skhun'       => null,
+                'nomor_skhun'     => null,
 
-                'status'            => 'Aktif',
+                'status'          => 'Aktif',
 
             ]);
 
             $berhasil++;
-
         }
 
         DB::commit();
 
         return redirect()
-            ->route('alumni.index')
+            ->route('alumni.index', [
+                'tahun_ajaran_id' => $tahunAktif->id
+            ])
             ->with(
                 'success',
                 "{$berhasil} data alumni berhasil dibuat."
@@ -179,10 +208,11 @@ public function generate()
 
         DB::rollBack();
 
-        return back()->with(
-            'error',
-            $e->getMessage()
-        );
+        return back()
+            ->with(
+                'error',
+                $e->getMessage()
+            );
 
     }
 }

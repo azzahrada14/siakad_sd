@@ -21,82 +21,143 @@ class GuruController extends Controller
     */
 
     public function index(Request $request)
-    {
-      $query = Guru::with([
-    'user',
-    'waliKelas'
-]);
+{
+    /*
+    |--------------------------------------------------------------------------
+    | PERIODE AKADEMIK
+    |--------------------------------------------------------------------------
+    */
 
+    $tahunAjaran = $request->filled('tahun_ajaran_id')
+        ? \App\Models\TahunAjaran::findOrFail($request->tahun_ajaran_id)
+        : \App\Models\TahunAjaran::where('status', 'Aktif')->first();
 
-        // Search
-        if ($request->filled('search')) {
-
-            $query->where(function ($q) use ($request) {
-
-                $q->where('nama_guru', 'like', '%' . $request->search . '%')
-                  ->orWhere('nip', 'like', '%' . $request->search . '%')
-                  ->orWhere('nuptk', 'like', '%' . $request->search . '%');
-
-            });
-
-        }
-
-        // Filter Jenis Pengajar
-        if ($request->filled('jenis_pengajar')) {
-
-            $query->where(
-                'jenis_pengajar',
-                $request->jenis_pengajar
-            );
-
-        }
-
-        // Filter Status Guru
-        if ($request->filled('status_guru')) {
-
-            $query->where(
-                'status_guru',
-                $request->status_guru
-            );
-
-        }
-
-        $gurus = $query
-            ->orderBy('nama_guru')
-            ->paginate(10)
-            ->withQueryString();
-
-        $totalGuru = Guru::count();
-
-        $totalWali = Guru::where('jenis_pengajar', 'Wali Kelas')
-            ->where('status_guru', 'Aktif')
-            ->count();
-
-        $totalPai = Guru::where('jenis_pengajar', 'Guru PAI')
-            ->where('status_guru', 'Aktif')
-            ->count();
-
-        $totalPjok = Guru::where('jenis_pengajar', 'Guru PJOK')
-            ->where('status_guru', 'Aktif')
-            ->count();
-
-        $totalMutasi = Guru::where(
-            'status_guru',
-            'Mutasi Keluar'
-        )->count();
-
-        return view(
-            'guru.index',
-            compact(
-                'gurus',
-                'totalGuru',
-                'totalWali',
-                'totalPai',
-                'totalPjok',
-                'totalMutasi'
-            )
+    if (!$tahunAjaran) {
+        return back()->with(
+            'error',
+            'Belum ada tahun ajaran yang tersedia.'
         );
     }
+
+    $modeArsip = $tahunAjaran->status !== 'Aktif';
+
+    $tahunAktif = $tahunAjaran;
+
+    /*
+    |--------------------------------------------------------------------------
+    | DATA GURU
+    |--------------------------------------------------------------------------
+    */
+
+    $query = Guru::with([
+        'user',
+        'waliKelas'
+    ]);
+
+
+    // Search
+    if ($request->filled('search')) {
+
+        $query->where(function ($q) use ($request) {
+
+            $q->where(
+                'nama_guru',
+                'like',
+                '%' . $request->search . '%'
+            )
+            ->orWhere(
+                'nip',
+                'like',
+                '%' . $request->search . '%'
+            )
+            ->orWhere(
+                'nuptk',
+                'like',
+                '%' . $request->search . '%'
+            );
+
+        });
+
+    }
+
+
+    // Filter Jenis Pengajar
+    if ($request->filled('jenis_pengajar')) {
+
+        $query->where(
+            'jenis_pengajar',
+            $request->jenis_pengajar
+        );
+
+    }
+
+
+    // Filter Status Guru
+    if ($request->filled('status_guru')) {
+
+        $query->where(
+            'status_guru',
+            $request->status_guru
+        );
+
+    }
+
+
+    $gurus = $query
+        ->orderBy('nama_guru')
+        ->paginate(10)
+        ->withQueryString();
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | STATISTIK
+    |--------------------------------------------------------------------------
+    */
+
+    $totalGuru = (clone $query)->count();
+
+    $totalWali = (clone $query)
+        ->where('jenis_pengajar', 'Wali Kelas')
+        ->where('status_guru', 'Aktif')
+        ->count();
+
+    $totalPai = (clone $query)
+        ->where('jenis_pengajar', 'Guru PAI')
+        ->where('status_guru', 'Aktif')
+        ->count();
+
+    $totalPjok = (clone $query)
+        ->where('jenis_pengajar', 'Guru PJOK')
+        ->where('status_guru', 'Aktif')
+        ->count();
+
+    $totalMutasi = (clone $query)
+        ->where('status_guru', 'Mutasi Keluar')
+        ->count();
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | VIEW
+    |--------------------------------------------------------------------------
+    */
+
+    return view(
+    'guru.index',
+    compact(
+        'gurus',
+        'totalGuru',
+        'totalWali',
+        'totalPai',
+        'totalPjok',
+        'totalMutasi',
+        'tahunAjaran',
+        'tahunAktif',
+        'modeArsip'
+    )
+);
+}
     /*
     |--------------------------------------------------------------------------
     | CREATE

@@ -31,16 +31,54 @@ public function index(Request $request)
 
     $guru = Auth::user()->guru;
 
+    if (!$guru) {
+        abort(403, 'Data guru tidak ditemukan.');
+    }
+
     /*
     |--------------------------------------------------------------------------
-    | TAHUN AJARAN AKTIF
+    | TAHUN AJARAN YANG DILIHAT
     |--------------------------------------------------------------------------
     */
 
-    $tahunAktif = TahunAjaran::where(
-        'status',
-        'Aktif'
-    )->first();
+    $tahunAjaran = $request->filled('tahun_ajaran_id')
+    ? TahunAjaran::findOrFail($request->tahun_ajaran_id)
+    : TahunAjaran::where('status', 'Aktif')->first();
+
+if (!$tahunAjaran) {
+    abort(404, 'Tahun ajaran belum tersedia.');
+}
+
+$modeArsip = $tahunAjaran->status !== 'Aktif';
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | TAHUN GANJIL SEBAGAI SUMBER STRUKTUR KELAS
+    |--------------------------------------------------------------------------
+    |
+    | Pembagian kelas dilakukan pada semester Ganjil.
+    | Pada semester Genap, kelas dan anggota siswa tetap menggunakan
+    | struktur yang dibentuk pada semester Ganjil.
+    |
+    */
+
+    $tahunGanjil = TahunAjaran::where(
+    'tahun_ajaran',
+    $tahunAjaran->tahun_ajaran
+)
+    ->where(
+        'semester',
+        'Ganjil'
+    )
+    ->first();
+
+    if (!$tahunGanjil) {
+        abort(
+            404,
+            'Data tahun ajaran Ganjil untuk struktur kelas belum tersedia.'
+        );
+    }
 
     /*
     |--------------------------------------------------------------------------
@@ -69,303 +107,391 @@ public function index(Request $request)
     $asts = [];
 
     /*
-|--------------------------------------------------------------------------
-| HAK AKSES GURU
-|--------------------------------------------------------------------------
-*/
+    |--------------------------------------------------------------------------
+    | HAK AKSES GURU
+    |--------------------------------------------------------------------------
+    */
 
-switch ($guru->jenis_pengajar) {
+    switch ($guru->jenis_pengajar) {
 
-    case 'Wali Kelas':
+        case 'Wali Kelas':
 
-        if ($guru->waliKelas) {
+            /*
+            |--------------------------------------------------------------
+            | Kelas Wali Selalu Mengikuti Struktur Ganjil
+            |--------------------------------------------------------------
+            */
 
-            $kelas = collect([
-                $guru->waliKelas
-            ]);
+            $kelasWali = Kelas::where(
+                'wali_kelas_id',
+                $guru->id
+            )
+            ->where(
+                'tahun_ajaran_id',
+                $tahunGanjil->id
+            )
+            ->first();
 
-        }
+            if ($kelasWali) {
 
-        $mapels = Mapel::where(
-            'status',
-            'Aktif'
+                $kelas = collect([
+                    $kelasWali
+                ]);
+
+            }
+
+            $mapels = Mapel::where(
+                'status',
+                'Aktif'
+            )
+            ->orderBy('nama_mapel')
+            ->get();
+
+            break;
+
+
+        case 'Guru PAI':
+
+            /*
+            |--------------------------------------------------------------
+            | Kelas berasal dari struktur Ganjil
+            |--------------------------------------------------------------
+            */
+
+            $kelas = Kelas::where(
+                'tahun_ajaran_id',
+                $tahunGanjil->id
+            )
+            ->orderBy('nama_kelas')
+            ->get();
+
+            $mapels = Mapel::where(
+                'kode_mapel',
+                'PAI'
+            )
+            ->get();
+
+            break;
+
+
+        case 'Guru PJOK':
+
+            /*
+            |--------------------------------------------------------------
+            | Kelas berasal dari struktur Ganjil
+            |--------------------------------------------------------------
+            */
+
+            $kelas = Kelas::where(
+                'tahun_ajaran_id',
+                $tahunGanjil->id
+            )
+            ->orderBy('nama_kelas')
+            ->get();
+
+            $mapels = Mapel::where(
+                'kode_mapel',
+                'PJOK'
+            )
+            ->get();
+
+            break;
+
+
+        default:
+
+            /*
+            |--------------------------------------------------------------
+            | Guru Mapel
+            |--------------------------------------------------------------
+            */
+
+            $kelas = Kelas::where(
+                'tahun_ajaran_id',
+                $tahunGanjil->id
+            )
+            ->orderBy('nama_kelas')
+            ->get();
+
+            $mapels = Mapel::where(
+                'status',
+                'Aktif'
+            )
+            ->orderBy('nama_mapel')
+            ->get();
+
+            break;
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | FILTER
+    |--------------------------------------------------------------------------
+    */
+
+    $kelasId = $request->kelas;
+
+    $mapelId = $request->mapel;
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | WALI KELAS HANYA BOLEH MEMILIH KELASNYA SENDIRI
+    |--------------------------------------------------------------------------
+    */
+
+    if ($guru->jenis_pengajar == 'Wali Kelas') {
+
+        $kelasId = $kelas->first()?->id;
+
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | DATA SISWA
+    |--------------------------------------------------------------------------
+    |
+    | Anggota kelas selalu diambil dari tahun Ganjil.
+    |
+    */
+
+    if ($kelasId) {
+
+        $ids = AnggotaKelas::where(
+            'kelas_id',
+            $kelasId
         )
-        ->orderBy('nama_mapel')
-        ->get();
-
-    break;
-
-    case 'Guru PAI':
-
-        $kelas = Kelas::orderBy('nama_kelas')->get();
-
-        $mapels = Mapel::where(
-            'kode_mapel',
-            'PAI'
-        )->get();
-
-    break;
-
-    case 'Guru PJOK':
-
-        $kelas = Kelas::orderBy('nama_kelas')->get();
-
-        $mapels = Mapel::where(
-            'kode_mapel',
-            'PJOK'
-        )->get();
-
-    break;
-
-    default:
-
-        $kelas = Kelas::orderBy('nama_kelas')->get();
-
-        $mapels = Mapel::where(
-            'status',
-            'Aktif'
+        ->where(
+            'tahun_ajaran_id',
+            $tahunGanjil->id
         )
-        ->orderBy('nama_mapel')
-        ->get();
+        ->pluck('siswa_id');
 
-}
-/*
-|--------------------------------------------------------------------------
-| FILTER
-|--------------------------------------------------------------------------
-*/
-
-$kelasId = $request->kelas;
-
-$mapelId = $request->mapel;
-
-if ($guru->jenis_pengajar == 'Wali Kelas') {
-
-    $kelasId = $guru->waliKelas?->id;
-
-}
-
-/*
-|--------------------------------------------------------------------------
-| DATA SISWA
-|--------------------------------------------------------------------------
-*/
-
-if ($kelasId) {
-
-    $ids = AnggotaKelas::where(
-        'kelas_id',
-        $kelasId
-    )->pluck('siswa_id');
-
-    $siswas = Siswa::whereIn(
+        $siswas = Siswa::whereIn(
             'id',
             $ids
         )
         ->orderBy('nama_siswa')
         ->get();
-
-}
-
-$detailAsts = NilaiAstsDetail::with('header')
-
-    ->whereHas('header', function ($q) use ($request, $tahunAktif) {
-
-        $q->where('mapel_id', $request->mapel)
-          ->where('tahun_ajaran_id', $tahunAktif->id)
-          ->where('semester', $tahunAktif->semester);
-
-    })
-    ->get();
-
-    foreach($detailAsts as $item){
-
-    $asts[$item->header->siswa_id][$item->lingkup_materi_id]
-        = $item->nilai;
-
-}
-
-/*
-|--------------------------------------------------------------------------
-| MAPEL YANG DIPILIH
-|--------------------------------------------------------------------------
-*/
-
-$mapel = null;
-
-if ($mapelId) {
-
-    $mapel = Mapel::find($mapelId);
-
-
     }
 
-/*
-|--------------------------------------------------------------------------
-| LINGKUP MATERI BERDASARKAN TINGKAT KELAS
-|--------------------------------------------------------------------------
-*/
 
-if ($mapel && $kelasId) {
+    /*
+    |--------------------------------------------------------------------------
+    | DATA ASTS
+    |--------------------------------------------------------------------------
+    |
+    | Nilai tetap mengikuti tahun ajaran + semester yang sedang dilihat.
+    |
+    */
 
-    $kelasDipilih = Kelas::find($kelasId);
-
-    if ($kelasDipilih) {
-
-        $lingkupMateris = LingkupMateri::with([
-            'tujuanPembelajarans' => function ($query) {
-                $query->where('status', 'Aktif')
-                      ->orderBy('urutan');
-            }
-        ])
-        ->where('mapel_id', $mapel->id)
-
-        // PENTING:
-        // LM mengikuti tingkat kelas,
-        // bukan rombel A/B
+    $astsData = DB::table('nilai_asts')
         ->where(
-            'tingkat',
-            $kelasDipilih->tingkat
+            'kelas_id',
+            $kelasId
         )
-
         ->where(
-            'status',
-            'Aktif'
+            'mapel_id',
+            $mapelId
         )
-
         ->where(
-            'tahun_ajaran_id',
-            $tahunAktif->id
-        )
-
-        ->where(
-            'semester',
-            $tahunAktif->semester
-        )
-
-        ->orderBy('id')
+    'tahun_ajaran_id',
+    $tahunAjaran->id
+)
+->where(
+    'semester',
+    $tahunAjaran->semester
+)
         ->get();
 
+    foreach ($astsData as $item) {
+
+        $asts[$item->siswa_id][$item->lingkup_materi_id]
+            = $item->nilai;
     }
 
-}
 
-/*
-|--------------------------------------------------------------------------
-| TUJUAN PEMBELAJARAN
-|--------------------------------------------------------------------------
-*/
+    /*
+    |--------------------------------------------------------------------------
+    | MAPEL YANG DIPILIH
+    |--------------------------------------------------------------------------
+    */
 
-foreach ($lingkupMateris as $lm) {
+    $mapel = null;
 
-    foreach ($lm->tujuanPembelajarans as $tp) {
+    if ($mapelId) {
 
-        $tujuanPembelajarans->push($tp);
-
+        $mapel = Mapel::find($mapelId);
     }
 
-}
 
-/*
-|--------------------------------------------------------------------------
-| NILAI SISWA
-|--------------------------------------------------------------------------
-*/
+    /*
+    |--------------------------------------------------------------------------
+    | LINGKUP MATERI
+    |--------------------------------------------------------------------------
+    */
 
-if (
+    if ($mapel && $kelasId) {
 
+        $kelasDipilih = Kelas::find($kelasId);
+
+        if ($kelasDipilih) {
+
+            $lingkupMateris = LingkupMateri::with([
+                'tujuanPembelajarans' => function ($query) {
+
+                    $query->where(
+                        'status',
+                        'Aktif'
+                    )
+                    ->orderBy('urutan');
+
+                }
+            ])
+            ->where(
+                'mapel_id',
+                $mapel->id
+            )
+            ->where(
+                'tingkat',
+                $kelasDipilih->tingkat
+            )
+            ->where(
+                'status',
+                'Aktif'
+            )
+            ->where(
+    'tahun_ajaran_id',
+    $tahunAjaran->id
+)
+->where(
+    'semester',
+    $tahunAjaran->semester
+)
+            ->orderBy('id')
+            ->get();
+        }
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | TUJUAN PEMBELAJARAN
+    |--------------------------------------------------------------------------
+    */
+
+    foreach ($lingkupMateris as $lm) {
+
+        foreach ($lm->tujuanPembelajarans as $tp) {
+
+            $tujuanPembelajarans->push($tp);
+
+        }
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | NILAI SISWA
+    |--------------------------------------------------------------------------
+    |
+    | Nilai mengikuti tahun ajaran + semester yang sedang dilihat.
+    |
+    */
+
+    if (
     $kelasId &&
     $mapel &&
-    $tahunAktif
-
+    $tahunAjaran
 ) {
 
-    foreach ($siswas as $siswa) {
+        foreach ($siswas as $siswa) {
 
-    $nilai = Nilai::with('detailTP')
+            $nilai = Nilai::with('detailTP')
+                ->where(
+                    'siswa_id',
+                    $siswa->id
+                )
+                ->where(
+                    'mapel_id',
+                    $mapel->id
+                )
+                ->where(
+    'tahun_ajaran_id',
+    $tahunAjaran->id
+)
+->where(
+    'semester',
+    $tahunAjaran->semester
+)
+                ->first();
 
-        ->where('siswa_id', $siswa->id)
+            if (!$nilai) {
+                continue;
+            }
 
-        ->where('mapel_id', $mapel->id)
+            $nilaiSiswa[$siswa->id] = $nilai;
 
-        ->where('tahun_ajaran_id', $tahunAktif->id)
+            foreach ($nilai->detailTP as $detail) {
 
-        ->where('semester', $tahunAktif->semester)
+                $nilaiTP[$siswa->id][$detail->tp_id]
+                    = $detail->nilai;
+            }
 
-        ->first();
+            $rataFormatif[$siswa->id]
+                = $nilai->rata_formatif;
 
-    if (!$nilai) {
-        continue;
+            $nilaiAkhir[$siswa->id]
+                = $nilai;
+        }
     }
 
-    $nilaiSiswa[$siswa->id] = $nilai;
 
-    foreach ($nilai->detailTP as $detail) {
+    /*
+    |--------------------------------------------------------------------------
+    | FILTER
+    |--------------------------------------------------------------------------
+    */
 
-        $nilaiTP[$siswa->id][$detail->tp_id] = $detail->nilai;
-
-    }
-
-    $rataFormatif[$siswa->id] = $nilai->rata_formatif;
-
-    $nilaiAkhir[$siswa->id] = $nilai;
-
-}
-}
-/*
-|--------------------------------------------------------------------------
-| FILTER
-|--------------------------------------------------------------------------
-*/
-
-$filter = [
+    $filter = [
 
     'kelas_id' => $kelasId,
 
     'mapel_id' => $mapelId,
 
-    'tahun_ajaran_id' => $tahunAktif?->id,
+    'tahun_ajaran_id' => $tahunAjaran->id,
 
-    'semester' => $tahunAktif?->semester,
+    'semester' => $tahunAjaran->semester,
 
 ];
 
-return view(
 
+    /*
+    |--------------------------------------------------------------------------
+    | VIEW
+    |--------------------------------------------------------------------------
+    */
+
+    return view(
     'nilai.index',
-
     compact(
-
         'guru',
-
         'kelas',
-
         'mapels',
-
         'siswas',
-
         'mapel',
-
         'lingkupMateris',
-
         'tujuanPembelajarans',
-
         'nilaiSiswa',
-
         'nilaiTP',
-
         'rataFormatif',
-
         'nilaiAkhir',
-
-        'tahunAktif',
-
+        'tahunAjaran',
         'asts',
-
+        'modeArsip',
         'filter'
-
     )
-
 );
 }
 
@@ -379,7 +505,22 @@ public function massStore(Request $request)
         'siswa_id'        => 'required|array',
     ]);
 
+    $tahunAjaran = TahunAjaran::findOrFail(
+        $request->tahun_ajaran_id
+    );
+
+    if ($tahunAjaran->status !== 'Aktif') {
+
+        return back()
+            ->withInput()
+            ->with(
+                'error',
+                'Periode tahun ajaran ini sudah diarsipkan. Input nilai tidak dapat dilakukan.'
+            );
+    }
+
     DB::beginTransaction();
+
 
     
     try {
@@ -547,22 +688,15 @@ if ($nilai->nilai_remedial > $nilaiAkhir) {
        DB::commit();
 
 return redirect()
-
-->route('nilai.index',[
-
-    'kelas'=>$request->kelas_id,
-
-    'mapel'=>$request->mapel_id
-
-])
-
-->with(
-
-'success',
-
-'Nilai berhasil disimpan.'
-
-);
+    ->route('nilai.index', [
+        'kelas' => $request->kelas_id,
+        'mapel' => $request->mapel_id,
+        'tahun_ajaran_id' => $request->tahun_ajaran_id,
+    ])
+    ->with(
+        'success',
+        'Nilai berhasil disimpan.'
+    );
 
 
 }
@@ -592,25 +726,38 @@ catch(\Exception $e){
 public function remedial(Request $request)
 {
     $request->validate([
-        'nilai_id' => 'required|exists:nilais,id',
+        'nilai_id'       => 'required|exists:nilais,id',
         'nilai_remedial' => 'required|numeric|min:0|max:100',
     ]);
 
     $nilai = Nilai::findOrFail($request->nilai_id);
-if (!$nilai->nilai_awal) {
-    $nilai->nilai_awal = $nilai->nilai_akhir;
-}
 
-$nilai->nilai_remedial = $request->nilai_remedial;
-$nilai->tanggal_remedial = now();
+    $tahunAjaran = TahunAjaran::findOrFail(
+        $nilai->tahun_ajaran_id
+    );
 
-$nilai->nilai_akhir = max(
-    $nilai->nilai_akhir,
-    $request->nilai_remedial
-);
+    if ($tahunAjaran->status !== 'Aktif') {
 
-$nilai->save();
+        return back()
+            ->with(
+                'error',
+                'Periode tahun ajaran ini sudah diarsipkan. Remedial tidak dapat dilakukan.'
+            );
+    }
 
+    if (!$nilai->nilai_awal) {
+        $nilai->nilai_awal = $nilai->nilai_akhir;
+    }
+
+    $nilai->nilai_remedial = $request->nilai_remedial;
+    $nilai->tanggal_remedial = now();
+
+    $nilai->nilai_akhir = max(
+        $nilai->nilai_akhir,
+        $request->nilai_remedial
+    );
+
+    $nilai->save();
 
     return back()->with(
         'success',

@@ -5,61 +5,62 @@
 {{-- =========================================================
     HEADER
 ========================================================= --}}
-<div class="mb-6">
+<div class="mb-8 flex items-start justify-between gap-6">
 
-    <h2 class="text-3xl font-bold text-gray-800">
-        Tujuan Pembelajaran
-    </h2>
+    {{-- BAGIAN KIRI --}}
+    <div>
 
-    @if($lingkupMateri)
+        <h2 class="text-3xl font-bold text-gray-800">
+            Tujuan Pembelajaran
+        </h2>
 
-        <div class="mt-3 flex flex-wrap items-center gap-2">
+        @if($lingkupMateri)
 
-            {{-- Mata Pelajaran --}}
-            @if($lingkupMateri->mapel)
-                <span class="inline-flex items-center px-3 py-1 rounded-full bg-blue-100 text-blue-700 text-sm font-medium">
-                    {{ $lingkupMateri->mapel->nama_mapel }}
+            <div class="mt-3 flex flex-wrap items-center gap-2">
+
+                {{-- Mata Pelajaran --}}
+                @if($lingkupMateri->mapel)
+                    <span class="inline-flex items-center px-3 py-1 rounded-full bg-blue-100 text-blue-700 text-sm font-medium">
+                        {{ $lingkupMateri->mapel->nama_mapel }}
+                    </span>
+                @endif
+
+                {{-- Tingkat --}}
+                <span class="inline-flex items-center px-3 py-1 rounded-full bg-purple-100 text-purple-700 text-sm font-medium">
+                    Kelas {{ $lingkupMateri->tingkat }}
                 </span>
-            @endif
 
-            {{-- Tingkat --}}
-            <span class="inline-flex items-center px-3 py-1 rounded-full bg-purple-100 text-purple-700 text-sm font-medium">
-                Kelas {{ $lingkupMateri->tingkat }}
-            </span>
+                {{-- Semester --}}
+                <span class="inline-flex items-center px-3 py-1 rounded-full bg-gray-100 text-gray-700 text-sm font-medium">
+                    Semester {{ $lingkupMateri->semester }}
+                </span>
 
-            {{-- Semester --}}
-            <span class="inline-flex items-center px-3 py-1 rounded-full bg-gray-100 text-gray-700 text-sm font-medium">
-                Semester {{ $lingkupMateri->semester }}
-            </span>
+            </div>
 
-        </div>
+            <p class="text-gray-500 mt-3">
+                Lingkup Materi :
+                <span class="font-semibold text-gray-700">
+                    {{ $lingkupMateri->nama_lm }}
+                </span>
+            </p>
 
-        <p class="text-gray-500 mt-3">
-            Lingkup Materi :
-            <span class="font-semibold text-gray-700">
-                {{ $lingkupMateri->nama_lm }}
-            </span>
-        </p>
+        @else
 
-    @else
+            <p class="text-gray-500 mt-2">
+                Pilih Lingkup Materi terlebih dahulu untuk melihat Tujuan Pembelajaran.
+            </p>
 
-        <p class="text-gray-500 mt-2">
-            Pilih Lingkup Materi terlebih dahulu untuk melihat Tujuan Pembelajaran.
-        </p>
+        @endif
 
-    @endif
-
-</div>
+    </div>
 
 
-{{-- =========================================================
-    TAHUN AJARAN AKTIF
-========================================================= --}}
-@if($tahunAktif)
+    {{-- =====================================================
+        TAHUN AJARAN AKTIF - KANAN
+    ====================================================== --}}
+    @if($tahunAktif)
 
-    <div class="mb-6">
-
-        <div class="bg-blue-50 border border-blue-200 rounded-xl shadow-sm px-5 py-4 max-w-sm">
+        <div class="bg-blue-50 border border-blue-200 rounded-xl shadow-sm px-5 py-4 min-w-[230px]">
 
             <p class="text-xs uppercase tracking-wide text-blue-600 font-semibold">
                 Tahun Ajaran Aktif
@@ -87,32 +88,31 @@
 
         </div>
 
-    </div>
+    @endif
 
-@endif
+</div>
 
 
 {{-- =========================================================
-    BUTTON TAMBAH
+    BUTTON TAMBAH DAN KEMBALI
 ========================================================= --}}
 @if($lingkupMateri)
 
-    <div class="flex justify-end mb-5">
+    <div class="flex justify-end items-center gap-3 mb-4">
 
-        <a
-            href="{{ route('tujuan-pembelajaran.create', [
-                'lingkup_materi' => $lingkupMateri->id
-            ]) }}"
-            class="inline-flex items-center gap-2 px-5 py-3 rounded-lg bg-blue-600 hover:bg-blue-700 text-white"
-        >
+    {{-- Kembali ke Lingkup Materi --}}
+    <a href="{{ route('lingkup-materi.index', ['mapel' => $lingkupMateri->mapel_id]) }}"
+       class="inline-flex items-center gap-2 bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg shadow-sm">
+        ← Kembali
+    </a>
 
-            <x-heroicon-o-plus class="w-5 h-5"/>
+    {{-- Tambah Tujuan Pembelajaran --}}
+    <a href="{{ route('tujuan-pembelajaran.create', $lingkupMateri->id) }}"
+       class="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg shadow-sm">
+        + Tambah Tujuan Pembelajaran
+    </a>
 
-            Tambah Tujuan Pembelajaran
-
-        </a>
-
-    </div>
+</div>
 
 @endif
 
@@ -130,31 +130,31 @@
 
                 <tr>
 
-                    <th class="px-4 py-3 text-center w-16">
+                    <th class="border px-4 py-3 text-center w-16">
                         No
                     </th>
 
-                    <th class="px-4 py-3 text-center w-24">
+                    <th class="border px-4 py-3 text-center w-24">
                         Kode TP
                     </th>
 
-                    <th class="px-4 py-3 text-left">
+                    <th class="border px-4 py-3 text-left">
                         Deskripsi Tujuan Pembelajaran
                     </th>
 
-                    <th class="px-4 py-3 text-center w-28">
+                    <th class="border px-4 py-3 text-center w-28">
                         Jumlah JP
                     </th>
 
-                    <th class="px-4 py-3 text-center w-24">
+                    <th class="border px-4 py-3 text-center w-24">
                         Urutan
                     </th>
 
-                    <th class="px-4 py-3 text-center w-28">
+                    <th class="border px-4 py-3 text-center w-28">
                         Status
                     </th>
 
-                    <th class="px-4 py-3 text-center w-36">
+                    <th class="border px-4 py-3 text-center w-36">
                         Aksi
                     </th>
 
@@ -170,13 +170,13 @@
                     <tr class="hover:bg-gray-50">
 
                         {{-- No --}}
-                        <td class="px-4 py-3 text-center text-gray-600">
+                        <td class="border px-4 py-3 text-center text-gray-600">
                             {{ $loop->iteration }}
                         </td>
 
 
                         {{-- Kode TP --}}
-                        <td class="px-4 py-3 text-center">
+                        <td class="border px-4 py-3 text-center">
 
                             <span class="font-semibold text-blue-700">
                                 {{ $item->kode_tp }}
@@ -186,7 +186,7 @@
 
 
                         {{-- Deskripsi --}}
-                        <td class="px-4 py-3 text-gray-700">
+                        <td class="border px-4 py-3 text-gray-700">
 
                             {{ $item->deskripsi }}
 
@@ -194,7 +194,7 @@
 
 
                         {{-- Jumlah JP --}}
-                        <td class="px-4 py-3 text-center text-gray-600">
+                        <td class="border px-4 py-3 text-center text-gray-600">
 
                             {{ $item->jumlah_jp }}
 
@@ -202,7 +202,7 @@
 
 
                         {{-- Urutan --}}
-                        <td class="px-4 py-3 text-center text-gray-600">
+                        <td class="border px-4 py-3 text-center text-gray-600">
 
                             {{ $item->urutan }}
 
@@ -210,7 +210,7 @@
 
 
                         {{-- Status --}}
-                        <td class="px-4 py-3 text-center">
+                        <td class="border px-4 py-3 text-center">
 
                             @if($item->status == 'Aktif')
 
@@ -230,7 +230,7 @@
 
 
                         {{-- Aksi --}}
-                        <td class="px-4 py-3">
+                        <td class=" border px-4 py-3">
 
                             <div class="flex justify-center items-center gap-2">
 

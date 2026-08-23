@@ -4,26 +4,34 @@
 
 @if($page3->count())
 
-<table class="table-border" style="margin-bottom:15px;">
+<table
+    style="
+        width:100%;
+        border-collapse:collapse;
+        table-layout:fixed;
+        font-size:11px;
+        margin-bottom:15px;
+    "
+>
 
 <thead>
 
 <tr>
 
-<th width="6%">
-No
+<th style="border:1px solid #000;width:35px;">
+    No
 </th>
 
-<th width="30%">
-Muatan Pelajaran
+<th style="border:1px solid #000;width:180px;">
+    Muatan Pelajaran
 </th>
 
-<th width="10%">
-Nilai Akhir
+<th style="border:1px solid #000;width:65px;">
+    Nilai Akhir
 </th>
 
-<th>
-Capaian Kompetensi
+<th style="border:1px solid #000;">
+    Capaian Kompetensi
 </th>
 
 </tr>
@@ -36,48 +44,67 @@ Capaian Kompetensi
 
 <tr>
 
-<td class="text-center">
+<td style="
+    border:1px solid #000;
+    text-align:center;
+    vertical-align:top;
+">
 
-{{ $page2->count() + $loop->iteration }}
-
-</td>
-
-<td>
-
-{{ $detail->mapel->nama_mapel }}
+    {{ $page2->count() + $loop->iteration }}
 
 </td>
 
-<td class="text-center">
+<td style="
+    border:1px solid #000;
+    padding:6px;
+    text-align:center;
+    vertical-align:middle;
+">
 
-{{ number_format($detail->nilai_akhir,0) }}
+    {{ $detail->mapel->nama_mapel }}
 
 </td>
 
-<td style="padding:0;">
+<td style="
+    border:1px solid #000;
+    text-align:center;
+    vertical-align:middle;
+    font-weight:bold;
+">
+
+    {{ number_format($detail->nilai_akhir,0) }}
+
+</td>
+
+<td style="
+    border:1px solid #000;
+    padding:0;
+">
 
 <div
 style="
-padding:8px;
-min-height:65px;
-line-height:1.6;
-text-align:justify;
-">
+    padding:6px;
+    min-height:45px;
+    line-height:1.5;
+    text-align:justify;
+"
+>
 
-{{ $detail->capaian_pengetahuan }}
+    {{ $detail->capaian_pengetahuan }}
 
 </div>
 
 <div
 style="
-border-top:1px solid #000;
-padding:8px;
-min-height:45px;
-line-height:1.5;
-text-align:justify;
-">
+    border-top:1px solid #000;
+    padding:6px;
+    min-height:45px;
+    line-height:1.5;
+    text-align:justify;
+"
+>
 
-{{ $detail->capaian_keterampilan }}
+    {{ $detail->capaian_keterampilan }}
 
 </div>
 
@@ -121,9 +148,13 @@ text-align:justify;
 
         <tr>
 
-            <td style="border:1px solid #000;text-align:center;padding:5px;">
-                {{ $loop->iteration }}
-            </td>
+         <td style="
+    border:1px solid #000;
+    text-align:center;
+    vertical-align:middle;
+">
+    {{ $page2->count() + $loop->iteration }}
+</td>
 
             <td style="border:1px solid #000;padding:5px;">
                 {{ $item->nama_kegiatan }}

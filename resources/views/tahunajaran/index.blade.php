@@ -290,12 +290,12 @@ Aktif
                         </option>
 
                         <option
-                            value="Nonaktif"
-                            {{ request('status')=='Nonaktif'?'selected':'' }}>
+    value="Tidak Aktif"
+    {{ request('status')=='Tidak Aktif'?'selected':'' }}>
 
-                            Nonaktif
+    Tidak Aktif
 
-                        </option>
+</option>
 
                     </select>
 
@@ -506,7 +506,7 @@ Aktif
 
 <span class="px-3 py-1 rounded-full bg-red-100 text-red-700 text-xs font-semibold">
 
-Nonaktif
+Tidak Aktif
 
 </span>
 
@@ -518,10 +518,11 @@ Nonaktif
 
 <div class="flex justify-center gap-2">
     <a
-href="{{ route('tahun-ajaran.show',$item->id) }}"
-class="w-9 h-9 rounded-lg bg-blue-100 hover:bg-blue-200 flex items-center justify-center">
+    href="{{ route('tahun-ajaran.dashboard', $item->id) }}"
+    title="Lihat Dashboard Periode"
+    class="w-9 h-9 rounded-lg bg-blue-100 hover:bg-blue-200 flex items-center justify-center">
 
-<x-heroicon-o-eye class="w-5 h-5 text-blue-600"/>
+    <x-heroicon-o-eye class="w-5 h-5 text-blue-600"/>
 
 </a>
 <a

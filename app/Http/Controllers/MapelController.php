@@ -18,90 +18,167 @@ class MapelController extends Controller
     |--------------------------------------------------------------------------
     */
 
-    public function index(Request $request)
-    {
-        $query = Mapel::with('kategori');
+   public function index(Request $request)
+{
+    /*
+    |--------------------------------------------------------------------------
+    | PERIODE AKADEMIK
+    |--------------------------------------------------------------------------
+    */
 
-        /*
-        |--------------------------------------------------------------------------
-        | Search
-        |--------------------------------------------------------------------------
-        */
+    $tahunAjaran = $request->filled('tahun_ajaran_id')
+        ? \App\Models\TahunAjaran::findOrFail(
+            $request->tahun_ajaran_id
+        )
+        : \App\Models\TahunAjaran::where(
+            'status',
+            'Aktif'
+        )->first();
 
-        if ($request->filled('search')) {
+    if (!$tahunAjaran) {
 
-            $query->where(function ($q) use ($request) {
-
-                $q->where('kode_mapel', 'like', '%' . $request->search . '%')
-                  ->orWhere('nama_mapel', 'like', '%' . $request->search . '%');
-
-            });
-
-        }
-
-        /*
-        |--------------------------------------------------------------------------
-        | Kelompok
-        |--------------------------------------------------------------------------
-        */
-
-        if ($request->filled('kelompok')) {
-
-            $query->where(
-                'kelompok',
-                $request->kelompok
-            );
-
-        }
-
-        /*
-        |--------------------------------------------------------------------------
-        | Status
-        |--------------------------------------------------------------------------
-        */
-
-        if ($request->filled('status')) {
-
-            $query->where(
-                'status',
-                $request->status
-            );
-
-        }
-
-        $mapels = $query
-            ->orderBy('nama_mapel')
-            ->paginate(10)
-            ->withQueryString();
-
-            $totalMapel = Mapel::count();
-
-$mapelAktif = Mapel::where(
-    'status',
-    'Aktif'
-)->count();
-
-$mapelIntrakurikuler = Mapel::where(
-    'kelompok',
-    'Intrakurikuler'
-)->count();
-
-$mapelMulok = Mapel::where(
-    'kelompok',
-    'Muatan Lokal'
-)->count();
-
-        return view(
-            'mapel.index',
-            compact(
-                'mapels',
-                'totalMapel',
-                'mapelAktif',
-                'mapelIntrakurikuler',
-                'mapelMulok'
-            )
+        return back()->with(
+            'error',
+            'Belum ada tahun ajaran yang tersedia.'
         );
+
     }
+
+    /*
+    |--------------------------------------------------------------------------
+    | MODE ARSIP
+    |--------------------------------------------------------------------------
+    */
+
+    $modeArsip = $tahunAjaran->status !== 'Aktif';
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | DATA MAPEL
+    |--------------------------------------------------------------------------
+    */
+
+    $query = Mapel::with('kategori');
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | SEARCH
+    |--------------------------------------------------------------------------
+    */
+
+    if ($request->filled('search')) {
+
+        $query->where(function ($q) use ($request) {
+
+            $q->where(
+                'kode_mapel',
+                'like',
+                '%' . $request->search . '%'
+            )
+
+            ->orWhere(
+                'nama_mapel',
+                'like',
+                '%' . $request->search . '%'
+            );
+
+        });
+
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | KELOMPOK
+    |--------------------------------------------------------------------------
+    */
+
+    if ($request->filled('kelompok')) {
+
+        $query->where(
+            'kelompok',
+            $request->kelompok
+        );
+
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | STATUS
+    |--------------------------------------------------------------------------
+    */
+
+    if ($request->filled('status')) {
+
+        $query->where(
+            'status',
+            $request->status
+        );
+
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | PAGINATION
+    |--------------------------------------------------------------------------
+    */
+
+    $mapels = $query
+        ->orderBy('nama_mapel')
+        ->paginate(10)
+        ->withQueryString();
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | STATISTIK
+    |--------------------------------------------------------------------------
+    */
+
+    $totalMapel = (clone $query)->count();
+
+    $mapelAktif = (clone $query)
+        ->where('status', 'Aktif')
+        ->count();
+
+    $mapelIntrakurikuler = (clone $query)
+        ->where(
+            'kelompok',
+            'Intrakurikuler'
+        )
+        ->count();
+
+    $mapelMulok = (clone $query)
+        ->where(
+            'kelompok',
+            'Muatan Lokal'
+        )
+        ->count();
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | VIEW
+    |--------------------------------------------------------------------------
+    */
+
+    return view(
+        'mapel.index',
+        compact(
+            'mapels',
+            'totalMapel',
+            'mapelAktif',
+            'mapelIntrakurikuler',
+            'mapelMulok',
+            'tahunAjaran',
+            'modeArsip'
+        )
+    );
+}
 
     public function nonaktif($id)
 {
@@ -154,7 +231,7 @@ $mapelMulok = Mapel::where(
     'kkm' => 'required|numeric|min:0|max:100',
     'status' => 'required',
 ]);
-Mapel::create($request->all());
+
 
         DB::beginTransaction();
 

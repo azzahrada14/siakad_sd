@@ -139,8 +139,12 @@ Capaian Kompetensi
 
 <tr>
 
-<td style="border:1px solid #000;text-align:center;vertical-align:top;">
-{{ $loop->iteration }}
+<td style="
+    border:1px solid #000;
+    text-align:center;
+    vertical-align:middle;
+">
+    {{ $loop->iteration }}
 </td>
 
 <td style="border:1px solid #000;padding:6px;text-align:center;vertical-align:middle;">

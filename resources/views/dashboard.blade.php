@@ -50,37 +50,39 @@
 
     </div>
 
-    @if($tahunAktif)
+ @if($tahunAjaran)
 
     <div class="mt-5 lg:mt-0">
 
         <div class="bg-blue-50 border border-blue-200 rounded-xl px-6 py-4 shadow-sm min-w-[280px]">
 
             <p class="text-xs uppercase tracking-wide text-blue-600 font-semibold">
-
-                Tahun Ajaran Aktif
-
+                Periode Akademik
             </p>
 
             <h3 class="text-2xl font-bold text-blue-700 mt-1">
-
-                {{ $tahunAktif->tahun_ajaran }}
-
+                {{ $tahunAjaran->tahun_ajaran }}
             </h3>
 
             <div class="flex justify-between items-center mt-2">
 
                 <span class="text-gray-600">
-
-                    Semester {{ $tahunAktif->semester }}
-
+                    Semester {{ $tahunAjaran->semester }}
                 </span>
 
-                <span class="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-semibold">
+                @if($tahunAjaran->status == 'Aktif')
 
-                    Aktif
+                    <span class="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-semibold">
+                        Aktif
+                    </span>
 
-                </span>
+                @else
+
+                    <span class="bg-gray-100 text-gray-600 px-3 py-1 rounded-full text-xs font-semibold">
+                        Arsip
+                    </span>
+
+                @endif
 
             </div>
 
@@ -88,7 +90,7 @@
 
     </div>
 
-    @endif
+@endif
 
 </div>
 
@@ -103,7 +105,7 @@
             <div>
                 <p class="text-gray-500 text-sm">Total Guru</p>
                 <h2 class="text-4xl font-bold text-blue-600 mt-2">
-                    {{ \App\Models\Guru::count() }}
+                    {{ $totalGuru }}
                 </h2>
             </div>
 
@@ -119,7 +121,7 @@
             <div>
                 <p class="text-gray-500 text-sm">Total Siswa</p>
                 <h2 class="text-4xl font-bold text-red-500 mt-2">
-                    {{ \App\Models\Siswa::count() }}
+                    {{ $totalSiswa }}
                 </h2>
             </div>
 
@@ -135,7 +137,7 @@
             <div>
                 <p class="text-gray-500 text-sm">Total Kelas</p>
                 <h2 class="text-4xl font-bold text-indigo-600 mt-2">
-                    {{ \App\Models\Kelas::count() }}
+                    {{ $totalKelas }}
                 </h2>
             </div>
 
@@ -151,7 +153,7 @@
             <div>
                 <p class="text-gray-500 text-sm">Total Mapel</p>
                 <h2 class="text-4xl font-bold text-green-600 mt-2">
-                    {{ \App\Models\Mapel::count() }}
+                    {{ $totalMapel }}
                 </h2>
             </div>
 
@@ -167,7 +169,7 @@
             <div>
                 <p class="text-gray-500 text-sm">Tahun Ajaran</p>
                 <h2 class="text-4xl font-bold text-orange-500 mt-2">
-                    {{ \App\Models\TahunAjaran::count() }}
+                    {{ $totalTahun }}
                 </h2>
             </div>
 
@@ -183,7 +185,7 @@
             <div>
                 <p class="text-gray-500 text-sm">Data Rapor</p>
                 <h2 class="text-4xl font-bold text-purple-600 mt-2">
-                    {{ \App\Models\Siswa::count() }}
+                    {{ $totalRapor }}
                 </h2>
             </div>
 
@@ -224,21 +226,20 @@
 </div>
 
 
-        <h2 class="text-2xl font-bold text-gray-800 mb-4">
+        {{-- INFORMASI SISTEM --}}
+<div class="bg-white rounded-2xl shadow-md p-8">
 
-            Informasi Sistem
+    <h2 class="text-2xl font-bold text-gray-800 mb-4">
+        Informasi Sistem
+    </h2>
 
-        </h2>
+    <p class="text-gray-600 leading-relaxed text-[15px]">
+        Sistem Informasi Akademik SD Negeri Cimanahayu digunakan
+        untuk membantu pengelolaan data akademik sekolah secara
+        terintegrasi mulai dari data guru, siswa, kelas,
+        mata pelajaran, absensi, hingga pengolahan nilai siswa.
+    </p>
 
-        <p class="text-gray-600 leading-relaxed text-[15px]">
-
-            Sistem Informasi Akademik SD Negeri Cimanahayu digunakan
-            untuk membantu pengelolaan data akademik sekolah secara
-            terintegrasi mulai dari data guru, siswa, kelas,
-            mata pelajaran, absensi, hingga pengolahan nilai siswa.
-
-        </p>
-
-    </div>
+</div>
 
 @endsection

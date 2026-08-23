@@ -17,9 +17,9 @@
             {{-- Logo Kabupaten --}}
             <div class="w-24 flex justify-center">
 
-                <img
+                  <img
                     src="{{ asset('logo-cianjur.png') }}"
-                    alt="Logo Kabupaten"
+                    alt="Logo Sekolah"
                     class="w-20 h-20 object-contain">
 
             </div>

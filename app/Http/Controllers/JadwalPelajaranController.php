@@ -16,157 +16,264 @@ class JadwalPelajaranController extends Controller
     /**
      * Menampilkan daftar jadwal.
      */
-    public function index(Request $request)
-    {
-        $query = JadwalPelajaran::with([
-            'kelas',
-            'guru',
-            'mapel',
-            'tahunAjaran'
-        ]);
+   public function index(Request $request)
+{
+    /*
+    |--------------------------------------------------------------------------
+    | PERIODE AKADEMIK
+    |--------------------------------------------------------------------------
+    */
 
-        $tahunAktif = TahunAjaran::where(
+    $tahunAjaran = $request->filled('tahun_ajaran_id')
+        ? TahunAjaran::findOrFail($request->tahun_ajaran_id)
+        : TahunAjaran::where('status', 'Aktif')->first();
+
+    if (!$tahunAjaran) {
+        return back()->with(
+            'error',
+            'Belum ada tahun ajaran yang tersedia.'
+        );
+    }
+
+    $tahunAktif = $tahunAjaran;
+
+    $modeArsip = $tahunAjaran->status !== 'Aktif';
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | QUERY JADWAL BERDASARKAN PERIODE
+    |--------------------------------------------------------------------------
+    */
+
+    $query = JadwalPelajaran::with([
+        'kelas',
+        'guru',
+        'mapel',
+        'tahunAjaran'
+    ])
+    ->where(
+        'tahun_ajaran_id',
+        $tahunAjaran->id
+    );
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | FILTER KELAS
+    |--------------------------------------------------------------------------
+    */
+
+    if ($request->filled('kelas_id')) {
+
+        $query->where(
+            'kelas_id',
+            $request->kelas_id
+        );
+
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | FILTER HARI
+    |--------------------------------------------------------------------------
+    */
+
+    if ($request->filled('hari')) {
+
+        $query->where(
+            'hari',
+            $request->hari
+        );
+
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | FILTER STATUS
+    |--------------------------------------------------------------------------
+    */
+
+    if ($request->filled('status')) {
+
+        $query->where(
             'status',
-            'Aktif'
-        )->first();
+            $request->status
+        );
 
-        // Filter tahun ajaran
-        if ($request->filled('tahun_ajaran_id')) {
-            $query->where(
-                'tahun_ajaran_id',
-                $request->tahun_ajaran_id
-            );
-        }
+    }
 
-        // Filter kelas
-        if ($request->filled('kelas_id')) {
-            $query->where(
-                'kelas_id',
-                $request->kelas_id
-            );
-        }
 
-        // Filter hari
-        if ($request->filled('hari')) {
-            $query->where(
-                'hari',
-                $request->hari
-            );
-        }
+    /*
+    |--------------------------------------------------------------------------
+    | SEARCH
+    |--------------------------------------------------------------------------
+    */
 
-        // Filter status
-        if ($request->filled('status')) {
-            $query->where(
-                'status',
-                $request->status
-            );
-        }
+    if ($request->filled('search')) {
 
-        // Search guru, mapel, atau kegiatan
-        if ($request->filled('search')) {
+        $search = $request->search;
 
-            $search = $request->search;
+        $query->where(function ($q) use ($search) {
 
-            $query->where(function ($q) use ($search) {
+            $q->whereHas('guru', function ($guru) use ($search) {
 
-                $q->whereHas('guru', function ($guru) use ($search) {
-
-                    $guru->where(
-                        'nama_guru',
-                        'like',
-                        '%' . $search . '%'
-                    );
-
-                })
-
-                ->orWhereHas('mapel', function ($mapel) use ($search) {
-
-                    $mapel->where(
-                        'nama_mapel',
-                        'like',
-                        '%' . $search . '%'
-                    );
-
-                })
-
-                ->orWhere(
-                    'nama_kegiatan',
+                $guru->where(
+                    'nama_guru',
                     'like',
                     '%' . $search . '%'
                 );
 
-            });
-        }
+            })
+            ->orWhereHas('mapel', function ($mapel) use ($search) {
 
-        $jadwals = $query
-            ->orderBy('kelas_id')
-            ->orderBy('hari')
-            ->orderBy('jam_ke')
-            ->paginate(10)
-            ->withQueryString();
+                $mapel->where(
+                    'nama_mapel',
+                    'like',
+                    '%' . $search . '%'
+                );
 
-        return view('jadwal.index', [
+            })
+            ->orWhere(
+                'nama_kegiatan',
+                'like',
+                '%' . $search . '%'
+            );
 
-            'jadwals' => $jadwals,
+        });
 
-            'kelas' => Kelas::orderBy('tingkat')->get(),
-
-            'tahunAjarans' => TahunAjaran::orderByDesc(
-                'tahun_ajaran'
-            )->get(),
-
-            'tahunAktif' => $tahunAktif,
-
-        ]);
     }
 
 
-    /**
-     * Form tambah jadwal.
-     */
-    public function create()
-    {
-        return view('jadwal.create', [
+    /*
+    |--------------------------------------------------------------------------
+    | DATA JADWAL
+    |--------------------------------------------------------------------------
+    */
 
-            'kelas' => Kelas::orderBy('tingkat')->get(),
+    $jadwals = $query
+        ->orderBy('kelas_id')
+        ->orderBy('hari')
+        ->orderBy('jam_ke')
+        ->paginate(10)
+        ->withQueryString();
 
-            'gurus' => Guru::orderBy('nama_guru')->get(),
 
-            'mapels' => Mapel::orderBy('nama_mapel')->get(),
+    /*
+    |--------------------------------------------------------------------------
+    | DATA VIEW
+    |--------------------------------------------------------------------------
+    */
 
-            'tahunAktif' => TahunAjaran::where(
-                'status',
-                'Aktif'
-            )->first(),
+    return view('jadwal.index', [
 
-            'jadwal' => new JadwalPelajaran(),
+        'jadwals' => $jadwals,
 
-        ]);
-    }
+        'kelas' => Kelas::where(
+            'tahun_ajaran_id',
+            $tahunAjaran->id
+        )
+        ->orderBy('tingkat')
+        ->get(),
 
+        'tahunAjarans' => TahunAjaran::orderByDesc(
+            'tahun_ajaran'
+        )->get(),
+
+        'tahunAktif' => $tahunAktif,
+
+        'tahunAjaran' => $tahunAjaran,
+
+        'modeArsip' => $modeArsip,
+
+    ]);
+}
 
     /**
      * Form edit jadwal.
      */
-    public function edit(JadwalPelajaran $jadwal)
-    {
-        return view('jadwal.edit', [
+   public function edit(Request $request, $id)
+{
+    $jadwal = JadwalPelajaran::findOrFail($id);
 
-            'jadwal' => $jadwal,
+    /*
+    |--------------------------------------------------------------------------
+    | PERIODE JADWAL
+    |--------------------------------------------------------------------------
+    */
 
-            'kelas' => Kelas::orderBy('tingkat')->get(),
+    $tahunAjaran = TahunAjaran::findOrFail(
+        $jadwal->tahun_ajaran_id
+    );
 
-            'gurus' => Guru::orderBy('nama_guru')->get(),
 
-            'mapels' => Mapel::orderBy('nama_mapel')->get(),
+    /*
+    |--------------------------------------------------------------------------
+    | ARSIP TIDAK BOLEH DIUBAH
+    |--------------------------------------------------------------------------
+    */
 
-            'tahunAktif' => TahunAjaran::where(
-                'status',
-                'Aktif'
-            )->first(),
+    if ($tahunAjaran->status !== 'Aktif') {
 
-        ]);
+        return redirect()
+            ->route('jadwal.index', [
+                'tahun_ajaran_id' => $tahunAjaran->id
+            ])
+            ->with(
+                'error',
+                'Jadwal pada periode arsip tidak dapat diubah.'
+            );
+
     }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | DATA FORM
+    |--------------------------------------------------------------------------
+    */
+
+    $kelas = Kelas::where(
+        'tahun_ajaran_id',
+        $tahunAjaran->id
+    )
+    ->orderBy('tingkat')
+    ->orderBy('nama_kelas')
+    ->get();
+
+    $gurus = Guru::where(
+        'status_guru',
+        'Aktif'
+    )
+    ->orderBy('nama_guru')
+    ->get();
+
+    $mapels = Mapel::where(
+        'status',
+        'Aktif'
+    )
+    ->orderBy('nama_mapel')
+    ->get();
+
+
+    return view('jadwal.edit', [
+
+        'jadwal' => $jadwal,
+
+        'kelas' => $kelas,
+
+        'gurus' => $gurus,
+
+        'mapels' => $mapels,
+
+        'tahunAjaran' => $tahunAjaran,
+
+        'tahunAktif' => $tahunAjaran,
+
+    ]);
+}
 
 
     /**
@@ -253,6 +360,22 @@ class JadwalPelajaranController extends Controller
             'jenis_jadwal' => 'required|in:Wajib,Kokurikuler,Kegiatan',
 
         ];
+
+       $tahunAjaran = TahunAjaran::findOrFail(
+    $request->tahun_ajaran_id
+);
+
+if ($tahunAjaran->status !== 'Aktif') {
+
+    return back()
+        ->withInput()
+        ->with(
+            'error',
+            'Jadwal pada periode arsip tidak dapat ditambahkan.'
+        );
+
+
+}
 
 
         /*
@@ -440,23 +563,39 @@ class JadwalPelajaranController extends Controller
         );
 
 
-        return redirect()
-            ->route('jadwal.index')
-            ->with(
-                'success',
-                'Jadwal pelajaran berhasil ditambahkan.'
-            );
+      return redirect()
+    ->route('jadwal.index', [
+        'tahun_ajaran_id' => $tahunAjaran->id
+    ])
+    ->with(
+        'success',
+        'Jadwal pelajaran berhasil ditambahkan.'
+    );
     }
 
 
     /**
      * Update jadwal.
      */
-    public function update(
-        Request $request,
-        JadwalPelajaran $jadwal
-    ) {
+   public function update(
+    Request $request,
+    JadwalPelajaran $jadwal
+) {
 
+    $tahunAjaran = TahunAjaran::findOrFail(
+        $jadwal->tahun_ajaran_id
+    );
+
+    if ($tahunAjaran->status !== 'Aktif') {
+
+        return back()->with(
+            'error',
+            'Jadwal pada periode arsip tidak dapat diubah.'
+        );
+
+    }
+
+    
         /*
         |--------------------------------------------------------------------------
         | VALIDASI DASAR
@@ -675,11 +814,13 @@ class JadwalPelajaranController extends Controller
 
 
         return redirect()
-            ->route('jadwal.index')
-            ->with(
-                'success',
-                'Jadwal pelajaran berhasil diperbarui.'
-            );
+    ->route('jadwal.index', [
+        'tahun_ajaran_id' => $tahunAjaran->id
+    ])
+    ->with(
+        'success',
+        'Jadwal pelajaran berhasil diperbarui.'
+    );
     }
 
 

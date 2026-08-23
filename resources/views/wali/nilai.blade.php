@@ -32,32 +32,39 @@
                 </p>
             </div>
 
-            @if($tahunAktif)
+        <div class="flex flex-col lg:flex-row gap-4">
 
-                <div class="bg-blue-50 border border-blue-200 rounded-xl shadow-sm px-5 py-4 min-w-[280px]">
+           @if($tahunAjaran)
 
-                    <p class="text-xs uppercase tracking-wide text-blue-600 font-semibold">
-                        Tahun Ajaran Aktif
-                    </p>
+    <div class="bg-blue-50 border border-blue-200 rounded-xl px-6 py-4 shadow-sm min-w-[260px]">
 
-                    <h2 class="text-2xl font-bold text-blue-700 mt-1">
-                        {{ $tahunAktif->tahun_ajaran }}
-                    </h2>
+        <p class="text-xs uppercase tracking-wide text-blue-600 font-semibold">
+            Tahun Ajaran
+        </p>
 
-                    <div class="flex justify-between items-center mt-2">
+        <h3 class="text-2xl font-bold text-blue-700 mt-1">
+            {{ $tahunAjaran->tahun_ajaran }}
+        </h3>
 
-                        <span class="text-gray-600 text-sm">
-                            Semester {{ $tahunAktif->semester }}
-                        </span>
+        <div class="flex justify-between items-center mt-2">
 
-                        <span class="inline-flex items-center gap-1 rounded-full bg-green-100 px-3 py-1 text-xs font-semibold text-green-700">
-                            <span class="w-2 h-2 rounded-full bg-green-500"></span>
-                            Aktif
-                        </span>
+            <span class="text-gray-600">
+                Semester {{ $tahunAjaran->semester }}
+            </span>
 
-                    </div>
+            @if($modeArsip)
 
-                </div>
+                <span class="inline-flex items-center gap-1 rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-600">
+                    <span class="w-2 h-2 rounded-full bg-gray-400"></span>
+                    Arsip
+                </span>
+
+            @else
+
+                <span class="inline-flex items-center gap-1 rounded-full bg-green-100 px-3 py-1 text-xs font-semibold text-green-700">
+                    <span class="w-2 h-2 rounded-full bg-green-500"></span>
+                    Aktif
+                </span>
 
             @endif
 
@@ -65,13 +72,62 @@
 
     </div>
 
+@endif
+        </div>
+
+    </div>
+    <br>
+
+{{-- ================= PERINGATAN ARSIP ================= --}}
+
+
+                   @if($modeArsip)
+
+<div class="bg-yellow-50 border border-yellow-200
+            rounded-xl px-5 py-4 mb-5">
+
+    <div class="flex items-start gap-3">
+
+        <x-heroicon-o-exclamation-triangle
+            class="w-6 h-6 text-yellow-600 flex-shrink-0"/>
+
+        <div>
+
+            <h3 class="font-semibold text-yellow-800">
+                Periode Tahun Ajaran Diarsipkan
+            </h3>
+
+            <p class="text-sm text-yellow-700 mt-1">
+                Rekap nilai pada tahun ajaran
+                <strong>{{ $tahunAjaran->tahun_ajaran }}</strong>
+                semester
+                <strong>{{ $tahunAjaran->semester }}</strong>
+                merupakan data arsip.
+
+                Data hanya dapat dilihat dan tidak dapat diubah.
+            </p>
+
+        </div>
+
+    </div>
+
+</div>
+
+@endif
+
 
     {{-- ================= FILTER ================= --}}
     <div class="bg-white rounded-2xl shadow border border-gray-200 px-6 py-5 mb-5">
 
-        <form method="GET" action="{{ url()->current() }}">
+       <form method="GET" action="{{ url()->current() }}">
 
-            <div class="grid grid-cols-4 gap-4 items-end">
+    <input
+    type="hidden"
+    name="tahun_ajaran_id"
+    value="{{ $tahunAjaran->id }}"
+>
+
+    <div class="grid grid-cols-4 gap-4 items-end">
 
                 {{-- Kelas --}}
                 <div>
@@ -96,7 +152,7 @@
 
                     <input
                         type="text"
-                        value="{{ $tahunAktif->tahun_ajaran ?? '-' }}"
+                        value="{{ $tahunAjaran->tahun_ajaran ?? '-' }}"
                         readonly
                         class="w-full rounded-lg border border-gray-300 bg-gray-100 px-3 py-2.5 text-sm text-gray-700"
                     >
@@ -111,7 +167,7 @@
 
                     <input
                         type="text"
-                        value="{{ $tahunAktif->semester ?? '-' }}"
+                       value="{{ $tahunAjaran->semester ?? '-' }}"
                         readonly
                         class="w-full rounded-lg border border-gray-300 bg-gray-100 px-3 py-2.5 text-sm text-gray-700"
                     >
@@ -175,9 +231,9 @@
                 @if($mapel)
 
                     <a
-                        href="{{ url('/wali/nilai/export') }}?mapel={{ $mapel->id }}"
-                        class="inline-flex items-center gap-2 rounded-lg bg-green-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-green-700"
-                    >
+    href="{{ url('/wali/nilai/export') }}?mapel={{ $mapel->id }}&tahun_ajaran_id={{ $tahunAjaran->id }}&semester={{ $tahunAjaran->semester }}"
+    class="inline-flex items-center gap-2 rounded-lg bg-green-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-green-700"
+>
 
                         <svg xmlns="http://www.w3.org/2000/svg"
                              class="w-5 h-5"
@@ -276,6 +332,128 @@
 </div>
 
 
+{{-- ================= KETERANGAN NILAI ================= --}}
+<div class="bg-blue-50 border border-blue-200 rounded-xl px-5 py-4 mb-5">
+
+    <div class="flex items-center gap-2 mb-3">
+        <svg xmlns="http://www.w3.org/2000/svg"
+             class="w-5 h-5 text-blue-600"
+             fill="none"
+             viewBox="0 0 24 24"
+             stroke="currentColor">
+            <path stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M13 16h-1v-4h-1m1-8h.01M12 20a8 8 0 100-16 8 8 0 000 16z"/>
+        </svg>
+
+        <h3 class="text-sm font-semibold text-blue-700">
+            Keterangan Nilai Akhir
+        </h3>
+    </div>
+
+    <div class="grid grid-cols-5 gap-4">
+
+        {{-- A --}}
+        <div class="flex items-center gap-2">
+            <span class="inline-flex items-center justify-center
+                         min-w-[38px] rounded-full
+                         bg-green-100 px-2 py-1
+                         text-xs font-bold text-green-700">
+                A
+            </span>
+
+            <span class="text-sm text-gray-600">
+                86–100 <b>(Sangat Baik)</b>
+            </span>
+        </div>
+
+        {{-- B --}}
+        <div class="flex items-center gap-2">
+            <span class="inline-flex items-center justify-center
+                         min-w-[38px] rounded-full
+                         bg-blue-100 px-2 py-1
+                         text-xs font-bold text-blue-700">
+                B
+            </span>
+
+            <span class="text-sm text-gray-600">
+                76–85 <b>(Baik)</b>
+            </span>
+        </div>
+
+        {{-- C --}}
+        <div class="flex items-center gap-2">
+            <span class="inline-flex items-center justify-center
+                         min-w-[38px] rounded-full
+                         bg-yellow-100 px-2 py-1
+                         text-xs font-bold text-yellow-700">
+                C
+            </span>
+
+            <span class="text-sm text-gray-600">
+                66–75 <b>(Cukup)</b>
+            </span>
+        </div>
+
+        {{-- D --}}
+        <div class="flex items-center gap-2">
+            <span class="inline-flex items-center justify-center
+                         min-w-[38px] rounded-full
+                         bg-orange-100 px-2 py-1
+                         text-xs font-bold text-orange-700">
+                D
+            </span>
+
+            <span class="text-sm text-gray-600">
+                56–65 <b>(Kurang)</b>
+            </span>
+        </div>
+
+        {{-- E --}}
+        <div class="flex items-center gap-2">
+            <span class="inline-flex items-center justify-center
+                         min-w-[38px] rounded-full
+                         bg-red-100 px-2 py-1
+                         text-xs font-bold text-red-700">
+                E
+            </span>
+
+            <span class="text-sm text-gray-600">
+                ≤55 <b>(Sangat Kurang)</b>
+            </span>
+        </div>
+
+    </div>
+
+    {{-- KKM --}}
+    <div class="mt-4 pt-3 border-t border-blue-200 flex items-center gap-5">
+
+        <div class="flex items-center gap-2">
+            <span class="w-3 h-3 rounded-full bg-green-500"></span>
+            <span class="text-sm text-gray-600">
+                <b>Tuntas</b> ≥ KKM
+            </span>
+        </div>
+
+        <div class="flex items-center gap-2">
+            <span class="w-3 h-3 rounded-full bg-red-500"></span>
+            <span class="text-sm text-gray-600">
+                <b>Belum Tuntas / Remedial</b> &lt; KKM
+            </span>
+        </div>
+        <br>
+
+        <div class="ml-auto bg-white border border-blue-200
+                    rounded-lg px-4 py-2">
+            <span class="text-sm text-gray-500">KKM</span>
+            <span class="ml-2 font-bold text-blue-700">75</span>
+        </div>
+
+    </div>
+
+</div>
+
         {{-- ================= TABEL REKAP ================= --}}
         <div class="bg-white rounded-2xl shadow border border-gray-200 overflow-hidden">
 
@@ -341,7 +519,7 @@
                                 rowspan="3"
                                 class="border border-gray-300 px-3 py-3 text-center whitespace-nowrap"
                             >
-                                {{ $tahunAktif->semester == 'Ganjil' ? 'ASAS' : 'ASAT' }}
+                                {{ $tahunAjaran->semester == 'Ganjil' ? 'ASAS' : 'ASAT' }}
                             </th>
 
                             <th
@@ -444,8 +622,8 @@
                 @endphp
 
                 <td class="border border-gray-300 px-3 py-2 text-center whitespace-nowrap">
-                    {{ $nilaiTPsiswa ?: '-' }}
-                </td>
+    {{ $nilaiTPsiswa !== 0 ? number_format($nilaiTPsiswa, 2, '.', '') : '-' }}
+</td>
 
             @endforeach
 
@@ -473,7 +651,7 @@
         {{-- ASAS / ASAT --}}
         <td class="border border-gray-300 px-3 py-2 text-center whitespace-nowrap">
 
-            @if($tahunAktif->semester == 'Ganjil')
+            @if($tahunAjaran->semester == 'Ganjil')
 
                 {{ $nilai->asas ?? '-' }}
 

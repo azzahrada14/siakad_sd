@@ -107,7 +107,7 @@
 
     </div>
 
-    @if($tahunAktif)
+    @if($tahunAjaran)
 
     <div class="mt-5 lg:mt-0">
 
@@ -115,13 +115,13 @@
 
             <p class="text-xs uppercase tracking-wide text-blue-600 font-semibold">
 
-                Tahun Ajaran Aktif
+                Periode Akademik
 
             </p>
 
             <h2 class="text-2xl font-bold text-blue-700 mt-1">
 
-                {{ $tahunAktif->tahun_ajaran }}
+                {{ $tahunAjaran->tahun_ajaran }}
 
             </h2>
 
@@ -133,13 +133,21 @@
 
                 </span>
 
-                <span class="inline-flex items-center gap-1 rounded-full bg-green-100 px-3 py-1 text-xs font-semibold text-green-700">
+               @if($modeArsip)
 
-                    <span class="w-2 h-2 rounded-full bg-green-500"></span>
+    <span class="inline-flex items-center gap-1 rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-600">
+        <span class="w-2 h-2 rounded-full bg-gray-400"></span>
+        Arsip
+    </span>
 
-                    Aktif
+@else
 
-                </span>
+    <span class="inline-flex items-center gap-1 rounded-full bg-green-100 px-3 py-1 text-xs font-semibold text-green-700">
+        <span class="w-2 h-2 rounded-full bg-green-500"></span>
+        Aktif
+    </span>
+
+@endif
 
             </div>
 
@@ -452,45 +460,61 @@
 </p>
     </div>
 
+    @if(!$modeArsip)
+
     <div class="flex flex-wrap gap-3">
 
-
-        {{-- Import --}}
+        {{-- IMPORT --}}
         <button
             type="button"
-           onclick="bukaModalMapel()"
-            class="inline-flex items-center gap-2 px-5 py-3 rounded-lg bg-green-600 hover:bg-green-700 text-white transition">
-
+            onclick="bukaModalMapel()"
+            class="inline-flex items-center gap-2 px-5 py-3
+                   rounded-lg bg-green-600 hover:bg-green-700
+                   text-white transition"
+        >
             <x-heroicon-o-arrow-up-tray class="w-5 h-5"/>
-
             Import
-
         </button>
 
-        {{-- Export --}}
+
+        {{-- EXPORT --}}
         <a
             href="{{ route('mapel.export') }}"
-            class="inline-flex items-center gap-2 px-5 py-3 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white transition">
-
+            class="inline-flex items-center gap-2 px-5 py-3
+                   rounded-lg bg-indigo-600 hover:bg-indigo-700
+                   text-white transition"
+        >
             <x-heroicon-o-arrow-down-tray class="w-5 h-5"/>
-
             Export
-
         </a>
 
-        {{-- Tambah --}}
+
+        {{-- TAMBAH --}}
         <a
             href="{{ route('mapel.create') }}"
-            class="inline-flex items-center gap-2 px-5 py-3 rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition">
-
+            class="inline-flex items-center gap-2 px-5 py-3
+                   rounded-lg bg-blue-600 hover:bg-blue-700
+                   text-white transition"
+        >
             <x-heroicon-o-plus class="w-5 h-5"/>
-
             Tambah
-
         </a>
 
     </div>
 
+@else
+
+    <span class="inline-flex items-center gap-2 px-4 py-2
+                 rounded-lg bg-gray-100 text-gray-600
+                 text-sm font-semibold">
+
+        <x-heroicon-o-lock-closed class="w-5 h-5"/>
+
+        Mode Arsip — Hanya Melihat
+
+    </span>
+
+@endif
 </div>
 {{-- ================= DATA MAPEL ================= --}}
 
@@ -739,56 +763,74 @@ Nonaktif
 
 </td>
 
-<td class="border px-3 py-3">
 
-<div class="flex justify-center gap-2">
+    <td class="border px-3 py-3">
 
-    {{-- Detail --}}
-    <a
-        href="{{ route('mapel.show',$mapel->id) }}"
-        class="w-9 h-9 rounded-lg bg-blue-100 hover:bg-blue-200 flex items-center justify-center">
+    <div class="flex justify-center gap-2">
 
-        <x-heroicon-o-eye class="w-5 h-5 text-blue-600"/>
+        {{-- DETAIL --}}
+        <a
+            href="{{ route('mapel.show', $mapel->id) }}"
+            class="w-9 h-9 rounded-lg bg-blue-100
+                   hover:bg-blue-200 flex items-center justify-center"
+            title="Detail"
+        >
+            <x-heroicon-o-eye class="w-5 h-5 text-blue-600"/>
+        </a>
 
-    </a>
 
-    {{-- Edit --}}
-    <a
-        href="{{ route('mapel.edit',$mapel->id) }}"
-        class="w-9 h-9 rounded-lg bg-yellow-100 hover:bg-yellow-200 flex items-center justify-center">
+        @if(!$modeArsip)
 
-        <x-heroicon-o-pencil-square class="w-5 h-5 text-yellow-600"/>
+            {{-- EDIT --}}
+            <a
+                href="{{ route('mapel.edit', $mapel->id) }}"
+                class="w-9 h-9 rounded-lg bg-yellow-100
+                       hover:bg-yellow-200 flex items-center justify-center"
+                title="Edit"
+            >
+                <x-heroicon-o-pencil-square class="w-5 h-5 text-yellow-600"/>
+            </a>
 
-    </a>
 
-    {{-- Lingkup Materi --}}
-    <a
-        href="{{ route('lingkup-materi.index', ['mapel' => $mapel->id]) }}"
-        class="w-9 h-9 rounded-lg bg-indigo-100 hover:bg-indigo-200 flex items-center justify-center"
-        title="Kelola Lingkup Materi">
+            {{-- LINGKUP MATERI --}}
+            <a
+                href="{{ route('lingkup-materi.index', [
+                    'mapel' => $mapel->id
+                ]) }}"
+                class="w-9 h-9 rounded-lg bg-indigo-100
+                       hover:bg-indigo-200 flex items-center justify-center"
+                title="Kelola Lingkup Materi"
+            >
+                <x-heroicon-o-rectangle-stack class="w-5 h-5 text-indigo-600"/>
+            </a>
 
-        <x-heroicon-o-rectangle-stack class="w-5 h-5 text-indigo-600"/>
 
-    </a>
+            {{-- NONAKTIF --}}
+            <form
+                action="{{ route('mapel.nonaktif', $mapel->id) }}"
+                method="POST"
+            >
+                @csrf
+                @method('PATCH')
 
-    {{-- Nonaktif --}}
-    <form action="{{ route('mapel.nonaktif', $mapel->id) }}" method="POST">
-        @csrf
-        @method('PATCH')
+                <button
+                    type="submit"
+                    onclick="return confirm('Nonaktifkan mata pelajaran ini?')"
+                    class="w-9 h-9 rounded-lg bg-orange-100
+                           hover:bg-orange-200 flex items-center justify-center"
+                    title="Nonaktifkan"
+                >
+                    <x-heroicon-o-no-symbol class="w-5 h-5 text-orange-600"/>
+                </button>
 
-        <button
-            onclick="return confirm('Nonaktifkan mata pelajaran ini?')"
-            class="w-9 h-9 rounded-lg bg-orange-100 hover:bg-orange-200 flex items-center justify-center">
+            </form>
 
-            <x-heroicon-o-no-symbol class="w-5 h-5 text-orange-600"/>
+        @endif
 
-        </button>
-
-    </form>
-
-</div>
+    </div>
 
 </td>
+
 
 </tr>
 

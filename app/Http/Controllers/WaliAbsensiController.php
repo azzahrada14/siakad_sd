@@ -29,19 +29,71 @@ class WaliAbsensiController extends Controller
 
     $guru = Auth::user()->guru;
 
+
+    /*
+|--------------------------------------------------------------------------
+| TAHUN AJARAN YANG DILIHAT
+|--------------------------------------------------------------------------
+*/
+
+$tahunAjaran = $request->filled('tahun_ajaran_id')
+    ? TahunAjaran::findOrFail($request->tahun_ajaran_id)
+    : TahunAjaran::where('status', 'Aktif')->first();
+
+if (!$tahunAjaran) {
+    abort(404, 'Tahun ajaran belum tersedia.');
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| TAHUN AJARAN AKTIF
+|--------------------------------------------------------------------------
+*/
+
+$tahunAktif = TahunAjaran::where(
+    'status',
+    'Aktif'
+)->first();
+
+
+/*
+|--------------------------------------------------------------------------
+| MODE ARSIP
+|--------------------------------------------------------------------------
+*/
+
+$modeArsip = $tahunAjaran->status !== 'Aktif';
+
     /*
     |--------------------------------------------------------------------------
-    | TAHUN AJARAN AKTIF
+    | TAHUN STRUKTUR KELAS
     |--------------------------------------------------------------------------
     */
 
-    $tahunAktif = TahunAjaran::where(
+    $tahunStruktur = $tahunAjaran;
 
-        'status',
+if (strtolower($tahunAjaran->semester) === 'genap') {
 
-        'Aktif'
+    $tahunStruktur = TahunAjaran::where(
+        'tahun_ajaran',
+        $tahunAjaran->tahun_ajaran
+    )
+    ->where(
+        'semester',
+        'Ganjil'
+    )
+    ->first();
 
-    )->first();
+    if (!$tahunStruktur) {
+        abort(
+            404,
+            'Data tahun ajaran Ganjil untuk struktur kelas belum tersedia.'
+        );
+    }
+}
+    
+
 
     /*
     |--------------------------------------------------------------------------
@@ -50,51 +102,45 @@ class WaliAbsensiController extends Controller
     */
 
     $kelas = Kelas::where(
-
         'wali_kelas_id',
-
         $guru->id
+    )
+    ->where(
+        'tahun_ajaran_id',
+        $tahunStruktur->id
+    )
+    ->first();
 
-    )->first();
+    if (!$kelas) {
+        abort(
+            403,
+            'Guru belum memiliki kelas pada tahun ajaran ini.'
+        );
+    }
+
+
     /*
-|--------------------------------------------------------------------------
-| SISWA DALAM KELAS
-|--------------------------------------------------------------------------
-*/
-
-$siswas = collect();
-
-if ($kelas) {
+    |--------------------------------------------------------------------------
+    | SISWA DALAM KELAS
+    |--------------------------------------------------------------------------
+    */
 
     $ids = AnggotaKelas::where(
-
         'kelas_id',
-
         $kelas->id
-
-    )->pluck(
-
-        'siswa_id'
-
-    );
+    )
+    ->where(
+        'tahun_ajaran_id',
+        $tahunStruktur->id
+    )
+    ->pluck('siswa_id');
 
     $siswas = Siswa::whereIn(
-
         'id',
-
         $ids
-
     )
-
-    ->orderBy(
-
-        'nama_siswa'
-
-    )
-
+    ->orderBy('nama_siswa')
     ->get();
-
-}
 /*
 |--------------------------------------------------------------------------
 | FILTER REKAP
@@ -184,20 +230,14 @@ foreach($siswas as $siswa){
     )
 
     ->where(
+    'tahun_ajaran_id',
+    $tahunAjaran->id
+)
 
-        'tahun_ajaran_id',
-
-        $tahunAktif->id
-
-    )
-
-    ->where(
-
-        'semester',
-
-        $tahunAktif->semester
-
-    )
+->where(
+    'semester',
+    $tahunAjaran->semester
+)
 
     ->whereDate(
 
@@ -322,36 +362,27 @@ $persentase =
 
 ];
 }
-return view(
 
+
+  return view(
     'wali.absensi',
-
-    compact(
-
-        'guru',
-
-        'kelas',
-
-        'siswas',
-
-        'mapels',
-
-        'bulan',
-
-        'tahun',
-
-        'jumlahHari',
-
-        'tahunAktif',
-
-        'mapelId',
-
-        'data'
-
-    )
-
+   compact(
+    'guru',
+    'kelas',
+    'siswas',
+    'mapels',
+    'bulan',
+    'tahun',
+    'jumlahHari',
+    'tahunAktif',
+    'tahunAjaran',
+    'modeArsip',
+    'mapelId',
+    'data'
+)
 );
 }
+
 public function export(Request $request)
 {
 

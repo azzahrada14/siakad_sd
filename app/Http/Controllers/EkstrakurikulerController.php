@@ -17,17 +17,50 @@ class EkstrakurikulerController extends Controller
     */
 public function index(Request $request)
 {
-    $tahunAktif = TahunAjaran::where(
-        'status',
-        'Aktif'
-    )->first();
+    /*
+    |--------------------------------------------------------------------------
+    | PERIODE AKADEMIK
+    |--------------------------------------------------------------------------
+    */
+
+    $tahunAjaran = $request->filled('tahun_ajaran_id')
+        ? TahunAjaran::findOrFail($request->tahun_ajaran_id)
+        : TahunAjaran::where('status', 'Aktif')->first();
+
+    if (!$tahunAjaran) {
+
+        return back()->with(
+            'error',
+            'Belum ada tahun ajaran yang tersedia.'
+        );
+
+    }
+
+    $tahunAktif = $tahunAjaran;
+
+    $modeArsip = $tahunAjaran->status !== 'Aktif';
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | KELAS BERDASARKAN TAHUN AJARAN
+    |--------------------------------------------------------------------------
+    */
 
     $kelas = Kelas::where(
-        'status',
-        'Aktif'
+        'tahun_ajaran_id',
+        $tahunAjaran->id
     )
+    ->orderBy('tingkat')
     ->orderBy('nama_kelas')
     ->get();
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | MASTER EKSTRAKURIKULER
+    |--------------------------------------------------------------------------
+    */
 
     $masterEkstrakurikuler = MasterEkstrakurikuler::where(
         'status',
@@ -36,29 +69,48 @@ public function index(Request $request)
     ->orderBy('nama_ekstrakurikuler')
     ->get();
 
-   $siswas = collect();
 
-if ($request->filled('kelas_id')) {
+    /*
+    |--------------------------------------------------------------------------
+    | SISWA BERDASARKAN PERIODE
+    |--------------------------------------------------------------------------
+    */
 
-    $siswas = Siswa::with([
+    $siswas = collect();
+
+    if ($request->filled('kelas_id')) {
+
+        $siswas = Siswa::with([
             'ekstrakurikulers',
             'anggotaKelas'
         ])
-        ->whereHas('anggotaKelas', function ($q) use ($request, $tahunAktif) {
+        ->whereHas('anggotaKelas', function ($q) use (
+            $request,
+            $tahunAjaran
+        ) {
 
-            $q->where('kelas_id', $request->kelas_id)
-              ->where('tahun_ajaran_id', $tahunAktif->id);
+            $q->where(
+                'kelas_id',
+                $request->kelas_id
+            )
+            ->where(
+                'tahun_ajaran_id',
+                $tahunAjaran->id
+            );
 
         })
         ->orderBy('nama_siswa')
         ->get();
 
-}
+    }
+
 
     return view(
         'ekstrakurikuler.index',
         compact(
             'tahunAktif',
+            'tahunAjaran',
+            'modeArsip',
             'kelas',
             'masterEkstrakurikuler',
             'siswas'
@@ -103,6 +155,21 @@ public function getData(Siswa $siswa, Request $request)
         'semester' => 'required'
 
     ]);
+
+    $tahunAjaran = TahunAjaran::findOrFail(
+    $request->tahun_ajaran_id
+);
+
+if ($tahunAjaran->status !== 'Aktif') {
+
+    return back()
+        ->withInput()
+        ->with(
+            'error',
+            'Data ekstrakurikuler pada periode arsip tidak dapat diubah.'
+        );
+
+}
 
     foreach ($request->ekstrakurikuler as $item) {
 

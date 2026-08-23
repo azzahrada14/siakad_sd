@@ -27,41 +27,49 @@
 
 
     {{-- Tahun Ajaran Aktif --}}
-    @if($tahunAktif)
+  @if($tahunAjaran)
 
-        <div class="mt-5 lg:mt-0">
+<div class="mt-5 lg:mt-0">
 
-            <div class="bg-blue-50 border border-blue-200 rounded-xl shadow-sm px-6 py-4 min-w-[290px]">
+    <div class="bg-blue-50 border border-blue-200 rounded-xl shadow-sm px-5 py-4 min-w-[280px]">
 
-                <p class="text-xs uppercase tracking-wide text-blue-600 font-semibold">
-                    Tahun Ajaran Aktif
-                </p>
+        <p class="text-xs uppercase tracking-wide text-blue-600 font-semibold">
+            Periode Akademik
+        </p>
 
-                <h2 class="mt-1 text-2xl font-bold text-blue-700">
-                    {{ $tahunAktif->tahun_ajaran }}
-                </h2>
+        <h2 class="text-2xl font-bold text-blue-700 mt-1">
+            {{ $tahunAjaran->tahun_ajaran }}
+        </h2>
 
-                <div class="flex justify-between items-center mt-2">
+        <div class="flex justify-between items-center mt-2">
 
-                    <span class="text-sm text-gray-600">
-                        Semester {{ $tahunAktif->semester }}
-                    </span>
+            <span class="text-gray-600 text-sm">
+                Semester {{ $tahunAjaran->semester }}
+            </span>
 
-                    <span class="inline-flex items-center gap-2 rounded-full bg-green-100 px-3 py-1 text-xs font-semibold text-green-700">
+            @if($modeArsip)
 
-                        <span class="w-2 h-2 rounded-full bg-green-500"></span>
+                <span class="inline-flex items-center gap-1 rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-600">
+                    <span class="w-2 h-2 rounded-full bg-gray-400"></span>
+                    Arsip
+                </span>
 
-                        Aktif
+            @else
 
-                    </span>
+                <span class="inline-flex items-center gap-1 rounded-full bg-green-100 px-3 py-1 text-xs font-semibold text-green-700">
+                    <span class="w-2 h-2 rounded-full bg-green-500"></span>
+                    Aktif
+                </span>
 
-                </div>
-
-            </div>
+            @endif
 
         </div>
 
-    @endif
+    </div>
+
+</div>
+
+@endif
 
 </div>
 
@@ -105,8 +113,8 @@
                     class="w-full rounded-lg border-gray-300">
 
                     <option value="">
-                        Semua Tahun
-                    </option>
+    Pilih Tahun Ajaran
+</option>
 
                     @foreach($tahunAjarans as $tahun)
 
@@ -293,37 +301,51 @@
 
 
     {{-- Hanya Operator --}}
-    @if(auth()->user()->role === 'operator')
+    @if(auth()->user()->role === 'operator' && !$modeArsip)
 
-        <div class="flex flex-wrap gap-3 mt-4 lg:mt-0">
+    <div class="flex flex-wrap gap-3 mt-4 lg:mt-0">
 
+        {{-- EXPORT --}}
+        <a
+            href="{{ route('jadwal.export', request()->query()) }}"
+            class="inline-flex items-center gap-2 rounded-lg bg-green-600 hover:bg-green-700 px-4 py-2 text-white transition">
 
-            {{-- EXPORT --}}
-            <a
-                href="{{ route('jadwal.export', request()->query()) }}"
-                class="inline-flex items-center gap-2 rounded-lg bg-green-600 hover:bg-green-700 px-4 py-2 text-white transition">
+            <x-heroicon-o-arrow-down-tray class="w-5 h-5"/>
 
-                <x-heroicon-o-arrow-down-tray class="w-5 h-5"/>
+            Export Excel
 
-                Export Excel
+        </a>
 
-            </a>
+        {{-- TAMBAH --}}
+        <a
+            href="{{ route('jadwal.create', [
+                'tahun_ajaran_id' => $tahunAktif->id
+            ]) }}"
+            class="inline-flex items-center gap-2 rounded-lg bg-blue-600 hover:bg-blue-700 px-4 py-2 text-white transition">
 
+            <x-heroicon-o-plus class="w-5 h-5"/>
 
-            {{-- TAMBAH --}}
-            <a
-                href="{{ route('jadwal.create') }}"
-                class="inline-flex items-center gap-2 rounded-lg bg-blue-600 hover:bg-blue-700 px-4 py-2 text-white transition">
+            Tambah Jadwal
 
-                <x-heroicon-o-plus class="w-5 h-5"/>
+        </a>
 
-                Tambah Jadwal
+    </div>
 
-            </a>
+@elseif(auth()->user()->role === 'operator' && $modeArsip)
 
-        </div>
+    <div class="mt-4 lg:mt-0">
 
-    @endif
+        <span class="inline-flex items-center gap-2 rounded-lg bg-gray-100 px-4 py-2 text-gray-500">
+
+            <x-heroicon-o-lock-closed class="w-5 h-5"/>
+
+            Periode Arsip — Hanya Melihat
+
+        </span>
+
+    </div>
+
+@endif
 
 </div>
 
@@ -658,65 +680,76 @@
                         {{-- =================================================
                              AKSI
                         ================================================== --}}
-                        @if(auth()->user()->role === 'operator')
+                                     @if(auth()->user()->role === 'operator')
 
-                            <td class="border px-4 py-3">
+    <td class="border px-4 py-3">
 
-                                <div class="flex justify-center gap-2">
+        <div class="flex justify-center gap-2">
+
+            @if(!$modeArsip)
+
+                {{-- EDIT --}}
+                <a
+                    href="{{ route('jadwal.edit', [
+                        'jadwal' => $jadwal->id,
+                        'tahun_ajaran_id' => $tahunAktif->id
+                    ]) }}"
+                    class="inline-flex items-center gap-1 rounded-lg bg-yellow-500 hover:bg-yellow-600 px-3 py-2 text-white">
+
+                    <x-heroicon-o-pencil-square class="w-4 h-4"/>
+                    Edit
+
+                </a>
 
 
-                                    {{-- EDIT --}}
-                                    <a
-                                        href="{{ route('jadwal.edit', $jadwal->id) }}"
-                                        class="inline-flex items-center gap-1 rounded-lg bg-yellow-500 hover:bg-yellow-600 px-3 py-2 text-white">
+                {{-- TOGGLE STATUS --}}
+                <form
+                    action="{{ route('jadwal.toggleStatus', $jadwal->id) }}"
+                    method="POST">
 
-                                        <x-heroicon-o-pencil-square class="w-4 h-4"/>
+                    @csrf
+                    @method('PATCH')
 
-                                        Edit
+                    <button
+                        type="submit"
+                        class="inline-flex items-center gap-1 rounded-lg px-3 py-2 text-white
+                        {{ $jadwal->status === 'Aktif'
+                            ? 'bg-red-600 hover:bg-red-700'
+                            : 'bg-green-600 hover:bg-green-700' }}">
 
-                                    </a>
+                        @if($jadwal->status === 'Aktif')
 
+                            <x-heroicon-o-x-circle class="w-4 h-4"/>
+                            Nonaktif
 
-                                    {{-- TOGGLE STATUS --}}
-                                    <form
-                                        action="{{ route('jadwal.toggleStatus', $jadwal->id) }}"
-                                        method="POST">
+                        @else
 
-                                        @csrf
-
-                                        @method('PATCH')
-
-                                        <button
-                                            type="submit"
-                                            class="inline-flex items-center gap-1 rounded-lg px-3 py-2 text-white
-                                            {{ $jadwal->status === 'Aktif'
-                                                ? 'bg-red-600 hover:bg-red-700'
-                                                : 'bg-green-600 hover:bg-green-700' }}">
-
-                                            @if($jadwal->status === 'Aktif')
-
-                                                <x-heroicon-o-x-circle class="w-4 h-4"/>
-
-                                                Nonaktif
-
-                                            @else
-
-                                                <x-heroicon-o-check-circle class="w-4 h-4"/>
-
-                                                Aktif
-
-                                            @endif
-
-                                        </button>
-
-                                    </form>
-
-                                </div>
-
-                            </td>
+                            <x-heroicon-o-check-circle class="w-4 h-4"/>
+                            Aktif
 
                         @endif
 
+                    </button>
+
+                </form>
+
+            @else
+
+                <span class="inline-flex items-center gap-1 rounded-lg bg-gray-100 px-3 py-2 text-gray-500 text-sm">
+
+                    <x-heroicon-o-lock-closed class="w-4 h-4"/>
+                    Arsip
+
+                </span>
+
+            @endif
+
+        </div>
+
+    </td>
+
+@endif
+                      
 
                     </tr>
 

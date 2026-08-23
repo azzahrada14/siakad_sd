@@ -24,27 +24,25 @@ class KelulusanController extends Controller
 |--------------------------------------------------------------------------
 */
 
-public function index()
+public function index(Request $request)
 {
-    /*
-    |--------------------------------------------------------------------------
-    | Tahun Ajaran Aktif
-    |--------------------------------------------------------------------------
-    */
-
-    $tahunAktif = TahunAjaran::where(
-        'status',
-        'Aktif'
-    )->first();
+    $tahunAktif = $request->filled('tahun_ajaran_id')
+        ? TahunAjaran::findOrFail($request->tahun_ajaran_id)
+        : TahunAjaran::where('status', 'Aktif')->first();
 
     if (!$tahunAktif) {
-
         return back()->with(
             'error',
             'Tahun ajaran aktif belum tersedia.'
         );
-
     }
+
+    $modeArsip = $tahunAktif->status !== 'Aktif';
+
+    $bolehProses = (
+        $tahunAktif->status === 'Aktif'
+        && strtolower($tahunAktif->semester) === 'genap'
+    );
 
     /*
     |--------------------------------------------------------------------------
@@ -127,22 +125,16 @@ public function index()
     return view(
 
         'kelulusan.index',
-
-        compact(
-
-            'tahunAktif',
-
-            'anggota',
-
-            'totalSiswa',
-
-            'lulus',
-
-            'belum'
-
-        )
-
-    );
+    compact(
+        'tahunAktif',
+        'modeArsip',
+        'bolehProses',
+        'anggota',
+        'totalSiswa',
+        'lulus',
+        'belum'
+    )
+);
 
 }   
 /*
@@ -158,10 +150,26 @@ public function generate()
         'Aktif'
     )->first();
 
+    if ($tahunAktif->status !== 'Aktif') {
+    return back()->with(
+        'error',
+        'Data pada periode arsip tidak dapat diproses.'
+    );
+}
+
+if (strtolower($tahunAktif->semester) !== 'genap') {
+    return back()->with(
+        'error',
+        'Proses kelulusan hanya dapat dilakukan pada semester Genap.'
+    );
+}
+
     if (!$tahunAktif) {
 
         return redirect()
-            ->route('kelulusan.index')
+           ->route('kelulusan.index', [
+    'tahun_ajaran_id' => $tahunAktif->id
+])
             ->with(
                 'error',
                 'Tahun ajaran aktif belum tersedia.'

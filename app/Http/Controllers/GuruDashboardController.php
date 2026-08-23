@@ -2,32 +2,68 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 use App\Models\Guru;
 use App\Models\JadwalPelajaran;
 use App\Models\Kelas;
-use App\Models\Siswa;
-use App\Models\Jadwal;
 use App\Models\TahunAjaran;
-use Illuminate\Support\Facades\DB;
 
 class GuruDashboardController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         $guru = Auth::user()->guru;
 
-        $tahunAktif = TahunAjaran::where(
+        /*
+        |--------------------------------------------------------------------------
+        | TAHUN AJARAN
+        |--------------------------------------------------------------------------
+        */
+
+        $tahunAjaran = $request->filled('tahun_ajaran_id')
+            ? TahunAjaran::findOrFail($request->tahun_ajaran_id)
+            : TahunAjaran::where('status', 'Aktif')->first();
+
+        if (!$tahunAjaran) {
+            return back()->with(
+                'error',
+                'Tahun ajaran belum tersedia.'
+            );
+        }
+
+        // Untuk tampilan card tahun ajaran
+        $tahunAktif = $tahunAjaran;
+
+        // Menentukan apakah dashboard sedang melihat arsip
+        $modeArsip = $tahunAjaran->status !== 'Aktif';
+
+        /*
+        |--------------------------------------------------------------------------
+        | TAHUN ARSIP
+        |--------------------------------------------------------------------------
+        */
+
+        $tahunArsip = TahunAjaran::where(
             'status',
-            'Aktif'
-        )->first();
+            'Tidak Aktif'
+        )
+        ->orderByDesc('id')
+        ->first();
+
+        /*
+        |--------------------------------------------------------------------------
+        | DATA DASAR
+        |--------------------------------------------------------------------------
+        */
 
         $kelasDiampu = '-';
 
         $totalSiswa = 0;
 
-        $jadwalHariIni = 0;
+        $jadwalHariIni = collect();
 
         /*
         |--------------------------------------------------------------------------
@@ -35,32 +71,60 @@ class GuruDashboardController extends Controller
         |--------------------------------------------------------------------------
         */
 
-        if($guru && $guru->jenis_pengajar == 'Wali Kelas'){
+        if (
+            $guru &&
+            $guru->jenis_pengajar == 'Wali Kelas'
+        ) {
 
-            $kelas = Kelas::where(
-                'wali_kelas_id',
-                $guru->id
-            )->first();
+            $tahunGanjil = TahunAjaran::where(
+    'tahun_ajaran',
+    $tahunAjaran->tahun_ajaran
+)
+->where(
+    'semester',
+    'Ganjil'
+)
+->first();
 
-            if($kelas){
+$kelas = null;
 
-                $kelasDiampu = $kelas->nama_kelas;
+if ($tahunGanjil) {
 
-              $totalSiswa = DB::table('anggota_kelas')
-    ->where('kelas_id', $kelas->id)
-    ->count();
+    $kelas = Kelas::where(
+        'wali_kelas_id',
+        $guru->id
+    )
+    ->where(
+        'tahun_ajaran_id',
+        $tahunGanjil->id
+    )
+    ->first();
+}
 
-            }
+if ($kelas) {
 
+    $kelasDiampu = $kelas->nama_kelas;
+
+    $totalSiswa = DB::table('anggota_kelas')
+        ->where(
+            'kelas_id',
+            $kelas->id
+        )
+        ->where(
+            'tahun_ajaran_id',
+            $tahunGanjil->id
+        )
+        ->count();
+}
         }
 
         /*
         |--------------------------------------------------------------------------
-        | GURU PJOK / PAI / GURU MAPEL
+        | GURU MAPEL / PJOK / PAI
         |--------------------------------------------------------------------------
         */
 
-        else if($guru){
+        else if ($guru) {
 
             $kelasIds = JadwalPelajaran::where(
                 'guru_id',
@@ -69,12 +133,18 @@ class GuruDashboardController extends Controller
             ->pluck('kelas_id')
             ->unique();
 
-            $kelasDiampu = $kelasIds->count().' Kelas';
+            $kelasDiampu = $kelasIds->count() . ' Kelas';
 
             $totalSiswa = DB::table('anggota_kelas')
-    ->whereIn('kelas_id', $kelasIds)
-    ->count();
-
+                ->whereIn(
+                    'kelas_id',
+                    $kelasIds
+                )
+                ->where(
+                    'tahun_ajaran_id',
+                    $tahunAjaran->id
+                )
+                ->count();
         }
 
         /*
@@ -83,11 +153,28 @@ class GuruDashboardController extends Controller
         |--------------------------------------------------------------------------
         */
 
-        $hari = now()->locale('id')->dayName;
+        if ($guru && !$modeArsip) {
 
-        if($guru){
+            $namaHari = now()
+                ->locale('id')
+                ->dayName;
 
-            $jadwalHariIni = JadwalPelajaran::where(
+            $hari = match ($namaHari) {
+
+                'Monday'    => 'Senin',
+                'Tuesday'   => 'Selasa',
+                'Wednesday' => 'Rabu',
+                'Thursday'  => 'Kamis',
+                'Friday'    => 'Jumat',
+
+                default => $namaHari
+            };
+
+            $jadwalHariIni = JadwalPelajaran::with([
+                'kelas',
+                'mapel'
+            ])
+            ->where(
                 'guru_id',
                 $guru->id
             )
@@ -95,52 +182,31 @@ class GuruDashboardController extends Controller
                 'hari',
                 $hari
             )
-            ->count();
-
-        /*
-|--------------------------------------------------------------------------
-| JADWAL HARI INI
-|--------------------------------------------------------------------------
-*/
-
-$namaHari = now()->locale('id')->dayName;
-
-$hari = match($namaHari){
-    'Monday' => 'Senin',
-    'Tuesday' => 'Selasa',
-    'Wednesday' => 'Rabu',
-    'Thursday' => 'Kamis',
-    'Friday' => 'Jumat',
-    default => $namaHari
-};
-
-$jadwalHariIni = JadwalPelajaran::with([
-        'kelas',
-        'mapel'
-    ])
-    ->where('guru_id',$guru->id)
-    ->where('hari',$hari)
-    ->orderBy('jam_ke')
-    ->get();
+            ->orderBy('jam_ke')
+            ->get();
         }
 
+        $tahunAjarans = TahunAjaran::orderByDesc('id')->get();
 
+        /*
+        |--------------------------------------------------------------------------
+        | VIEW
+        |--------------------------------------------------------------------------
+        */
 
-        return view(
-            'guru.dashboard',
-            compact(
-
-                'guru',
-
-                'tahunAktif',
-
-                'kelasDiampu',
-
-                'totalSiswa',
-
-                'jadwalHariIni'
-
-            )
-        );
-    }
+       return view(
+    'guru.dashboard',
+    compact(
+        'guru',
+        'tahunAktif',
+        'tahunAjaran',
+        'tahunArsip',
+        'tahunAjarans',
+        'modeArsip',
+        'kelasDiampu',
+        'totalSiswa',
+        'jadwalHariIni'
+    )
+);
+}
 }

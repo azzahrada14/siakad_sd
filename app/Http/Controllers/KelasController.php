@@ -18,76 +18,157 @@ class KelasController extends Controller
     |--------------------------------------------------------------------------
     */
 
-    public function index(Request $request)
-    {
-        $query = Kelas::with([
-            'waliKelas'
-        ]);
+   public function index(Request $request)
+{
+    /*
+    |--------------------------------------------------------------------------
+    | PERIODE AKADEMIK
+    |--------------------------------------------------------------------------
+    */
 
-        /*
-        |--------------------------------------------------------------------------
-        | Search
-        |--------------------------------------------------------------------------
-        */
+    $tahunAjaran = $request->filled('tahun_ajaran_id')
+        ? TahunAjaran::findOrFail($request->tahun_ajaran_id)
+        : TahunAjaran::where('status', 'Aktif')->first();
 
-        if ($request->filled('search')) {
+    if (!$tahunAjaran) {
 
-            $query->where('nama_kelas', 'like', '%' . $request->search . '%');
+        return back()->with(
+            'error',
+            'Belum ada tahun ajaran yang tersedia.'
+        );
 
-        }
+    }
 
-        /*
-        |--------------------------------------------------------------------------
-        | Tingkat
-        |--------------------------------------------------------------------------
-        */
+    $tahunAktif = $tahunAjaran;
 
-        if ($request->filled('tingkat')) {
-
-            $query->where('tingkat', $request->tingkat);
-
-        }
-
-        $kelas = $query
-            ->orderBy('tingkat')
-            ->orderBy('nama_kelas')
-            ->paginate(10)
-            ->withQueryString();
-
-        /*
-        |--------------------------------------------------------------------------
-        | Statistik
-        |--------------------------------------------------------------------------
-        */
-
-        $totalKelas = Kelas::count();
-
-        $totalWali = Guru::where(
-            'jenis_pengajar',
-            'Wali Kelas'
-        )->count();
-
-        $totalSiswa = Siswa::count();
+    $modeArsip = $tahunAjaran->status !== 'Aktif';
 
 
-        $totalTingkat = Kelas::distinct('tingkat')->count();
+    /*
+    |--------------------------------------------------------------------------
+    | DATA KELAS BERDASARKAN PERIODE
+    |--------------------------------------------------------------------------
+    */
 
-        $guru = Guru::where('jenis_pengajar', 'Wali Kelas')
-    ->where('status_guru', 'Aktif')
+    $query = Kelas::with([
+        'waliKelas'
+    ])
+    ->where(
+        'tahun_ajaran_id',
+        $tahunAjaran->id
+    );
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | SEARCH
+    |--------------------------------------------------------------------------
+    */
+
+    if ($request->filled('search')) {
+
+        $query->where(
+            'nama_kelas',
+            'like',
+            '%' . $request->search . '%'
+        );
+
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | TINGKAT
+    |--------------------------------------------------------------------------
+    */
+
+    if ($request->filled('tingkat')) {
+
+        $query->where(
+            'tingkat',
+            $request->tingkat
+        );
+
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | DATA KELAS
+    |--------------------------------------------------------------------------
+    */
+
+    $kelas = $query
+        ->orderBy('tingkat')
+        ->orderBy('nama_kelas')
+        ->paginate(10)
+        ->withQueryString();
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | STATISTIK
+    |--------------------------------------------------------------------------
+    */
+
+    $totalKelas = (clone $query)->count();
+
+    $totalWali = Guru::where(
+        'jenis_pengajar',
+        'Wali Kelas'
+    )->count();
+
+    $totalSiswa = \App\Models\AnggotaKelas::where(
+        'tahun_ajaran_id',
+        $tahunAjaran->id
+    )
+    ->distinct('siswa_id')
+    ->count('siswa_id');
+
+    $totalTingkat = (clone $query)
+        ->distinct('tingkat')
+        ->count('tingkat');
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | GURU WALI KELAS
+    |--------------------------------------------------------------------------
+    */
+
+    $guru = Guru::where(
+        'jenis_pengajar',
+        'Wali Kelas'
+    )
+    ->where(
+        'status_guru',
+        'Aktif'
+    )
     ->orderBy('nama_guru')
     ->get();
-$tahunAktif = TahunAjaran::where('status', 'Aktif')->first();
 
-        return view('kelas.index', compact(
-    'kelas',
-    'totalKelas',
-    'totalWali',
-    'totalSiswa',
-    'guru',
-    'totalTingkat',
-    'tahunAktif',
-));
-    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | VIEW
+    |--------------------------------------------------------------------------
+    */
+
+    return view(
+        'kelas.index',
+        compact(
+            'kelas',
+            'totalKelas',
+            'totalWali',
+            'totalSiswa',
+            'guru',
+            'totalTingkat',
+            'tahunAktif',
+            'tahunAjaran',
+            'modeArsip'
+        )
+    );
+}
 
     /*
 |--------------------------------------------------------------------------
@@ -104,10 +185,40 @@ public function store(Request $request)
         'tingkat' => 'required|integer|min:1|max:6',
 
         'ruang_kelas' => 'nullable|string|max:10',
-        
-        'wali_kelas_id' => 'nullable|exists:gurus,id'
+
+        'wali_kelas_id' => 'nullable|exists:gurus,id',
+
+        'tahun_ajaran_id' => 'required|exists:tahun_ajarans,id',
 
     ]);
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | PERIODE YANG DIPILIH
+    |--------------------------------------------------------------------------
+    */
+
+    $tahunAjaran = TahunAjaran::findOrFail(
+        $request->tahun_ajaran_id
+    );
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | ARSIP TIDAK BOLEH DITAMBAH
+    |--------------------------------------------------------------------------
+    */
+
+    if ($tahunAjaran->status !== 'Aktif') {
+
+        return back()->with(
+            'error',
+            'Data kelas pada periode arsip tidak dapat ditambahkan.'
+        );
+
+    }
+
 
     DB::beginTransaction();
 
@@ -115,36 +226,47 @@ public function store(Request $request)
 
         Kelas::create([
 
-            'nama_kelas'    => $request->nama_kelas,
+            'nama_kelas' => $request->nama_kelas,
 
-            'tingkat'       => $request->tingkat,
+            'tingkat' => $request->tingkat,
 
             'wali_kelas_id' => $request->wali_kelas_id,
 
-            'ruang_kelas' => $request->ruang_kelas
+            'ruang_kelas' => $request->ruang_kelas,
+
+            'tahun_ajaran_id' => $tahunAjaran->id
+
         ]);
+
 
         DB::commit();
 
         return redirect()
-            ->route('kelas.index')
+            ->route(
+                'kelas.index',
+                [
+                    'tahun_ajaran_id' => $tahunAjaran->id
+                ]
+            )
             ->with(
                 'success',
                 'Data kelas berhasil ditambahkan.'
             );
 
+
     } catch (\Exception $e) {
 
         DB::rollBack();
 
-        return back()->with(
-            'error',
-            $e->getMessage()
-        );
+        return back()
+            ->withInput()
+            ->with(
+                'error',
+                $e->getMessage()
+            );
 
     }
 }
-
     /*
     |--------------------------------------------------------------------------
     | SHOW
@@ -174,22 +296,39 @@ public function edit($id)
 {
     $kelas = Kelas::findOrFail($id);
 
+    $tahunAjaran = TahunAjaran::findOrFail(
+        $kelas->tahun_ajaran_id
+    );
+
+
+    if ($tahunAjaran->status !== 'Aktif') {
+
+        return back()->with(
+            'error',
+            'Data kelas pada periode arsip tidak dapat diubah.'
+        );
+
+    }
+
+
     $guru = Guru::where(
-            'jenis_pengajar',
-            'Wali Kelas'
-        )
-        ->where(
-            'status_guru',
-            'Aktif'
-        )
-        ->orderBy('nama_guru')
-        ->get();
+        'jenis_pengajar',
+        'Wali Kelas'
+    )
+    ->where(
+        'status_guru',
+        'Aktif'
+    )
+    ->orderBy('nama_guru')
+    ->get();
+
 
     return view(
         'kelas.edit',
         compact(
             'kelas',
-            'guru'
+            'guru',
+            'tahunAjaran'
         )
     );
 }
@@ -218,7 +357,20 @@ public function update(Request $request, $id)
 
     try {
 
-        $kelas = Kelas::findOrFail($id);
+       $kelas = Kelas::findOrFail($id);
+
+$tahunAjaran = TahunAjaran::findOrFail(
+    $kelas->tahun_ajaran_id
+);
+
+if ($tahunAjaran->status !== 'Aktif') {
+
+    return back()->with(
+        'error',
+        'Data kelas pada periode arsip tidak dapat diubah.'
+    );
+
+}
 
         $kelas->update([
 
@@ -234,12 +386,10 @@ public function update(Request $request, $id)
 
         DB::commit();
 
-        return redirect()
-            ->route('kelas.index')
-            ->with(
-                'success',
-                'Data kelas berhasil diperbarui.'
-            );
+       return redirect()
+    ->route('kelas.index', [
+        'tahun_ajaran_id' => $tahunAjaran->id
+    ]);
 
     } catch (\Exception $e) {
 
@@ -256,6 +406,32 @@ public function update(Request $request, $id)
 }
 
 
+public function create(Request $request)
+{
+    $tahunAjaran = $request->filled('tahun_ajaran_id')
+        ? TahunAjaran::findOrFail($request->tahun_ajaran_id)
+        : TahunAjaran::where('status', 'Aktif')->first();
+
+    if (!$tahunAjaran) {
+        return back()->with('error', 'Belum ada tahun ajaran yang tersedia.');
+    }
+
+    if ($tahunAjaran->status !== 'Aktif') {
+        return back()->with('error', 'Periode arsip tidak dapat menambahkan data.');
+    }
+
+    $guru = Guru::where('jenis_pengajar', 'Wali Kelas')
+        ->where('status_guru', 'Aktif')
+        ->orderBy('nama_guru')
+        ->get();
+
+    return view('kelas.create', compact(
+        'tahunAjaran',
+        'guru'
+    ));
+}
+
+
     /*
 |--------------------------------------------------------------------------
 | DESTROY
@@ -266,19 +442,38 @@ public function destroy($id)
 {
     $kelas = Kelas::findOrFail($id);
 
-    if ($kelas->anggotaKelas()->exists()) {
-
-    return back()->with(
-        'error',
-        'Kelas tidak dapat dihapus karena sudah digunakan.'
+    $tahunAjaran = TahunAjaran::findOrFail(
+        $kelas->tahun_ajaran_id
     );
 
-}
+
+    if ($tahunAjaran->status !== 'Aktif') {
+
+        return back()->with(
+            'error',
+            'Data kelas pada periode arsip tidak dapat dihapus.'
+        );
+
+    }
+
+
+    if ($kelas->anggotaKelas()->exists()) {
+
+        return back()->with(
+            'error',
+            'Kelas tidak dapat dihapus karena sudah digunakan.'
+        );
+
+    }
+
 
     $kelas->delete();
 
+
     return redirect()
-        ->route('kelas.index')
+        ->route('kelas.index', [
+            'tahun_ajaran_id' => $tahunAjaran->id
+        ])
         ->with(
             'success',
             'Data kelas berhasil dihapus.'

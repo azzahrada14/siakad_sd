@@ -27,16 +27,20 @@ class RaporController extends Controller
     |--------------------------------------------------------------------------
     */
 
-   public function index()
+public function index(Request $request)
 {
-    $tahunAktif = TahunAjaran::where('status', 'Aktif')->first();
+    $tahunAjaran = $request->filled('tahun_ajaran_id')
+        ? TahunAjaran::findOrFail($request->tahun_ajaran_id)
+        : TahunAjaran::where('status', 'Aktif')->first();
 
-    if (!$tahunAktif) {
+    if (!$tahunAjaran) {
         return back()->with(
             'error',
-            'Tahun ajaran aktif belum tersedia.'
+            'Tahun ajaran belum tersedia.'
         );
     }
+
+    $modeArsip = $tahunAjaran->status !== 'Aktif';
 
     $guru = auth()->user()->guru;
 
@@ -46,30 +50,47 @@ class RaporController extends Controller
 
     /*
     |--------------------------------------------------------------------------
-    | Kelas wali pada tahun ajaran aktif
+    | Kelas wali pada tahun ajaran yang dipilih
     |--------------------------------------------------------------------------
     */
 
-    $kelasGuru = Kelas::where(
-        'wali_kelas_id',
-        $guru->id
-    )
-    ->where(
-        'tahun_ajaran_id',
-        $tahunAktif->id
-    )
-    ->first();
+   $tahunGanjil = TahunAjaran::where(
+    'tahun_ajaran',
+    $tahunAjaran->tahun_ajaran
+)
+->where(
+    'semester',
+    'Ganjil'
+)
+->first();
 
-    if (!$kelasGuru) {
-        return back()->with(
-            'error',
-            'Anda belum menjadi wali kelas pada tahun ajaran aktif.'
-        );
-    }
+if (!$tahunGanjil) {
+    return back()->with(
+        'error',
+        'Data tahun ajaran Ganjil untuk struktur kelas belum tersedia.'
+    );
+}
+
+$kelasGuru = Kelas::where(
+    'wali_kelas_id',
+    $guru->id
+)
+->where(
+    'tahun_ajaran_id',
+    $tahunGanjil->id
+)
+->first();
+
+if (!$kelasGuru) {
+    return back()->with(
+        'error',
+        'Anda belum menjadi wali kelas pada tahun ajaran ini.'
+    );
+}
 
     /*
     |--------------------------------------------------------------------------
-    | Ambil hanya rapor kelas wali
+    | Ambil rapor kelas wali
     |--------------------------------------------------------------------------
     */
 
@@ -83,21 +104,23 @@ class RaporController extends Controller
     )
     ->where(
         'tahun_ajaran_id',
-        $tahunAktif->id
+        $tahunAjaran->id
     )
     ->where(
         'semester',
-        $tahunAktif->semester
+        $tahunAjaran->semester
     )
     ->orderBy('siswa_id')
-    ->paginate(10);
+    ->paginate(10)
+    ->withQueryString();
 
     return view(
         'rapor.index',
         compact(
-            'tahunAktif',
+            'tahunAjaran',
             'kelasGuru',
-            'rapor'
+            'rapor',
+            'modeArsip'
         )
     );
 }
@@ -137,14 +160,31 @@ class RaporController extends Controller
     |--------------------------------------------------------------------------
     */
 
-    $tahunAktif = TahunAjaran::find($request->tahun_ajaran_id);
+    $tahunAjaran = TahunAjaran::find($request->tahun_ajaran_id);
 
-    if (!$tahunAktif) {
+    if (!$tahunAjaran) {
         return back()->with(
             'error',
             'Tahun ajaran tidak ditemukan.'
         );
     }
+
+    $tahunGanjil = TahunAjaran::where(
+    'tahun_ajaran',
+    $tahunAjaran->tahun_ajaran
+)
+->where(
+    'semester',
+    'Ganjil'
+)
+->first();
+
+if (!$tahunGanjil) {
+    return back()->with(
+        'error',
+        'Data tahun ajaran Ganjil untuk struktur kelas belum tersedia.'
+    );
+}
 
     /*
     |--------------------------------------------------------------------------
@@ -165,14 +205,14 @@ class RaporController extends Controller
     */
 
     $kelasGuru = Kelas::where(
-        'wali_kelas_id',
-        $guru->id
-    )
-    ->where(
-        'tahun_ajaran_id',
-        $request->tahun_ajaran_id
-    )
-    ->first();
+    'wali_kelas_id',
+    $guru->id
+)
+->where(
+    'tahun_ajaran_id',
+    $tahunGanjil->id
+)
+->first();
 
     if (!$kelasGuru) {
         return back()->with(
@@ -227,15 +267,15 @@ class RaporController extends Controller
     */
 
     $anggotaKelas = AnggotaKelas::with('siswa')
-        ->where(
-            'kelas_id',
-            $kelasId
-        )
-        ->where(
-            'tahun_ajaran_id',
-            $request->tahun_ajaran_id
-        )
-        ->get();
+    ->where(
+        'kelas_id',
+        $kelasId
+    )
+    ->where(
+        'tahun_ajaran_id',
+        $tahunGanjil->id
+    )
+    ->get();
 
     if ($anggotaKelas->isEmpty()) {
 

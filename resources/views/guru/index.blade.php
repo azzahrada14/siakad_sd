@@ -2,55 +2,55 @@
 
 @section('content')
 
+@if(!$modeArsip)
+
 <div
-id="modalImport"
-class="fixed inset-0 bg-black/40 hidden items-center justify-center z-50">
+    id="modalImport"
+    class="fixed inset-0 bg-black/40 hidden items-center justify-center z-50">
 
-<div class="bg-white rounded-xl w-full max-w-md p-6">
+    <div class="bg-white rounded-xl w-full max-w-md p-6">
 
-<h2 class="text-xl font-bold mb-4">
+        <h2 class="text-xl font-bold mb-4">
+            Import Data Guru
+        </h2>
 
-Import Data Guru
+        <form
+            action="{{ route('guru.import') }}"
+            method="POST"
+            enctype="multipart/form-data">
 
-</h2>
+            @csrf
 
-<form
-action="{{ route('guru.import') }}"
-method="POST"
-enctype="multipart/form-data">
+            <input
+                type="file"
+                name="file"
+                accept=".xlsx,.xls"
+                class="w-full border rounded-lg p-3"
+                required>
 
-@csrf
+            <div class="flex justify-end gap-3 mt-6">
 
-<input
-type="file"
-name="file"
-accept=".xlsx,.xls"
-class="w-full border rounded-lg p-3"
-required>
+                <button
+                    type="button"
+                    onclick="tutupModalGuru()"
+                    class="px-4 py-2 bg-gray-500 text-white rounded-lg">
+                    Batal
+                </button>
 
-<div class="flex justify-end gap-3 mt-6">
+                <button
+                    class="px-4 py-2 bg-green-600 text-white rounded-lg">
+                    Import
+                </button>
 
-<button
-    type="button"
-    onclick="tutupModalGuru()"
-    class="px-4 py-2 bg-gray-500 text-white rounded-lg">
-    Batal
-</button>
+            </div>
 
-<button
-class="px-4 py-2 bg-green-600 text-white rounded-lg">
+        </form>
 
-Import
-
-</button>
-
-</div>
-
-</form>
+    </div>
 
 </div>
 
-</div>
+@endif
 
 @if(session('success'))
 
@@ -97,47 +97,49 @@ class="mb-5 rounded-lg bg-red-100 border border-red-300 text-red-700 px-4 py-3">
 
     </div>
 
-    @if($tahunAktif)
+   @if($tahunAjaran)
 
-    <div class="mt-5 lg:mt-0">
+<div class="mt-5 lg:mt-0">
 
-        <div class="bg-blue-50 border border-blue-200 rounded-xl shadow-sm px-5 py-4 min-w-[280px]">
+    <div class="bg-blue-50 border border-blue-200 rounded-xl shadow-sm px-5 py-4 min-w-[280px]">
 
-            <p class="text-xs uppercase tracking-wide text-blue-600 font-semibold">
+        <p class="text-xs uppercase tracking-wide text-blue-600 font-semibold">
+            Periode Akademik
+        </p>
 
-                Tahun Ajaran Aktif
+        <h2 class="text-2xl font-bold text-blue-700 mt-1">
+            {{ $tahunAjaran->tahun_ajaran }}
+        </h2>
 
-            </p>
+        <div class="flex justify-between items-center mt-2">
 
-            <h2 class="text-2xl font-bold text-blue-700 mt-1">
+            <span class="text-gray-600 text-sm">
+                Semester {{ $tahunAjaran->semester }}
+            </span>
 
-                {{ $tahunAktif->tahun_ajaran }}
+            @if($modeArsip)
 
-            </h2>
-
-            <div class="flex justify-between items-center mt-2">
-
-                <span class="text-gray-600 text-sm">
-
-                    Semester {{ $tahunAktif->semester }}
-
+                <span class="inline-flex items-center gap-1 rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-600">
+                    <span class="w-2 h-2 rounded-full bg-gray-400"></span>
+                    Arsip
                 </span>
+
+            @else
 
                 <span class="inline-flex items-center gap-1 rounded-full bg-green-100 px-3 py-1 text-xs font-semibold text-green-700">
-
                     <span class="w-2 h-2 rounded-full bg-green-500"></span>
-
                     Aktif
-
                 </span>
 
-            </div>
+            @endif
 
         </div>
 
     </div>
 
-    @endif
+</div>
+
+@endif
 
 </div>
 {{-- ================= CARD STATISTIK ================= --}}
@@ -276,6 +278,12 @@ class="mb-5 rounded-lg bg-red-100 border border-red-300 text-red-700 px-4 py-3">
 
     <form action="{{ route('guru.index') }}" method="GET">
 
+    <input
+        type="hidden"
+        name="tahun_ajaran_id"
+        value="{{ $tahunAjaran->id }}"
+    >
+
         <div class="p-6">
 
             <div class="grid grid-cols-1 md:grid-cols-4 gap-5">
@@ -388,7 +396,9 @@ class="mb-5 rounded-lg bg-red-100 border border-red-300 text-red-700 px-4 py-3">
                     </button>
 
                     <a
-                        href="{{ route('guru.index') }}"
+    href="{{ route('guru.index', [
+        'tahun_ajaran_id' => $tahunAjaran->id
+    ]) }}"
                         class="h-11 px-5 flex items-center justify-center rounded-lg bg-gray-300 hover:bg-gray-400">
 
                         Reset
@@ -427,7 +437,8 @@ class="mb-5 rounded-lg bg-red-100 border border-red-300 text-red-700 px-4 py-3">
 
     <div class="flex flex-wrap gap-3 mt-5 lg:mt-0">
 
-    
+    @if(!$modeArsip)
+
         {{-- IMPORT --}}
         <button
             type="button"
@@ -451,8 +462,9 @@ class="mb-5 rounded-lg bg-red-100 border border-red-300 text-red-700 px-4 py-3">
 
         </a>
 
-    </div>
+    @endif
 
+</div>
 </div>
 {{-- ================= DATA GURU ================= --}}
 
@@ -769,68 +781,86 @@ class="mb-5 rounded-lg bg-red-100 border border-red-300 text-red-700 px-4 py-3">
 
     </td>
 
-    {{-- AKSI --}}
-    <td class="border px-3 py-3">
+  {{-- AKSI --}}
+<td class="border px-3 py-3">
 
-        <div class="flex justify-center items-center gap-2 whitespace-nowrap">
+    <div class="flex justify-center items-center gap-2 whitespace-nowrap">
 
-            {{-- Detail --}}
+        {{-- DETAIL --}}
+        <a
+            href="{{ route('guru.show', $guru->id) }}"
+            class="p-1.5 rounded-lg bg-blue-100 hover:bg-blue-200 transition"
+            title="Detail">
+
+            <x-heroicon-o-eye class="w-5 h-5 text-blue-600"/>
+
+        </a>
+
+
+        {{-- AKSI HANYA PERIODE AKTIF --}}
+        @if(!$modeArsip)
+
+            {{-- EDIT --}}
             <a
-                href="{{ route('guru.show',$guru->id) }}"
-                 class="p-1.5 rounded-lg bg-blue-100 hover:bg-blue-200 transition">
+                href="{{ route('guru.edit', $guru->id) }}"
+                class="p-1.5 rounded-lg bg-yellow-100 hover:bg-yellow-200 transition"
+                title="Edit">
 
-                <x-heroicon-o-eye class="w-5 h-5 text-blue-600"/>
+                <x-heroicon-o-pencil-square
+                    class="w-5 h-5 text-yellow-600"/>
 
             </a>
 
-            {{-- Edit --}}
-            <a
-                href="{{ route('guru.edit',$guru->id) }}"
-               class="p-1.5 rounded-lg bg-yellow-100 hover:bg-yellow-200 transition">
 
-                <x-heroicon-o-pencil-square class="w-5 h-5 text-yellow-600"/>
-
-            </a>
-
-            {{-- Reset Password --}}
+            {{-- RESET PASSWORD --}}
             <form
-                action="{{ route('guru.reset-password',$guru->id) }}"
-                method="POST">
+                action="{{ route('guru.reset-password', $guru->id) }}"
+                method="POST"
+                class="inline">
 
                 @csrf
 
                 <button
+                    type="submit"
                     onclick="return confirm('Reset password guru ini?')"
-                   class="p-1.5 rounded-lg bg-red-100 hover:bg-red-200 transition">
-    
+                    class="p-1.5 rounded-lg bg-red-100 hover:bg-red-200 transition"
+                    title="Reset Password">
 
-                    <x-heroicon-o-key class="w-5 h-5 text-red-600"/>
+                    <x-heroicon-o-key
+                        class="w-5 h-5 text-red-600"/>
 
                 </button>
 
             </form>
 
-            {{-- Mutasi --}}
+
+            {{-- MUTASI --}}
             <form
-               action="{{ route('guru.mutasi',$guru->id) }}"
-                method="POST">
+                action="{{ route('guru.mutasi', $guru->id) }}"
+                method="POST"
+                class="inline">
 
                 @csrf
-               @method('PATCH')
+                @method('PATCH')
 
                 <button
+                    type="submit"
                     onclick="return confirm('Mutasikan guru ini?')"
-                   class="p-1.5 rounded-lg bg-green-100 hover:bg-red-200 transition">
-                   
-                    <x-heroicon-o-arrow-right-on-rectangle class="w-5 h-5 text-green-600"/>
+                    class="p-1.5 rounded-lg bg-green-100 hover:bg-green-200 transition"
+                    title="Mutasi">
+
+                    <x-heroicon-o-arrow-right-on-rectangle
+                        class="w-5 h-5 text-green-600"/>
 
                 </button>
 
             </form>
 
-        </div>
+        @endif
 
-    </td>
+    </div>
+
+</td>
 
 </tr>
 

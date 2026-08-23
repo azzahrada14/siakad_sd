@@ -40,47 +40,50 @@
 
         </div>
 
-         @if($tahunAktif)
 
-    <div class="mt-5 lg:mt-0">
+@if($tahunAktif)
 
-        <div class="bg-blue-50 border border-blue-200 rounded-xl shadow-sm px-5 py-4 min-w-[280px]">
+<div class="mt-5 lg:mt-0">
 
-            <p class="text-xs uppercase tracking-wide text-blue-600 font-semibold">
+    <div class="bg-blue-50 border border-blue-200 rounded-xl shadow-sm px-5 py-4 min-w-[280px]">
 
-                Tahun Ajaran Aktif
+        <p class="text-xs uppercase tracking-wide text-blue-600 font-semibold">
+            Tahun Ajaran
+        </p>
 
-            </p>
+        <h2 class="text-2xl font-bold text-blue-700 mt-1">
+            {{ $tahunAktif->tahun_ajaran }}
+        </h2>
 
-            <h2 class="text-2xl font-bold text-blue-700 mt-1">
+        <div class="flex justify-between items-center mt-2">
 
-                {{ $tahunAktif->tahun_ajaran }}
+            <span class="text-gray-600 text-sm">
+                Semester {{ $tahunAktif->semester }}
+            </span>
 
-            </h2>
+            @if($modeArsip)
 
-            <div class="flex justify-between items-center mt-2">
-
-                <span class="text-gray-600 text-sm">
-
-                    Semester {{ $tahunAktif->semester }}
-
+                <span class="inline-flex items-center gap-1 rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-600">
+                    <span class="w-2 h-2 rounded-full bg-gray-400"></span>
+                    Arsip
                 </span>
+
+            @else
 
                 <span class="inline-flex items-center gap-1 rounded-full bg-green-100 px-3 py-1 text-xs font-semibold text-green-700">
-
                     <span class="w-2 h-2 rounded-full bg-green-500"></span>
-
                     Aktif
-
                 </span>
 
-            </div>
+            @endif
 
         </div>
 
     </div>
 
-    @endif
+</div>
+
+@endif
 
     </div>
 
@@ -177,14 +180,28 @@
             </div>
 
             <div class="flex gap-3">
+@if($bolehProses)
 
-                <button
-                    onclick="openModal()"
-                    class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-3 rounded-lg">
+    <button
+        onclick="openModal()"
+        class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-3 rounded-lg">
 
-                    Generate Alumni
+        Generate Alumni
 
-                </button>
+    </button>
+
+@else
+
+    <span
+        class="inline-flex items-center gap-2 bg-gray-400 text-white px-5 py-3 rounded-lg cursor-not-allowed">
+
+        <x-heroicon-o-lock-closed class="w-5 h-5"/>
+
+        Tidak Dapat Diproses
+
+    </span>
+
+@endif
 
                 <a
                     href="{{ route('alumni.export') }}"
@@ -395,20 +412,26 @@ Belum ada data alumni.
 
             </button>
 
-            <form
-                action="{{ route('alumni.generate') }}"
-                method="POST">
+           <form
+    action="{{ route('alumni.generate') }}"
+    method="POST">
 
-                @csrf
+    @csrf
 
-                <button
-                    class="px-5 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white">
+    <input
+        type="hidden"
+        name="tahun_ajaran_id"
+        value="{{ $tahunAktif->id }}"
+    >
 
-                    Generate
+    <button
+        class="px-5 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white">
 
-                </button>
+        Generate
 
-            </form>
+    </button>
+
+</form>
 
         </div>
 

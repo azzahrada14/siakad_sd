@@ -2,6 +2,8 @@
 
 @section('content')
 
+@if(!$modeArsip)
+
 {{-- =========================================================
     MODAL TAMBAH DATA KELAS
 ========================================================= --}}
@@ -43,6 +45,14 @@
         >
 
             @csrf
+
+            {{-- PERIODE TAHUN AJARAN --}}
+            <input
+                type="hidden"
+                name="tahun_ajaran_id"
+                value="{{ $tahunAjaran->id }}"
+            >
+
 
             {{-- NAMA KELAS --}}
             <div class="mb-4">
@@ -192,6 +202,11 @@
 
 </div>
 
+@endif
+
+
+        
+
 
 {{-- =========================================================
     ALERT SUCCESS
@@ -249,50 +264,49 @@
 
 
     {{-- TAHUN AJARAN AKTIF --}}
-    @if($tahunAktif)
+    @if($tahunAjaran)
 
-        <div class="mt-5 lg:mt-0">
+    <div class="mt-5 lg:mt-0">
 
-            <div class="bg-blue-50 border border-blue-200 rounded-xl shadow-sm px-5 py-4 min-w-[280px]">
+        <div class="bg-blue-50 border border-blue-200 rounded-xl shadow-sm px-5 py-4 min-w-[280px]">
 
-                <p class="text-xs uppercase tracking-wide text-blue-600 font-semibold">
+            <p class="text-xs uppercase tracking-wide text-blue-600 font-semibold">
+                Periode Akademik
+            </p>
 
-                    Tahun Ajaran Aktif
+            <h2 class="text-2xl font-bold text-blue-700 mt-1">
+                {{ $tahunAjaran->tahun_ajaran }}
+            </h2>
 
-                </p>
+            <div class="flex justify-between items-center mt-2">
 
+                <span class="text-gray-600 text-sm">
+                    Semester {{ $tahunAjaran->semester }}
+                </span>
 
-                <h2 class="text-2xl font-bold text-blue-700 mt-1">
-
-                    {{ $tahunAktif->tahun_ajaran }}
-
-                </h2>
-
-
-                <div class="flex justify-between items-center mt-2">
-
-                    <span class="text-gray-600 text-sm">
-
-                        Semester {{ $tahunAktif->semester }}
-
-                    </span>
-
+                @if($tahunAjaran->status === 'Aktif')
 
                     <span class="inline-flex items-center gap-1 rounded-full bg-green-100 px-3 py-1 text-xs font-semibold text-green-700">
-
                         <span class="w-2 h-2 rounded-full bg-green-500"></span>
-
                         Aktif
-
                     </span>
 
-                </div>
+                @else
+
+                    <span class="inline-flex items-center gap-1 rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-600">
+                        <span class="w-2 h-2 rounded-full bg-gray-400"></span>
+                        Arsip
+                    </span>
+
+                @endif
 
             </div>
 
         </div>
 
-    @endif
+    </div>
+
+@endif
 
 </div>
 
@@ -457,6 +471,11 @@
         action="{{ route('kelas.index') }}"
         method="GET"
     >
+    <input
+    type="hidden"
+    name="tahun_ajaran_id"
+    value="{{ $tahunAjaran->id }}"
+>
 
         <div class="p-6">
 
@@ -528,17 +547,12 @@
                         Cari
 
                     </button>
-
-
-                    <a
-                        href="{{ route('kelas.index') }}"
-                        class="h-11 px-5 flex items-center justify-center rounded-lg bg-gray-300 hover:bg-gray-400"
-                    >
-
-                        Reset
-
-                    </a>
-
+<a
+    href="{{ route('kelas.index', ['tahun_ajaran_id' => $tahunAjaran->id]) }}"
+    class="h-11 px-5 flex items-center justify-center rounded-lg bg-gray-300 hover:bg-gray-400"
+>
+    Reset
+</a>
                 </div>
 
             </div>
@@ -576,19 +590,21 @@
     <div class="flex flex-wrap gap-3 mt-5 lg:mt-0">
 
         {{-- TAMBAH KELAS --}}
-        <button
-            type="button"
-            onclick="bukaModalKelas()"
-            class="inline-flex items-center gap-2 px-5 py-3 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition"
-        >
+        @if(!$modeArsip)
 
-            <x-heroicon-o-plus
-                class="w-5 h-5"
-            />
+    <button
+        type="button"
+        onclick="bukaModalKelas()"
+        class="inline-flex items-center gap-2 px-5 py-3 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition"
+    >
 
-            Tambah Kelas
+        <x-heroicon-o-plus class="w-5 h-5"/>
 
-        </button>
+        Tambah Kelas
+
+    </button>
+
+@endif
 
     </div>
 
@@ -814,45 +830,47 @@
                                 </a>
 
 
-                                {{-- EDIT --}}
-                                <a
-                                    href="{{ route('kelas.edit', $kelasItem->id) }}"
-                                    class="p-1.5 rounded-lg bg-yellow-100 hover:bg-yellow-200 transition"
-                                    title="Edit"
-                                >
+                                
+                         @if(!$modeArsip)
 
-                                    <x-heroicon-o-pencil-square
-                                        class="w-5 h-5 text-yellow-600"
-                                    />
+    {{-- EDIT --}}
+    <a
+        href="{{ route('kelas.edit', $kelasItem->id) }}"
+        class="p-1.5 rounded-lg bg-yellow-100 hover:bg-yellow-200 transition"
+        title="Edit"
+    >
+        <x-heroicon-o-pencil-square
+            class="w-5 h-5 text-yellow-600"
+        />
+    </a>
 
-                                </a>
 
+    {{-- HAPUS --}}
+    <form
+        action="{{ route('kelas.destroy', $kelasItem->id) }}"
+        method="POST"
+        class="inline"
+    >
 
-                                {{-- HAPUS --}}
-                                <form
-                                    action="{{ route('kelas.destroy', $kelasItem->id) }}"
-                                    method="POST"
-                                    class="inline"
-                                >
+        @csrf
+        @method('DELETE')
 
-                                    @csrf
+        <button
+            type="submit"
+            onclick="return confirm('Apakah Anda yakin ingin menghapus kelas ini?')"
+            class="p-1.5 rounded-lg bg-red-100 hover:bg-red-200 transition"
+            title="Hapus"
+        >
 
-                                    @method('DELETE')
+            <x-heroicon-o-trash
+                class="w-5 h-5 text-red-600"
+            />
 
-                                    <button
-                                        type="submit"
-                                        onclick="return confirm('Apakah Anda yakin ingin menghapus kelas ini?')"
-                                        class="p-1.5 rounded-lg bg-red-100 hover:bg-red-200 transition"
-                                        title="Hapus"
-                                    >
+        </button>
 
-                                        <x-heroicon-o-trash
-                                            class="w-5 h-5 text-red-600"
-                                        />
+    </form>
 
-                                    </button>
-
-                                </form>
+@endif
 
 
                             </div>
@@ -944,7 +962,11 @@
 
         <div>
 
-            {{ $kelas->links('vendor.pagination.tailwind') }}
+       {{ $kelas->appends([
+    'tahun_ajaran_id' => $tahunAjaran->id,
+    'search' => request('search'),
+    'tingkat' => request('tingkat'),
+])->links('vendor.pagination.tailwind') }}
 
         </div>
 

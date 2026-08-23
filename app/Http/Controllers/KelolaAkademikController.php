@@ -22,69 +22,74 @@ class KelolaAkademikController extends Controller
     |--------------------------------------------------------------------------
     */
 
-    private function tahunAktif()
-    {
-        return TahunAjaran::where(
-            'status',
-            'Aktif'
-        )->firstOrFail();
-    }
+   private function tahunAktif(Request $request)
+{
+    $tahunAjaran = $request->filled('tahun_ajaran_id')
+    ? TahunAjaran::findOrFail($request->tahun_ajaran_id)
+    : TahunAjaran::where(
+        'status',
+        'Aktif'
+    )->first();
 
+    if (!$tahunAjaran) {
+    abort(404, 'Tahun ajaran belum tersedia.');
+}
+
+    return $tahunAjaran;
+}
     /*
     |--------------------------------------------------------------------------
     | STATISTIK
     |--------------------------------------------------------------------------
     */
+private function statistik($tahunAjaranId)
+{
+    $data = [];
 
-    private function statistik()
-    {
-        $data = [];
+    for ($tingkat = 1; $tingkat <= 6; $tingkat++) {
 
-        for ($tingkat = 1; $tingkat <= 6; $tingkat++) {
+        $jumlah = AnggotaKelas::where(
+                'tahun_ajaran_id',
+                $tahunAjaranId
+            )
+            ->whereHas('kelas', function ($q) use ($tingkat) {
 
-            $jumlah = Siswa::where(
+                $q->where(
                     'tingkat',
                     $tingkat
-                )
-                ->where(
-                    'status_siswa',
-                    'Aktif'
-                )
-                ->count();
+                );
 
-            if ($jumlah == 0) {
+            })
+            ->distinct('siswa_id')
+            ->count('siswa_id');
 
-                $rombel = 0;
+        if ($jumlah == 0) {
 
-            } elseif ($jumlah <= 30) {
+            $rombel = 0;
 
-                $rombel = 1;
+        } elseif ($jumlah <= 30) {
 
-            } elseif ($jumlah <= 60) {
+            $rombel = 1;
 
-                $rombel = 2;
+        } else {
 
-            } else {
-
-                $rombel = 2;
-
-            }
-
-            $data[] = [
-
-                'tingkat' => $tingkat,
-
-                'jumlah' => $jumlah,
-
-                'rombel' => $rombel
-
-            ];
+            $rombel = 2;
 
         }
 
-        return collect($data);
+        $data[] = [
+
+            'tingkat' => $tingkat,
+
+            'jumlah' => $jumlah,
+
+            'rombel' => $rombel
+
+        ];
     }
 
+    return collect($data);
+}
     /*
     |--------------------------------------------------------------------------
     | AMBIL SISWA
@@ -253,59 +258,52 @@ class KelolaAkademikController extends Controller
     |--------------------------------------------------------------------------
     */
 
-    public function index()
-    {
-        $tahunAktif = $this->tahunAktif();
+    public function index(Request $request)
+{
+  $tahunAjaran = $this->tahunAktif($request);
 
-        /*
-        |--------------------------------------------------------------------------
-        | DATA KELAS
-        |--------------------------------------------------------------------------
-        */
+$modeArsip = $tahunAjaran->status !== 'Aktif';
 
-        $kelas = Kelas::with([
+/*
+|--------------------------------------------------------------------------
+| TAHUN STRUKTUR KELAS
+|--------------------------------------------------------------------------
+*/
 
-                'waliKelas',
+$tahunStruktur = $tahunAjaran;
 
-                'anggotaKelas.siswa'
+if ($tahunAjaran->semester === 'Genap') {
 
-            ])
-            ->where(
-                'tahun_ajaran_id',
-                $tahunAktif->id
-            )
-            ->orderBy('tingkat')
-            ->orderBy('nama_kelas')
-            ->get();
+    $tahunStruktur = TahunAjaran::where(
+        'tahun_ajaran',
+        $tahunAjaran->tahun_ajaran
+    )
+    ->where(
+        'semester',
+        'Ganjil'
+    )
+    ->first();
 
-        /*
-        |--------------------------------------------------------------------------
-        | HITUNG STATISTIK KELAS
-        |--------------------------------------------------------------------------
-        */
+}
+/*
+|--------------------------------------------------------------------------
+| DATA KELAS
+|--------------------------------------------------------------------------
+*/
 
-        foreach ($kelas as $item) {
+$kelas = Kelas::with([
+    'waliKelas',
+    'anggotaKelas.siswa'
+])
+->where(
+    'tahun_ajaran_id',
+    $tahunStruktur?->id ?? $tahunAjaran->id
+)
+->orderBy('tingkat')
+->orderBy('nama_kelas')
+->get();
 
-            $item->jumlah_siswa = $item->anggotaKelas->count();
 
-            $item->jumlah_l = $item->anggotaKelas
-                ->filter(fn($row) => $row->siswa?->jenis_kelamin == 'L')
-                ->count();
-
-            $item->jumlah_p = $item->anggotaKelas
-                ->filter(fn($row) => $row->siswa?->jenis_kelamin == 'P')
-                ->count();
-
-            $item->status_kapasitas = match (true) {
-
-    $item->jumlah_siswa == 0  => 'Kosong',
-
-    $item->jumlah_siswa >= 30 => 'Penuh',
-
-    default => 'Tersedia',
-
-};
-        }
 
         /*
         |--------------------------------------------------------------------------
@@ -323,7 +321,9 @@ class KelolaAkademikController extends Controller
         |--------------------------------------------------------------------------
         */
 
-        $statistik = $this->statistik();
+       $statistik = $this->statistik(
+    $tahunAjaran->id
+);
 
         /*
         |--------------------------------------------------------------------------
@@ -332,23 +332,17 @@ class KelolaAkademikController extends Controller
         */
 
         return view(
-
-            'kelola-akademik.index',
-
-            compact(
-
-                'tahunAktif',
-
-                'kelas',
-
-                'guru',
-
-                'statistik'
-
-            )
-
-        );
-    }
+    'kelola-akademik.index',
+    compact(
+        'tahunAjaran',
+        'kelas',
+        'guru',
+        'statistik',
+        'modeArsip'
+    )
+);
+}
+    
     /*
 |--------------------------------------------------------------------------
 | GENERATE PEMBAGIAN KELAS
@@ -373,7 +367,14 @@ public function generate(Request $request)
         |--------------------------------------------------------------------------
         */
 
-        $tahunAktif = $this->tahunAktif();
+        $tahunAjaran = $this->tahunAktif($request);
+
+if ($tahunAjaran->status !== 'Aktif') {
+    return back()->with(
+        'error',
+        'Pembagian kelas pada periode arsip tidak dapat diubah.'
+    );
+}
 
         $tingkat = $request->tingkat;
 
@@ -383,15 +384,10 @@ public function generate(Request $request)
 |--------------------------------------------------------------------------
 */
 
-$cek = Kelas::where(
-        'tingkat',
-        $tingkat
-    )
-    ->where(
-        'tahun_ajaran_id',
-        $tahunAktif->id
-    )
-    ->exists();
+$this->resetPembagian(
+    $tingkat,
+    $tahunAjaran->id
+);
 
 if ($cek) {
 
@@ -399,7 +395,7 @@ if ($cek) {
 
         $tingkat,
 
-        $tahunAktif->id
+        $tahunAjaran->id
 
     );
 
@@ -456,7 +452,7 @@ if ($cek) {
 
             $tingkat,
 
-            $tahunAktif->id,
+            $tahunAjaran->id,
 
             $siswa->count()
 
@@ -496,7 +492,7 @@ if ($cek) {
 
                 $kelas[0]->id,
 
-                $tahunAktif->id,
+                $tahunAjaran->id,
 
                 $gabung
 
@@ -596,7 +592,7 @@ if ($cek) {
 
                 $kelas[0]->id,
 
-                $tahunAktif->id,
+                $tahunAjaran->id,
 
                 $kelasA
 
@@ -606,7 +602,7 @@ if ($cek) {
 
                 $kelas[1]->id,
 
-                $tahunAktif->id,
+                $tahunAjaran->id,
 
                 $kelasB
 
@@ -616,17 +612,14 @@ if ($cek) {
 
         DB::commit();
 
-        return redirect()
-
-            ->route('kelola-akademik.index')
-
-            ->with(
-
-                'success',
-
-                'Pembagian kelas berhasil dibuat.'
-
-            );
+       return redirect()
+    ->route('kelola-akademik.index', [
+        'tahun_ajaran_id' => $tahunAjaran->id
+    ])
+    ->with(
+        'success',
+        'Pembagian kelas berhasil dibuat.'
+    );
 
     }
 
@@ -651,19 +644,33 @@ if ($cek) {
 |--------------------------------------------------------------------------
 */
 
-public function reset($tingkat)
+public function reset(Request $request, $tingkat)
 {
     DB::beginTransaction();
 
     try {
 
-        $tahunAktif = $this->tahunAktif();
+        $tahunAjaran = $this->tahunAktif($request);
+
+if ($tahunAjaran->status !== 'Aktif') {
+    return back()->with(
+        'error',
+        'Pembagian kelas pada periode arsip tidak dapat diubah.'
+    );
+}
+
+if ($tahunAjaran->semester !== 'Ganjil') {
+    return back()->with(
+        'error',
+        'Pembagian kelas hanya dapat dilakukan pada Semester Ganjil.'
+    );
+}
 
         $this->resetPembagian(
 
             $tingkat,
 
-            $tahunAktif->id
+            $tahunAjaran->id
 
         );
 
@@ -701,6 +708,23 @@ public function simpan(Request $request)
     'wali_kelas'  => 'nullable|array',
     'ruang_kelas' => 'nullable|array',
 ]);
+
+$tahunAjaran = $this->tahunAktif($request);
+
+if ($tahunAjaran->status !== 'Aktif') {
+    return back()->with(
+        'error',
+        'Data pembagian kelas pada periode arsip tidak dapat diubah.'
+    );
+}
+
+if ($tahunAjaran->semester !== 'Ganjil') {
+    return back()->with(
+        'error',
+        'Pembagian kelas hanya dapat dilakukan pada Semester Ganjil.'
+    );
+}
+
     DB::beginTransaction();
 
     try {
@@ -748,12 +772,15 @@ public function simpan(Request $request)
 
     }
 }
-public function cetak(Kelas $kelas)
+
+public function cetak(Request $request, Kelas $kelas)
 {
-    $tahunAktif = TahunAjaran::where(
-        'status',
-        'Aktif'
-    )->first();
+    $tahunAjaran = $request->filled('tahun_ajaran_id')
+        ? TahunAjaran::findOrFail($request->tahun_ajaran_id)
+        : TahunAjaran::where('status', 'Aktif')
+            ->where('semester', 'Ganjil')
+            ->firstOrFail();
+
 
     $kelas->load([
         'waliKelas',
@@ -772,15 +799,15 @@ public function cetak(Kelas $kelas)
         ->count();
 
     $pdf = Pdf::loadView(
-        'kelola-akademik.pdf',
-        compact(
-            'kelas',
-            'tahunAktif',
-            'anggota',
-            'jumlahL',
-            'jumlahP'
-        )
-    );
+    'kelola-akademik.pdf',
+    compact(
+        'kelas',
+        'tahunAjaran',
+        'anggota',
+        'jumlahL',
+        'jumlahP'
+    )
+);
 
     $pdf->setPaper('A4','portrait');
 

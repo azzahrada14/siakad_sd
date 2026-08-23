@@ -26,42 +26,122 @@ class AbsensiController extends Controller
     |--------------------------------------------------------------------------
     */
 
-    public function index(Request $request)
-    {
-        /*
-        |--------------------------------------------------------------------------
-        | DATA LOGIN
-        |--------------------------------------------------------------------------
-        */
+  public function index(Request $request)
+{
+    /*
+    |--------------------------------------------------------------------------
+    | DATA LOGIN
+    |--------------------------------------------------------------------------
+    */
 
-        $guru = Auth::user()->guru;
+    $user = Auth::user();
 
-        /*
-        |--------------------------------------------------------------------------
-        | MASTER
-        |--------------------------------------------------------------------------
-        */
+    $guru = $user->guru ?? null;
 
-        $tahunajaran = TahunAjaran::orderByDesc('id')->get();
-        $tahunAktif = TahunAjaran::where('status', 'Aktif')->first();
 
-        if (!$tahunAktif) {
-    return back()->with('error', 'Belum ada Tahun Ajaran yang aktif.');
+    /*
+    |--------------------------------------------------------------------------
+    | TAHUN AJARAN
+    |--------------------------------------------------------------------------
+    */
+
+    $tahunajaran = TahunAjaran::orderByDesc('id')->get();
+
+    $tahunAjaran = $request->filled('tahun_ajaran_id')
+        ? TahunAjaran::findOrFail($request->tahun_ajaran_id)
+        : TahunAjaran::where('status', 'Aktif')->first();
+
+    if (!$tahunAjaran) {
+
+        return back()->with(
+            'error',
+            'Belum ada Tahun Ajaran yang tersedia.'
+        );
+
+    }
+
+    $tahunAktif = TahunAjaran::where(
+        'status',
+        'Aktif'
+    )->first();
+
+    $modeArsip = $tahunAjaran->status !== 'Aktif';
+
+
+    /*
+|--------------------------------------------------------------------------
+| TAHUN STRUKTUR KELAS
+|--------------------------------------------------------------------------
+| Pembagian kelas hanya dilakukan pada semester Ganjil.
+| Semester Genap menggunakan struktur kelas dari Ganjil.
+|--------------------------------------------------------------------------
+*/
+
+$tahunStruktur = $tahunAjaran;
+
+if (strtolower($tahunAjaran->semester) === 'genap') {
+
+    $tahunStruktur = TahunAjaran::where(
+        'tahun_ajaran',
+        $tahunAjaran->tahun_ajaran
+    )
+    ->where(
+        'semester',
+        'Ganjil'
+    )
+    ->first();
+
+    if (!$tahunStruktur) {
+
+        return back()->with(
+            'error',
+            'Data tahun ajaran Ganjil untuk struktur kelas belum tersedia.'
+        );
+
+    }
 }
-        $semester = [
-            'Ganjil',
-            'Genap'
-        ];
 
-        $kelas = collect();
+    /*
+    |--------------------------------------------------------------------------
+    | MASTER
+    |--------------------------------------------------------------------------
+    */
 
-        $mapels = collect();
+    $semester = [
+        'Ganjil',
+        'Genap'
+    ];
 
-        /*
-        |--------------------------------------------------------------------------
-        | HAK AKSES GURU
-        |--------------------------------------------------------------------------
-        */
+    $kelas = collect();
+
+    $mapels = collect();
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | HAK AKSES
+    |--------------------------------------------------------------------------
+    */
+
+    if (!$guru) {
+
+        // Operator
+
+        $kelas = Kelas::where(
+            'status',
+            'Aktif'
+        )
+        ->orderBy('nama_kelas')
+        ->get();
+
+        $mapels = Mapel::where(
+            'status',
+            'Aktif'
+        )
+        ->orderBy('nama_mapel')
+        ->get();
+
+    } else {
 
         switch ($guru->jenis_pengajar) {
 
@@ -75,13 +155,22 @@ class AbsensiController extends Controller
 
                 }
 
-                $mapels = Mapel::all();
+                $mapels = Mapel::where(
+                    'status',
+                    'Aktif'
+                )->get();
 
             break;
 
+
             case 'Guru PAI':
 
-                $kelas = Kelas::orderBy('nama_kelas')->get();
+                $kelas = Kelas::where(
+                    'status',
+                    'Aktif'
+                )
+                ->orderBy('nama_kelas')
+                ->get();
 
                 $mapels = Mapel::where(
                     'kode_mapel',
@@ -90,9 +179,15 @@ class AbsensiController extends Controller
 
             break;
 
+
             case 'Guru PJOK':
 
-                $kelas = Kelas::orderBy('nama_kelas')->get();
+                $kelas = Kelas::where(
+                    'status',
+                    'Aktif'
+                )
+                ->orderBy('nama_kelas')
+                ->get();
 
                 $mapels = Mapel::where(
                     'kode_mapel',
@@ -101,45 +196,94 @@ class AbsensiController extends Controller
 
             break;
 
+
             default:
 
-                $kelas = Kelas::orderBy('nama_kelas')->get();
+                $kelas = Kelas::where(
+                    'status',
+                    'Aktif'
+                )
+                ->orderBy('nama_kelas')
+                ->get();
 
-                $mapels = Mapel::all();
+                $mapels = Mapel::where(
+                    'status',
+                    'Aktif'
+                )->get();
 
-        }
-
-        
-                /*
-        |--------------------------------------------------------------------------
-        | KELAS YANG DIPILIH
-        |--------------------------------------------------------------------------
-        */
-
-        $kelasId = $request->kelas;
-
-        if ($guru->jenis_pengajar == 'Wali Kelas') {
-
-            $kelasId = $guru->waliKelas?->id;
+            break;
 
         }
-$absensiSiswa = [];
+
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | KELAS YANG DIPILIH
+    |--------------------------------------------------------------------------
+    */
+
+   $kelasId = $request->kelas;
+
 /*
+|--------------------------------------------------------------------------
+| WALI KELAS
+|--------------------------------------------------------------------------
+| Pada Genap, kelas tetap menggunakan kelas hasil pembagian Ganjil.
+|--------------------------------------------------------------------------
+*/
+
+$kelasId = $request->kelas;
+
+if (
+    $guru &&
+    $guru->jenis_pengajar == 'Wali Kelas'
+) {
+
+    $kelasWali = Kelas::where(
+        'wali_kelas_id',
+        $guru->id
+    )
+    ->where(
+        'tahun_ajaran_id',
+        $tahunStruktur->id
+    )
+    ->first();
+
+    $kelasId = $kelasWali?->id;
+}
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | ABSENSI SISWA
+    |--------------------------------------------------------------------------
+    */
+
+    $absensiSiswa = [];
+
+
+   
+       /*
 |--------------------------------------------------------------------------
 | AMBIL SISWA
 |--------------------------------------------------------------------------
 */
 
-
 $siswas = collect();
-
 
 if ($kelasId) {
 
     $ids = AnggotaKelas::where(
         'kelas_id',
         $kelasId
-    )->pluck('siswa_id');
+    )
+    ->where(
+        'tahun_ajaran_id',
+        $tahunStruktur->id
+    )
+    ->pluck('siswa_id');
 
     $siswas = Siswa::whereIn(
         'id',
@@ -147,91 +291,100 @@ if ($kelasId) {
     )
     ->orderBy('nama_siswa')
     ->get();
-    
-
 }
-             
+   
 
-/*
-|--------------------------------------------------------------------------
-| AMBIL DATA ABSENSI
-|--------------------------------------------------------------------------
-*/
 
-$filter = [
-    'kelas_id' => null,
-    'tahun_ajaran_id' => null,
-    'semester' => null,
-    'tanggal' => null,
-    'mapel_id' => null,
-];
+    /*
+    |--------------------------------------------------------------------------
+    | AMBIL DATA ABSENSI
+    |--------------------------------------------------------------------------
+    */
 
-if ($kelasId && $request->tanggal) {
+    $filter = [
+        'kelas_id' => null,
+        'tahun_ajaran_id' => $tahunAjaran->id,
+        'semester' => $tahunAjaran->semester,
+        'tanggal' => null,
+        'mapel_id' => null,
+    ];
 
-    $query = Absensi::where(
+
+    if ($kelasId && $request->tanggal) {
+
+        $query = Absensi::where(
             'tanggal',
             $request->tanggal
         )
         ->where(
             'kelas_id',
             $kelasId
+        )
+        ->where(
+            'tahun_ajaran_id',
+            $tahunAjaran->id
+        )
+        ->where(
+            'semester',
+            $tahunAjaran->semester
         );
 
-    if ($request->filled('tahun_ajaran_id')) {
-    $query->where(
-        'tahun_ajaran_id',
-        $request->tahun_ajaran_id
+
+        if ($request->filled('mapel')) {
+
+            $query->where(
+                'mapel_id',
+                $request->mapel
+            );
+
+        }
+
+
+        $absensi = $query->get();
+
+
+        foreach ($absensi as $item) {
+
+            $absensiSiswa[$item->siswa_id] = $item;
+
+        }
+
+
+        $filter = [
+            'kelas_id' => $kelasId,
+            'tahun_ajaran_id' => $tahunAjaran->id,
+            'semester' => $tahunAjaran->semester,
+            'tanggal' => $request->tanggal,
+            'mapel_id' => $request->mapel,
+        ];
+
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | VIEW
+    |--------------------------------------------------------------------------
+    */
+
+    return view(
+        'absensi.index',
+        compact(
+            'guru',
+            'kelas',
+            'mapels',
+            'tahunAktif',
+            'tahunAjaran',
+            'tahunajaran',
+            'semester',
+            'siswas',
+            'absensiSiswa',
+            'kelasId',
+            'modeArsip',
+            'filter'
+        )
     );
 }
-
-    if ($request->filled('semester')) {
-
-        $query->where(
-            'semester',
-            $request->semester
-        );
-
-    }
-
-    if ($request->filled('mapel')) {
-
-        $query->where(
-            'mapel_id',
-            $request->mapel
-        );
-
-    }
-
-    $absensi = $query->get();
-
-    foreach ($absensi as $item) {
-
-        $absensiSiswa[$item->siswa_id] = $item;
-
-    }
-    $filter = [
-    'kelas_id' => $kelasId,
-    'tahun_ajaran_id' => $request->tahun_ajaran_id,
-    'semester' => $request->semester,
-    'tanggal' => $request->tanggal,
-    'mapel_id' => $request->mapel,
-];
-
-}
-return view(
-    'absensi.index',
-    compact(
-        'guru',
-        'kelas',
-        'mapels',
-        'tahunAktif',
-        'siswas',
-        'absensiSiswa',
-        'kelasId',
-        'filter'
-    )
-);
-    }
 public function massStore(Request $request)
 {
 
@@ -257,6 +410,19 @@ public function massStore(Request $request)
         'siswa_id' => 'required|array'
 
     ]);
+
+    $tahunAjaran = TahunAjaran::findOrFail(
+    $request->tahun_ajaran_id
+);
+
+if ($tahunAjaran->status !== 'Aktif') {
+
+    return back()->with(
+        'error',
+        'Data absensi pada periode arsip tidak dapat ditambahkan atau diubah.'
+    );
+
+}
 
     DB::beginTransaction();
 

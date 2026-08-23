@@ -27,6 +27,11 @@ class LingkupMateriController extends Controller
             'tahunAjaran'
         ]);
 
+        $semester = request('semester');
+
+if ($semester) {
+    $query->where('semester', $semester);
+}
         /*
         |--------------------------------------------------------------------------
         | Filter Tahun Ajaran Aktif

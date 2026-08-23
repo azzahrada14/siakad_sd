@@ -15,7 +15,7 @@ class RankingController extends Controller
     /**
      * Halaman Ranking
      */
-    public function index()
+    public function index(Request $request)
     {
         $guru = Auth::user()->guru;
 
@@ -25,25 +25,48 @@ class RankingController extends Controller
 
         /*
         |--------------------------------------------------------------------------
-        | Tahun Ajaran Aktif
+        | Tahun Ajaran yang Dipilih
+        |--------------------------------------------------------------------------
+        */
+$tahunAjaran = $request->filled('tahun_ajaran_id')
+    ? TahunAjaran::findOrFail($request->tahun_ajaran_id)
+    : TahunAjaran::where('status', 'Aktif')->first();
+
+if (!$tahunAjaran) {
+    return back()->with(
+        'error',
+        'Tahun ajaran belum tersedia.'
+    );
+}
+
+$modeArsip = $tahunAjaran->status !== 'Aktif';
+
+        /*
+        |--------------------------------------------------------------------------
+        | Tahun Ganjil sebagai sumber struktur kelas
         |--------------------------------------------------------------------------
         */
 
-        $tahunAktif = TahunAjaran::where(
-            'status',
-            'Aktif'
-        )->first();
+        $tahunGanjil = TahunAjaran::where(
+            'tahun_ajaran',
+            $tahunAjaran->tahun_ajaran
+        )
+        ->where(
+            'semester',
+            'Ganjil'
+        )
+        ->first();
 
-        if (!$tahunAktif) {
+        if (!$tahunGanjil) {
             return back()->with(
                 'error',
-                'Tahun ajaran aktif belum tersedia.'
+                'Data tahun ajaran Ganjil untuk struktur kelas belum tersedia.'
             );
         }
 
         /*
         |--------------------------------------------------------------------------
-        | Kelas Wali pada Tahun Ajaran Aktif
+        | Kelas Wali
         |--------------------------------------------------------------------------
         */
 
@@ -53,20 +76,20 @@ class RankingController extends Controller
         )
         ->where(
             'tahun_ajaran_id',
-            $tahunAktif->id
+            $tahunGanjil->id
         )
         ->first();
 
         if (!$kelasGuru) {
             return back()->with(
                 'error',
-                'Anda belum menjadi wali kelas pada tahun ajaran aktif.'
+                'Anda belum menjadi wali kelas pada tahun ajaran ini.'
             );
         }
 
         /*
         |--------------------------------------------------------------------------
-        | Ranking Hanya untuk Kelas Wali
+        | Ranking
         |--------------------------------------------------------------------------
         */
 
@@ -81,23 +104,25 @@ class RankingController extends Controller
         )
         ->where(
             'tahun_ajaran_id',
-            $tahunAktif->id
+            $tahunAjaran->id
         )
         ->where(
             'semester',
-            $tahunAktif->semester
+            $tahunAjaran->semester
         )
         ->orderBy('ranking')
-        ->paginate(10);
+        ->paginate(10)
+        ->withQueryString();
 
-        return view(
-            'ranking.index',
-            compact(
-                'ranking',
-                'kelasGuru',
-                'tahunAktif'
-            )
-        );
+   return view(
+    'ranking.index',
+    compact(
+        'ranking',
+        'kelasGuru',
+        'tahunAjaran',
+        'modeArsip'
+    )
+);
     }
 
 
@@ -118,12 +143,12 @@ class RankingController extends Controller
         |--------------------------------------------------------------------------
         */
 
-        $tahunAktif = TahunAjaran::where(
+        $tahunAjaran = TahunAjaran::where(
             'status',
             'Aktif'
         )->first();
 
-        if (!$tahunAktif) {
+        if (!$tahunAjaran) {
             return back()->with(
                 'error',
                 'Tahun ajaran aktif belum tersedia.'
@@ -132,7 +157,30 @@ class RankingController extends Controller
 
         /*
         |--------------------------------------------------------------------------
-        | Cari Kelas Wali Sesuai Tahun Ajaran Aktif
+        | Tahun Ganjil sebagai sumber struktur kelas
+        |--------------------------------------------------------------------------
+        */
+
+        $tahunGanjil = TahunAjaran::where(
+            'tahun_ajaran',
+            $tahunAjaran->tahun_ajaran
+        )
+        ->where(
+            'semester',
+            'Ganjil'
+        )
+        ->first();
+
+        if (!$tahunGanjil) {
+            return back()->with(
+                'error',
+                'Data tahun ajaran Ganjil belum tersedia.'
+            );
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Cari Kelas Wali
         |--------------------------------------------------------------------------
         */
 
@@ -142,14 +190,14 @@ class RankingController extends Controller
         )
         ->where(
             'tahun_ajaran_id',
-            $tahunAktif->id
+            $tahunGanjil->id
         )
         ->first();
 
         if (!$kelasGuru) {
             return back()->with(
                 'error',
-                'Anda belum menjadi wali kelas pada tahun ajaran aktif.'
+                'Anda belum memiliki kelas pada tahun ajaran ini.'
             );
         }
 
@@ -157,7 +205,7 @@ class RankingController extends Controller
 
         /*
         |--------------------------------------------------------------------------
-        | Hapus Ranking Lama Kelas Ini
+        | Hapus Ranking Lama
         |--------------------------------------------------------------------------
         */
 
@@ -167,11 +215,11 @@ class RankingController extends Controller
         )
         ->where(
             'tahun_ajaran_id',
-            $tahunAktif->id
+            $tahunAjaran->id
         )
         ->where(
             'semester',
-            $tahunAktif->semester
+            $tahunAjaran->semester
         )
         ->delete();
 
@@ -180,7 +228,8 @@ class RankingController extends Controller
         | Ambil Nilai Siswa
         |--------------------------------------------------------------------------
         |
-        | Siswa harus merupakan anggota kelas aktif.
+        | Struktur kelas dan anggota siswa berasal dari Ganjil.
+        | Nilai mengikuti tahun ajaran dan semester yang sedang aktif.
         |
         */
 
@@ -198,6 +247,7 @@ class RankingController extends Controller
         )
         ->selectRaw("
             nilais.siswa_id,
+            siswas.nama_siswa,
             AVG(nilais.nilai_akhir) AS rata_rata
         ")
         ->where(
@@ -206,18 +256,19 @@ class RankingController extends Controller
         )
         ->where(
             'anggota_kelas.tahun_ajaran_id',
-            $tahunAktif->id
+            $tahunGanjil->id
         )
         ->where(
             'nilais.tahun_ajaran_id',
-            $tahunAktif->id
+            $tahunAjaran->id
         )
         ->where(
             'nilais.semester',
-            $tahunAktif->semester
+            $tahunAjaran->semester
         )
         ->groupBy(
-            'nilais.siswa_id'
+            'nilais.siswa_id',
+            'siswas.nama_siswa'
         )
         ->get();
 
@@ -235,11 +286,11 @@ class RankingController extends Controller
             )
             ->where(
                 'tahun_ajaran_id',
-                $tahunAktif->id
+                $tahunAjaran->id
             )
             ->where(
                 'semester',
-                $tahunAktif->semester
+                $tahunAjaran->semester
             )
             ->count();
 
@@ -249,11 +300,11 @@ class RankingController extends Controller
             )
             ->where(
                 'tahun_ajaran_id',
-                $tahunAktif->id
+                $tahunAjaran->id
             )
             ->where(
                 'semester',
-                $tahunAktif->semester
+                $tahunAjaran->semester
             )
             ->where(
                 'status',
@@ -304,13 +355,14 @@ class RankingController extends Controller
         foreach ($nilai as $item) {
 
             RankingSiswa::create([
+
                 'siswa_id' => $item->siswa_id,
 
                 'kelas_id' => $kelasId,
 
-                'tahun_ajaran_id' => $tahunAktif->id,
+                'tahun_ajaran_id' => $tahunAjaran->id,
 
-                'semester' => $tahunAktif->semester,
+                'semester' => $tahunAjaran->semester,
 
                 'rata_rata' => round(
                     $item->rata_rata,
@@ -320,6 +372,7 @@ class RankingController extends Controller
                 'kehadiran' => $item->kehadiran,
 
                 'ranking' => $ranking++,
+
             ]);
         }
 

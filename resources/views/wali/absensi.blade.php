@@ -5,60 +5,113 @@
 <div class="max-w-[98%] mx-auto py-6">
 
     {{-- HEADER --}}
-    <div class="bg-white rounded-2xl shadow border p-8 mb-6">
+<div class="bg-white rounded-2xl shadow border p-8 mb-6">
 
-        <div class="flex justify-between items-center">
+    <div class="flex justify-between items-center">
 
-            <div>
+        <div>
+            <h1 class="flex items-center gap-3 text-3xl font-bold text-slate-800">
+                <x-heroicon-o-clipboard-document-check class="w-8 h-8 text-blue-600"/>
+                Rekap Absensi Siswa
+            </h1>
 
-                <h1 class="flex items-center gap-3 text-3xl font-bold text-slate-800">
-                        <x-heroicon-o-clipboard-document-check class="w-8 h-8 text-blue-600" />
-                    Rekap Absensi Siswa
+            <p class="text-gray-500 mt-2">
+                Daftar Hadir Siswa Dalam Bulan
+            </p>
+        </div>
 
-                </h1>
-
-                <p class="text-gray-500 mt-2">
-
-                    Daftar Hadir Siswa Dalam Bulan
-
-                </p>
-
-            </div>
- {{-- Informasi Kanan --}}
         <div class="flex flex-col lg:flex-row gap-4">
 
-            @if($tahunAktif)
-            <div class="bg-blue-50 border border-blue-200 rounded-xl px-6 py-4 shadow-sm min-w-[260px]">
+            @if($tahunAjaran)
 
-                <p class="text-xs uppercase tracking-wide text-blue-600 font-semibold">
-                    Tahun Ajaran Aktif
-                </p>
+                <div class="bg-blue-50 border border-blue-200 rounded-xl px-6 py-4 shadow-sm min-w-[260px]">
 
-                <h3 class="text-2xl font-bold text-blue-700 mt-1">
-                    {{ $tahunAktif->tahun_ajaran }}
-                </h3>
+                    <p class="text-xs uppercase tracking-wide text-blue-600 font-semibold">
+                        Tahun Ajaran
+                    </p>
 
-                <div class="flex justify-between items-center mt-2">
+                    <h3 class="text-2xl font-bold text-blue-700 mt-1">
+                        {{ $tahunAjaran->tahun_ajaran }}
+                    </h3>
 
-                    <span class="text-gray-600">
-                        Semester {{ $tahunAktif->semester }}
-                    </span>
+                    <div class="flex justify-between items-center mt-2">
 
-                    <span class="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-semibold">
-                        Aktif
-                    </span>
+                        <span class="text-gray-600">
+                            Semester {{ $tahunAjaran->semester }}
+                        </span>
+
+                        @if($modeArsip)
+
+                            <span class="inline-flex items-center gap-1 rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-600">
+                                <span class="w-2 h-2 rounded-full bg-gray-400"></span>
+                                Arsip
+                            </span>
+
+                        @else
+
+                            <span class="inline-flex items-center gap-1 rounded-full bg-green-100 text-green-700 px-3 py-1 text-xs font-semibold">
+                                <span class="w-2 h-2 rounded-full bg-green-500"></span>
+                                Aktif
+                            </span>
+
+                        @endif
+
+                    </div>
 
                 </div>
 
-            </div>
             @endif
+
         </div>
+
     </div>
+
 </div>
+
+
+{{-- PERINGATAN ARSIP --}}
+@if($modeArsip)
+
+    <div class="bg-yellow-50 border border-yellow-200 rounded-xl px-5 py-4 mb-6">
+
+        <div class="flex items-start gap-3">
+
+            <x-heroicon-o-exclamation-triangle
+                class="w-6 h-6 text-yellow-600 flex-shrink-0"/>
+
+            <div>
+
+                <h3 class="font-semibold text-yellow-800">
+                    Periode Tahun Ajaran Diarsipkan
+                </h3>
+
+                <p class="text-sm text-yellow-700 mt-1">
+                    Rekap absensi pada tahun ajaran
+                    <strong>{{ $tahunAjaran->tahun_ajaran }}</strong>
+                    semester
+                    <strong>{{ $tahunAjaran->semester }}</strong>
+                    merupakan data arsip.
+
+                    Data hanya dapat dilihat dan tidak dapat diubah.
+                </p>
+
+            </div>
+
+        </div>
+
+    </div>
+
+@endif
 
 <div class="bg-white rounded-2xl shadow border p-6 mb-6">
 
-    <form method="GET" action="{{ route('wali.absensi') }}">
+   <form method="GET" action="{{ route('wali.absensi') }}">
+
+    <input
+        type="hidden"
+        name="tahun_ajaran_id"
+        value="{{ $tahunAjaran->id }}"
+    >
 
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-5">
 
@@ -154,7 +207,7 @@ $bulanIndonesia = [
                 <input
                     type="text"
                     readonly
-                    value="{{ $tahunAktif->tahun_ajaran }}"
+                    value="{{ $tahunAjaran->tahun_ajaran }}"
                     class="w-full rounded-xl bg-gray-100 border-gray-300">
 
                 
@@ -180,10 +233,11 @@ $bulanIndonesia = [
             <div class="flex items-end">
 
                 <a
-                    href="{{ route('wali.absensi.export',[
-                        'bulan' => $bulan,
-                        'mapel_id' => $mapelId
-                    ]) }}"
+    href="{{ route('wali.absensi.export',[
+        'bulan' => $bulan,
+        'mapel_id' => $mapelId,
+        'tahun_ajaran_id' => $tahunAjaran->id
+    ]) }}"
                     class="w-full inline-flex justify-center items-center gap-2 rounded-xl bg-green-600 hover:bg-green-700 text-white py-3">
 
                     <x-heroicon-o-arrow-down-tray class="w-5 h-5"/>
@@ -201,6 +255,24 @@ $bulanIndonesia = [
 </div>
 
 </div>
+
+@if(!$mapelId)
+
+<div class="bg-white rounded-2xl shadow border p-10 text-center">
+
+    <h3 class="text-lg font-semibold text-slate-800">
+        Pilih Mata Pelajaran dan Bulan
+    </h3>
+
+    <p class="text-sm text-gray-500 mt-2">
+        Silakan pilih mata pelajaran dan Bulan terlebih dahulu untuk menampilkan rekap absensi siswa.
+    </p>
+
+</div>
+
+@else
+
+
 <div class="bg-white rounded-2xl shadow border overflow-auto">
 
 <table class="min-w-max w-full border-collapse text-sm">
@@ -399,6 +471,8 @@ A
 
 </td>
 
+
+
 </tr>
 @empty
 
@@ -421,5 +495,6 @@ Belum ada data absensi.
 </table>
 
 </div>
+@endif
 
 @endsection

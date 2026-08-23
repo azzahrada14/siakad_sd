@@ -20,12 +20,21 @@
             </div>
         @endif
 
-        <form action="{{ route('kelas.store') }}" method="POST">
+        
 
-            @csrf
+    @csrf
 
-            <div class="grid md:grid-cols-2 gap-6">
+    <form action="{{ route('kelas.store') }}" method="POST">
 
+    @csrf
+
+    <input
+        type="hidden"
+        name="tahun_ajaran_id"
+        value="{{ request('tahun_ajaran_id', $tahunAjaran->id ?? '') }}"
+    >
+
+    <div class="grid md:grid-cols-2 gap-6">
                 {{-- Nama Kelas --}}
                 <div>
                     <label class="block text-sm font-medium mb-2">
@@ -113,9 +122,11 @@
             <div class="flex justify-end gap-3 mt-8">
 
                 <a
-                    href="{{ route('kelas.index') }}"
-                    class="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-gray-500 hover:bg-gray-600 text-white">
-
+    href="{{ route('kelas.index', [
+        'tahun_ajaran_id' => request('tahun_ajaran_id', $tahunAjaran->id ?? '')
+    ]) }}"
+    class="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-gray-500 hover:bg-gray-600 text-white"
+>
                     <x-heroicon-o-arrow-left class="w-5 h-5"/>
 
                     Kembali

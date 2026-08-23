@@ -79,45 +79,47 @@
 
      
 
-    @if($tahunAktif)
+   @if($tahunAjaran)
 
-    <div class="mt-5 lg:mt-0">
+<div class="mt-5 lg:mt-0">
 
-        <div class="bg-blue-50 border border-blue-200 rounded-xl px-5 py-3 shadow-sm min-w-[270px]">
+    <div class="bg-blue-50 border border-blue-200 rounded-xl px-5 py-3 shadow-sm min-w-[270px]">
 
-            <p class="text-xs uppercase text-blue-600 font-semibold">
+        <p class="text-xs uppercase text-blue-600 font-semibold">
+            Periode Akademik
+        </p>
 
-                Tahun Ajaran Aktif
+        <h3 class="text-xl font-bold text-blue-700">
+            {{ $tahunAjaran->tahun_ajaran }}
+        </h3>
 
-            </p>
+        <div class="flex justify-between items-center mt-1">
 
-            <h3 class="text-xl font-bold text-blue-700">
+            <span class="text-gray-600">
+                Semester {{ $tahunAjaran->semester }}
+            </span>
 
-                {{ $tahunAktif->tahun_ajaran }}
+            @if($modeArsip)
 
-            </h3>
-
-            <div class="flex justify-between items-center mt-1">
-
-                <span class="text-gray-600">
-
-                    Semester {{ $tahunAktif->semester }}
-
+                <span class="bg-gray-100 text-gray-600 text-xs px-3 py-1 rounded-full">
+                    Arsip
                 </span>
+
+            @else
 
                 <span class="bg-green-100 text-green-700 text-xs px-3 py-1 rounded-full">
-
                     Aktif
-
                 </span>
 
-            </div>
+            @endif
 
         </div>
 
     </div>
 
-    @endif
+</div>
+
+@endif
 
 </div>
 
@@ -242,6 +244,12 @@
     </div>
 
     <form action="{{ route('siswa.index') }}" method="GET">
+
+    <input
+        type="hidden"
+        name="tahun_ajaran_id"
+        value="{{ $tahunAjaran->id }}"
+    >
 
         <div class="p-6">
 
@@ -383,7 +391,9 @@
                     </button>
 
                     <a
-                        href="{{ route('siswa.index') }}"
+    href="{{ route('siswa.index', [
+        'tahun_ajaran_id' => $tahunAjaran->id
+    ]) }}" 
                         class="h-11 px-5 flex items-center justify-center rounded-lg bg-gray-300 hover:bg-gray-400">
 
                         Reset
@@ -400,51 +410,64 @@
 
 </div>
 
+{{-- ================= MANAJEMEN DATA PESERTA DIDIK ================= --}}
+<div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6">
 
-<div class="flex flex-col lg:flex-row lg:justify-between lg:items-center mb-6">
+    {{-- JUDUL --}}
+    <div class="flex-1 min-w-0">
 
-    <div>
-
-        <h2 class="text-lg font-semibold text-slate-800">
-
+        <h2 class="text-lg font-semibold text-slate-800 whitespace-nowrap">
             Manajemen Data Peserta Didik
-
         </h2>
 
         <p class="text-sm text-gray-500 mt-1">
-
             Import, export data peserta didik.
-
         </p>
 
     </div>
 
-    <div class="flex flex-wrap gap-3 mt-5 lg:mt-0">
+
+    {{-- BUTTON --}}
+    @if(!$modeArsip)
+
+        <div class="flex flex-wrap items-center gap-3 shrink-0">
+
+            {{-- IMPORT --}}
+            <button
+                type="button"
+                onclick="bukaModalSiswa()"
+                class="inline-flex items-center gap-2 px-5 py-3
+                       rounded-lg bg-green-600 text-white
+                       hover:bg-green-700 transition"
+            >
+
+                <x-heroicon-o-arrow-up-tray class="w-5 h-5"/>
+
+                Import Excel
+
+            </button>
 
 
-                <button
-    type="button"
-    onclick="bukaModalSiswa()"
-    class="inline-flex items-center gap-2 px-5 py-3 rounded-lg bg-green-600 text-white hover:bg-green-700 transition">
+            {{-- EXPORT --}}
+            <a
+                href="{{ route('siswa.export') }}"
+                class="inline-flex items-center gap-2 px-5 py-3
+                       rounded-lg bg-yellow-500 text-white
+                       hover:bg-yellow-600 transition"
+            >
 
-    <x-heroicon-o-arrow-up-tray class="w-5 h-5"/>
+                <x-heroicon-o-arrow-down-tray class="w-5 h-5"/>
 
-    Import Excel
+                Export Excel
 
-</button>
-
-                <a href="{{ route('siswa.export') }}"
-                    class="inline-flex items-center gap-2 px-5 py-3 rounded-lg bg-yellow-500 text-white hover:bg-yellow-600 transition">
-
-                      <x-heroicon-o-arrow-down-tray class="w-5 h-5"/>
-
-                    Export Excel
-
-                </a>
-
-            </div>
+            </a>
 
         </div>
+
+    @endif
+
+</div>
+
 {{-- ================= DATA PESERTA DIDIK ================= --}}
 
 <div class="bg-white rounded-xl shadow border border-gray-200">
@@ -660,30 +683,50 @@
 
                     </td>
 
-                    <td class="border">
+                   <td class="border px-3 py-3">
 
-                        <div class="flex justify-center gap-2">
+    <div class="flex justify-center gap-2">
 
-                            <a
-                                href="{{ route('siswa.show',$item->id) }}"
-                                 class="p-1.5 rounded-lg bg-blue-100 hover:bg-blue-200 transition">
+        {{-- DETAIL --}}
+        {{-- DETAIL --}}
+<a
+    href="{{ route('siswa.show', [
+        'siswa' => $item->id,
+        'tahun_ajaran_id' => $tahunAjaran->id
+    ]) }}"
+    class="inline-flex items-center justify-center
+           w-9 h-9 rounded-lg
+           bg-blue-100 text-blue-600
+           hover:bg-blue-200"
+    title="Detail"
+>
+    <x-heroicon-o-eye class="w-5 h-5"/>
+</a>
 
-        <x-heroicon-o-eye class="w-5 h-5 text-blue-600"/>
 
-                            </a>
+        {{-- EDIT HANYA PERIODE AKTIF --}}
+        @if(!$modeArsip)
 
-                            <a
-                                href="{{ route('siswa.edit',$item->id) }}"
-                                class="p-1.5 rounded-lg bg-yellow-100 hover:bg-yellow-200 transition">
+            <a
+                href="{{ route('siswa.edit', [
+                    'id' => $item->id,
+                    'tahun_ajaran_id' => $tahunAjaran->id
+                ]) }}"
+                class="p-1.5 rounded-lg bg-yellow-100 hover:bg-yellow-200 transition"
+                title="Edit"
+            >
 
-        <x-heroicon-o-pencil-square class="w-5 h-5 text-yellow-600"/>
+                <x-heroicon-o-pencil-square
+                    class="w-5 h-5 text-yellow-600"
+                />
 
-                            </a>
+            </a>
 
+        @endif
 
-                        </div>
+    </div>
 
-                    </td>
+</td>
 
                 </tr>
 

@@ -86,7 +86,7 @@ HEADER
         class="p-6"
     >
 
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+<div class="grid grid-cols-1 md:grid-cols-4 gap-4">
 
             {{-- =================================================
                 MATA PELAJARAN
@@ -166,22 +166,43 @@ HEADER
 
             </div>
 
+            {{-- Semester --}}
+<div>
+    <label class="block text-sm font-medium text-gray-700 mb-2">
+        Semester
+    </label>
+
+    <select
+        name="semester"
+        onchange="this.form.submit()"
+        class="w-full rounded-lg border-gray-300 focus:border-blue-500 focus:ring-blue-500">
+
+        <option value="">Semua Semester</option>
+
+        <option value="Ganjil"
+            {{ request('semester') == 'Ganjil' ? 'selected' : '' }}>
+            Ganjil
+        </option>
+
+        <option value="Genap"
+            {{ request('semester') == 'Genap' ? 'selected' : '' }}>
+            Genap
+        </option>
+
+    </select>
+</div>
+
 
             {{-- =================================================
                 TOMBOL RESET
             ================================================== --}}
             <div class="flex items-end">
 
-                <a
-                    href="{{ route('lingkup-materi.index') }}"
-                    class="w-full inline-flex items-center justify-center gap-2 px-5 py-3 rounded-lg bg-gray-500 hover:bg-gray-600 text-white"
-                >
+               <a href="{{ url()->current() }}"
+   class="w-full inline-flex justify-center items-center gap-2 bg-gray-500 hover:bg-gray-600 text-white px-4 py-3 rounded-lg">
 
-                    <x-heroicon-o-arrow-path class="w-5 h-5"/>
-
-                    Reset Filter
-
-                </a>
+    ↻ Reset Filter
+</a>
 
             </div>
 
@@ -235,20 +256,18 @@ HEADER
 {{-- =========================================================
     BUTTON TAMBAH
 ========================================================= --}}
-<div class="flex justify-end mb-5">
+<div class="flex justify-end items-center gap-3 mb-4">
 
-    <a
-        href="{{ route('lingkup-materi.create', [
-            'mapel' => request('mapel'),
-            'tingkat' => request('tingkat')
-        ]) }}"
-        class="inline-flex items-center gap-2 px-5 py-3 rounded-lg bg-blue-600 hover:bg-blue-700 text-white"
-    >
+    {{-- Tombol Kembali --}}
+    <a href="{{ url()->previous() }}"
+       class="inline-flex items-center gap-2 bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg shadow-sm">
+        ← Kembali
+    </a>
 
-        <x-heroicon-o-plus class="w-5 h-5"/>
-
-        Tambah Lingkup Materi
-
+    {{-- Tombol Tambah --}}
+    <a href="{{ route('lingkup-materi.create', $mapel->id) }}"
+       class="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg shadow-sm">
+        + Tambah Lingkup Materi
     </a>
 
 </div>

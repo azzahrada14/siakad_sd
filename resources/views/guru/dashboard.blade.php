@@ -52,45 +52,47 @@
 
     </div>
 
-    @if($tahunAktif)
+   @if($tahunAjaran)
 
-    <div class="mt-5 lg:mt-0">
+<div class="mt-5 lg:mt-0">
 
-        <div class="bg-blue-50 border border-blue-200 rounded-xl px-6 py-4 shadow-sm min-w-[280px]">
+    <div class="bg-blue-50 border border-blue-200 rounded-xl px-6 py-4 shadow-sm min-w-[280px]">
 
-            <p class="text-xs uppercase tracking-wide text-blue-600 font-semibold">
+        <p class="text-xs uppercase tracking-wide text-blue-600 font-semibold">
+            Tahun Ajaran
+        </p>
 
-                Tahun Ajaran Aktif
+        <h3 class="text-2xl font-bold text-blue-700 mt-1">
+            {{ $tahunAjaran->tahun_ajaran }}
+        </h3>
 
-            </p>
+        <div class="flex justify-between items-center mt-2">
 
-            <h3 class="text-2xl font-bold text-blue-700 mt-1">
+            <span class="text-gray-600">
+                Semester {{ $tahunAjaran->semester }}
+            </span>
 
-                {{ $tahunAktif->tahun_ajaran }}
+            @if($modeArsip)
 
-            </h3>
-
-            <div class="flex justify-between items-center mt-2">
-
-                <span class="text-gray-600">
-
-                    Semester {{ $tahunAktif->semester }}
-
+                <span class="bg-gray-100 text-gray-600 px-3 py-1 rounded-full text-xs font-semibold">
+                    Arsip
                 </span>
+
+            @else
 
                 <span class="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-semibold">
-
                     Aktif
-
                 </span>
 
-            </div>
+            @endif
 
         </div>
 
     </div>
 
-    @endif
+</div>
+
+@endif
 
 </div>
 <div class="grid grid-cols-1 md:grid-cols-3 gap-5 mb-10">
@@ -184,7 +186,7 @@
 {{-- ===================================================== --}}
 {{-- MENU AKADEMIK --}}
 {{-- ===================================================== --}}
-
+@if(!$modeArsip)
 <div class="bg-white rounded-2xl shadow border p-8 mb-8">
 
     <div class="flex justify-between items-center mb-8">
@@ -307,6 +309,171 @@
     </div>
 
 </div>
+@endif
+
+{{-- ===================================================== --}}
+{{-- RIWAYAT AKADEMIK --}}
+{{-- ===================================================== --}}
+
+<div class="bg-white rounded-2xl shadow border p-8 mb-8">
+
+    <div class="flex flex-col md:flex-row
+                md:items-center md:justify-between gap-6">
+
+        {{-- INFORMASI --}}
+        <div>
+
+            <div class="w-14 h-14 rounded-xl bg-purple-100
+                        flex items-center justify-center mb-5">
+
+                <x-heroicon-o-clock
+                    class="w-7 h-7 text-purple-600"/>
+
+            </div>
+
+            <h2 class="text-2xl font-bold text-slate-800">
+                Riwayat Akademik
+            </h2>
+
+            <p class="text-gray-500 mt-2">
+                Lihat data akademik dari tahun ajaran sebelumnya.
+            </p>
+
+        </div>
+
+            {{-- TOMBOL RIWAYAT --}}
+<div class="flex-shrink-0">
+
+    <button
+        type="button"
+        onclick="openTahunAjaranModal()"
+        class="inline-flex items-center gap-2
+               rounded-lg bg-purple-600
+               hover:bg-purple-700
+               text-white px-6 py-3 font-medium
+               transition">
+
+        <x-heroicon-o-clock class="w-5 h-5"/>
+
+        Lihat Riwayat
+
+    </button>
+
+</div>
+
+        </div>
+
+    </div>
+
+
+
+{{-- ===================================================== --}}
+{{-- MODAL PILIH TAHUN AJARAN --}}
+{{-- ===================================================== --}}
+
+<div
+    id="tahunAjaranModal"
+    class="fixed inset-0 z-50 hidden
+           bg-black/50 items-center justify-center p-4">
+
+    <div class="bg-white rounded-2xl shadow-xl w-full max-w-md">
+
+        {{-- HEADER MODAL --}}
+        <div class="px-6 py-5 border-b">
+
+            <div class="flex items-center justify-between">
+
+                <div>
+                    <h2 class="text-xl font-bold text-slate-800">
+                        Pilih Tahun Ajaran
+                    </h2>
+
+                    <p class="text-sm text-gray-500 mt-1">
+                        Pilih periode akademik yang ingin dilihat.
+                    </p>
+                </div>
+
+                <button
+                    type="button"
+                    onclick="closeTahunAjaranModal()"
+                    class="text-gray-400 hover:text-gray-600">
+
+                    <x-heroicon-o-x-mark class="w-6 h-6"/>
+
+                </button>
+
+            </div>
+
+        </div>
+
+        {{-- FORM --}}
+        <form
+            method="GET"
+            action="{{ route('guru.dashboard') }}"
+            class="p-6">
+
+            <label class="block text-sm font-semibold text-gray-700 mb-2">
+                Tahun Ajaran
+            </label>
+
+            <select
+                name="tahun_ajaran_id"
+                class="w-full rounded-xl border-gray-300
+                       focus:border-purple-500
+                       focus:ring-purple-500">
+
+                @foreach($tahunAjarans as $tahun)
+
+                    <option
+                        value="{{ $tahun->id }}"
+                        @selected($tahunAjaran->id == $tahun->id)>
+
+                        {{ $tahun->tahun_ajaran }}
+                        - Semester {{ $tahun->semester }}
+
+                        @if($tahun->status === 'Aktif')
+                            (Aktif)
+                        @else
+                            (Arsip)
+                        @endif
+
+                    </option>
+
+                @endforeach
+
+            </select>
+
+            <div class="flex justify-end gap-3 mt-6">
+
+                <button
+                    type="button"
+                    onclick="closeTahunAjaranModal()"
+                    class="px-5 py-2.5 rounded-xl
+                           border border-gray-300
+                           text-gray-700 hover:bg-gray-50">
+
+                    Batal
+
+                </button>
+
+                <button
+                    type="submit"
+                    class="px-5 py-2.5 rounded-xl
+                           bg-purple-600 hover:bg-purple-700
+                           text-white">
+
+                    Lihat
+
+                </button>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
 @if($guru->waliKelas)
 
 <div class="bg-white rounded-2xl shadow border p-8 mb-8">
@@ -361,7 +528,9 @@
     </p>
 
     <a
-        href="{{ route('wali.nilai.index') }}"
+        href="{{ route('wali.nilai.index', [
+    'tahun_ajaran_id' => $tahunAjaran->id
+]) }}"
         class="mt-6 inline-flex items-center gap-2 rounded-lg bg-yellow-500 hover:bg-yellow-600 text-white px-5 py-2">
 
         <x-heroicon-o-arrow-right class="w-4 h-4"/>
@@ -393,7 +562,9 @@
     </p>
 
     <a
-        href="{{ route('wali.absensi') }}"
+        href="{{ route('wali.absensi', [
+    'tahun_ajaran_id' => $tahunAjaran->id
+]) }}"
         class="mt-6 inline-flex items-center gap-2 rounded-lg bg-orange-500 hover:bg-orange-600 text-white px-5 py-2">
 
         <x-heroicon-o-arrow-right class="w-4 h-4"/>
@@ -425,7 +596,9 @@
     </p>
 
     <a
-        href="{{ route('ranking.index') }}"
+       href="{{ route('ranking.index', [
+    'tahun_ajaran_id' => $tahunAjaran->id
+]) }}"
         class="mt-6 inline-flex items-center gap-2 rounded-lg bg-green-600 hover:bg-green-700 text-white px-5 py-2">
 
         <x-heroicon-o-arrow-right class="w-4 h-4"/>
@@ -457,7 +630,9 @@
     </p>
 
     <a
-        href="{{ route('rapor.index') }}"
+    href="{{ route('rapor.index', [
+    'tahun_ajaran_id' => $tahunAjaran->id
+]) }}"
         class="mt-6 inline-flex items-center gap-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white px-5 py-2">
 
         <x-heroicon-o-arrow-right class="w-4 h-4"/>
@@ -473,10 +648,12 @@
 
 @endif
 
+
+
 {{-- ===================================================== --}}
 {{-- JADWAL HARI INI --}}
 {{-- ===================================================== --}}
-
+@if(!$modeArsip)
 <div class="bg-white rounded-2xl shadow border p-8 mb-8">
 
     <div class="flex justify-between items-center mb-6">
@@ -608,7 +785,31 @@
     </p>
 
 </div>
-
+@endif
 @endif
 </div>
+
+@push('scripts')
+
+<script>
+
+function openTahunAjaranModal()
+{
+    const modal = document.getElementById('tahunAjaranModal');
+
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+}
+
+function closeTahunAjaranModal()
+{
+    const modal = document.getElementById('tahunAjaranModal');
+
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+}
+
+</script>
+
+@endpush
 @endsection

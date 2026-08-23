@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
-use App\Models\Guru;
 use App\Models\Kelas;
 use App\Models\Mapel;
 use App\Models\Siswa;
@@ -17,34 +16,88 @@ use App\Models\AnggotaKelas;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\WaliNilaiExport;
 
-
 class WaliNilaiController extends Controller
 {
-    public function index(Request $request)
-    {
-        /*
-        |--------------------------------------------------------------------------
-        | GURU LOGIN
-        |--------------------------------------------------------------------------
-        */
+   public function index(Request $request)
+{
+    /*
+    |--------------------------------------------------------------------------
+    | GURU LOGIN
+    |--------------------------------------------------------------------------
+    */
 
-        $guru = Auth::user()->guru;
+    $guru = Auth::user()->guru;
+
+    if (!$guru) {
+        abort(403, 'Data guru tidak ditemukan.');
+    }
 
 
-        /*
-        |--------------------------------------------------------------------------
-        | TAHUN AJARAN AKTIF
-        |--------------------------------------------------------------------------
-        */
+    /*
+    |--------------------------------------------------------------------------
+    | TAHUN AJARAN
+    |--------------------------------------------------------------------------
+    */
+/*
+|--------------------------------------------------------------------------
+| TAHUN AJARAN
+|--------------------------------------------------------------------------
+*/
 
-        $tahunAktif = TahunAjaran::where(
-            'status',
-            'Aktif'
-        )->first();
+$tahunajaran = TahunAjaran::orderByDesc('id')->get();
 
-        if (!$tahunAktif) {
-            abort(404, 'Tahun ajaran aktif belum tersedia.');
+$tahunAjaran = $request->filled('tahun_ajaran_id')
+    ? TahunAjaran::findOrFail($request->tahun_ajaran_id)
+    : TahunAjaran::where('status', 'Aktif')->first();
+
+if (!$tahunAjaran) {
+    abort(404, 'Tahun ajaran belum tersedia.');
+}
+
+/*
+|--------------------------------------------------------------------------
+| TAHUN AJARAN AKTIF
+|--------------------------------------------------------------------------
+*/
+
+$tahunAktif = TahunAjaran::where(
+    'status',
+    'Aktif'
+)->first();
+
+$modeArsip = $tahunAjaran->status !== 'Aktif';
+
+    /*
+    |--------------------------------------------------------------------------
+    | TAHUN STRUKTUR KELAS
+    |--------------------------------------------------------------------------
+    */
+
+    $tahunStruktur = $tahunAktif;
+
+    if (
+        strtolower($tahunAktif->semester) === 'genap'
+    ) {
+
+        $tahunStruktur = TahunAjaran::where(
+            'tahun_ajaran',
+            $tahunAktif->tahun_ajaran
+        )
+        ->where(
+            'semester',
+            'Ganjil'
+        )
+        ->first();
+
+        if (!$tahunStruktur) {
+
+            return back()->with(
+                'error',
+                'Data tahun ajaran Ganjil untuk struktur kelas belum tersedia.'
+            );
+
         }
+    }
 
 
         /*
@@ -53,10 +106,23 @@ class WaliNilaiController extends Controller
         |--------------------------------------------------------------------------
         */
 
-        $kelas = $guru->waliKelas;
+        $kelas = Kelas::where(
+            'wali_kelas_id',
+            $guru->id
+        )
+        ->where(
+            'tahun_ajaran_id',
+            $tahunStruktur->id
+        )
+        ->first();
 
         if (!$kelas) {
-            abort(403, 'Guru bukan wali kelas.');
+
+            abort(
+                403,
+                'Guru belum memiliki kelas wali pada tahun ajaran ini.'
+            );
+
         }
 
 
@@ -64,10 +130,6 @@ class WaliNilaiController extends Controller
         |--------------------------------------------------------------------------
         | TINGKAT KELAS
         |--------------------------------------------------------------------------
-        |
-        | LM dan TP mengikuti TINGKAT kelas.
-        | Jadi 3A dan 3B sama-sama menggunakan LM/TP tingkat 3.
-        |
         */
 
         $tingkat = $kelas->tingkat;
@@ -93,8 +155,6 @@ class WaliNilaiController extends Controller
 
         $rataFormatif = [];
 
-        $filter = [];
-
 
         /*
         |--------------------------------------------------------------------------
@@ -109,7 +169,6 @@ class WaliNilaiController extends Controller
         ->orderBy('nama_mapel')
         ->get();
 
-
         $mapelId = $request->mapel;
 
 
@@ -117,11 +176,18 @@ class WaliNilaiController extends Controller
         |--------------------------------------------------------------------------
         | DATA SISWA
         |--------------------------------------------------------------------------
+        |
+        | Siswa mengikuti struktur anggota kelas Ganjil.
+        |
         */
 
         $ids = AnggotaKelas::where(
             'kelas_id',
             $kelas->id
+        )
+        ->where(
+            'tahun_ajaran_id',
+            $tahunStruktur->id
         )
         ->pluck('siswa_id');
 
@@ -154,59 +220,30 @@ class WaliNilaiController extends Controller
         | LINGKUP MATERI
         |--------------------------------------------------------------------------
         |
-        | PENTING:
-        | LM mengikuti TINGKAT kelas wali.
-        |
-        | Contoh:
-        |
-        | 3A -> tingkat 3 -> LM tingkat 3
-        | 3B -> tingkat 3 -> LM tingkat 3
-        |
-        | 4A -> tingkat 4 -> LM tingkat 4
-        | 4B -> tingkat 4 -> LM tingkat 4
+        | LM dan TP mengikuti:
+        | - Mapel
+        | - Tingkat
+        | - Tahun ajaran aktif
+        | - Semester aktif
         |
         */
 
         if ($mapel) {
 
-            $lingkupMateris = LingkupMateri::with([
-                'tujuanPembelajarans' => function ($query) {
-
-                    $query
-                        ->where('status', 'Aktif')
-                        ->orderBy('urutan');
-
-                }
-            ])
-
-            ->where(
-                'mapel_id',
-                $mapel->id
-            )
-
-            ->where(
-                'tingkat',
-                $tingkat
-            )
-
-            ->where(
-                'tahun_ajaran_id',
-                $tahunAktif->id
-            )
-
-            ->where(
-                'semester',
-                $tahunAktif->semester
-            )
-
-            ->where(
-                'status',
-                'Aktif'
-            )
-
-            ->orderBy('id')
-            ->get();
-
+           $lingkupMateris = LingkupMateri::with([
+    'tujuanPembelajarans' => function ($query) {
+        $query
+            ->where('status', 'Aktif')
+            ->orderBy('urutan');
+    }
+])
+->where('mapel_id', $mapel->id)
+->where('tingkat', $tingkat)
+->where('tahun_ajaran_id', $tahunAjaran->id)
+->where('semester', $tahunAjaran->semester)
+->where('status', 'Aktif')
+->orderBy('id')
+->get();
         }
 
 
@@ -218,9 +255,13 @@ class WaliNilaiController extends Controller
 
         foreach ($lingkupMateris as $lm) {
 
-            foreach ($lm->tujuanPembelajarans as $tp) {
+            foreach (
+                $lm->tujuanPembelajarans as $tp
+            ) {
 
-                $tujuanPembelajarans->push($tp);
+                $tujuanPembelajarans->push(
+                    $tp
+                );
 
             }
 
@@ -231,43 +272,25 @@ class WaliNilaiController extends Controller
         |--------------------------------------------------------------------------
         | NILAI SISWA
         |--------------------------------------------------------------------------
+        |
+        | Nilai selalu mengikuti tahun ajaran dan semester aktif.
+        |
         */
 
         if ($mapelId) {
 
             foreach ($siswas as $siswa) {
 
-                $nilai = Nilai::with(
-                    'detailTP'
-                )
-
-                ->where(
-                    'siswa_id',
-                    $siswa->id
-                )
-
-                ->where(
-                    'mapel_id',
-                    $mapelId
-                )
-
-                ->where(
-                    'tahun_ajaran_id',
-                    $tahunAktif->id
-                )
-
-                ->where(
-                    'semester',
-                    $tahunAktif->semester
-                )
-
-                ->first();
+                $nilai = Nilai::with('detailTP')
+    ->where('siswa_id', $siswa->id)
+    ->where('mapel_id', $mapelId)
+    ->where('tahun_ajaran_id', $tahunAjaran->id)
+    ->where('semester', $tahunAjaran->semester)
+    ->first();
 
 
                 if (!$nilai) {
-
                     continue;
-
                 }
 
 
@@ -277,7 +300,9 @@ class WaliNilaiController extends Controller
                 |--------------------------------------------------------------------------
                 */
 
-                $nilaiSiswa[$siswa->id] = $nilai;
+                $nilaiSiswa[
+                    $siswa->id
+                ] = $nilai;
 
 
                 /*
@@ -286,10 +311,15 @@ class WaliNilaiController extends Controller
                 |--------------------------------------------------------------------------
                 */
 
-                foreach ($nilai->detailTP as $detail) {
+                foreach (
+                    $nilai->detailTP as $detail
+                ) {
 
-                    $nilaiTP[$siswa->id][$detail->tp_id]
-                        = $detail->nilai;
+                    $nilaiTP[
+                        $siswa->id
+                    ][
+                        $detail->tp_id
+                    ] = $detail->nilai;
 
                 }
 
@@ -300,8 +330,9 @@ class WaliNilaiController extends Controller
                 |--------------------------------------------------------------------------
                 */
 
-                $rataFormatif[$siswa->id]
-                    = $nilai->rata_formatif;
+                $rataFormatif[
+                    $siswa->id
+                ] = $nilai->rata_formatif;
 
             }
 
@@ -316,22 +347,22 @@ class WaliNilaiController extends Controller
 
         $filter = [
 
-            'kelas_id' =>
-                $kelas->id,
+    'kelas_id' =>
+        $kelas->id,
 
-            'tingkat' =>
-                $tingkat,
+    'tingkat' =>
+        $tingkat,
 
-            'tahun_ajaran_id' =>
-                $tahunAktif->id,
+    'tahun_ajaran_id' =>
+        $tahunAjaran->id,
 
-            'semester' =>
-                $tahunAktif->semester,
+    'semester' =>
+        $tahunAjaran->semester,
 
-            'mapel_id' =>
-                $mapelId,
+    'mapel_id' =>
+        $mapelId,
 
-        ];
+];
 
 
         /*
@@ -340,24 +371,26 @@ class WaliNilaiController extends Controller
         |--------------------------------------------------------------------------
         */
 
-        return view(
-            'wali.nilai',
-            compact(
-                'guru',
-                'kelas',
-                'tingkat',
-                'tahunAktif',
-                'mapels',
-                'mapel',
-                'siswas',
-                'lingkupMateris',
-                'tujuanPembelajarans',
-                'nilaiTP',
-                'nilaiSiswa',
-                'rataFormatif',
-                'filter'
-            )
-        );
+      return view(
+    'wali.nilai',
+    compact(
+        'guru',
+        'kelas',
+        'tingkat',
+        'tahunAktif',
+        'tahunAjaran',
+        'modeArsip',
+        'mapels',
+        'mapel',
+        'siswas',
+        'lingkupMateris',
+        'tujuanPembelajarans',
+        'nilaiTP',
+        'nilaiSiswa',
+        'rataFormatif',
+        'filter'
+    )
+);
     }
 
 
@@ -375,7 +408,9 @@ class WaliNilaiController extends Controller
                 $request->mapel
             ),
 
-            'Rekap_Nilai_' . $request->mapel . '.xlsx'
+            'Rekap_Nilai_' .
+            $request->mapel .
+            '.xlsx'
 
         );
     }
