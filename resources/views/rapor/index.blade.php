@@ -315,36 +315,40 @@ Belum Generate
 
 </td>
 
+
 <td class="border p-2">
 
-<div class="flex justify-center gap-2">
+    <div class="flex justify-center gap-2">
 
-<a href=<a href="{{ route('rapor.show',$item->id) }}"
-class="bg-green-600 hover:bg-green-700 text-white p-2 rounded-lg">
+        {{-- Lihat Detail --}}
+        <a href="{{ route('rapor.show', $item->id) }}"
+           class="bg-green-600 hover:bg-green-700 text-white p-2 rounded-lg">
 
-<x-heroicon-o-eye class="w-5 h-5"/>
+            <x-heroicon-o-eye class="w-5 h-5"/>
 
-</a>
+        </a>
 
-@if(!$modeArsip)
+        {{-- Edit --}}
+        @if(!$modeArsip)
 
-    <a href="{{ route('rapor.edit', $item->id) }}"
-       class="bg-yellow-500 hover:bg-yellow-600 text-white p-2 rounded-lg">
+            <a href="{{ route('rapor.edit', $item->id) }}"
+               class="bg-yellow-500 hover:bg-yellow-600 text-white p-2 rounded-lg">
 
-        <x-heroicon-o-pencil-square class="w-5 h-5"/>
+                <x-heroicon-o-pencil-square class="w-5 h-5"/>
 
-    </a>
+            </a>
 
-@endif
+        @endif
 
-<a href="{{ route('rapor.print', $item->id) }}"
-   class="bg-blue-600 hover:bg-blue-700 text-white p-2 rounded-lg">
+        {{-- Cetak --}}
+        <a href="{{ route('rapor.print', $item->id) }}"
+           class="bg-blue-600 hover:bg-blue-700 text-white p-2 rounded-lg">
 
-    <x-heroicon-o-printer class="w-5 h-5"/>
+            <x-heroicon-o-printer class="w-5 h-5"/>
 
-</a>
+        </a>
 
-</div>
+    </div>
 
 </td>
 

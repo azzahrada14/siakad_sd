@@ -49,10 +49,28 @@ class GuruController extends Controller
     |--------------------------------------------------------------------------
     */
 
-    $query = Guru::with([
-        'user',
-        'waliKelas'
+    $isStaff = $request->routeIs('staff.index');
+
+$query = Guru::with([
+    'user',
+    'waliKelas'
+]);
+
+if ($isStaff) {
+
+    $query->whereIn('jenis_pengajar', [
+        'Operator',
+        'Staff'
     ]);
+
+} else {
+
+    $query->whereNotIn('jenis_pengajar', [
+        'Operator',
+        'Staff'
+    ]);
+
+}
 
 
     // Search
@@ -154,10 +172,14 @@ class GuruController extends Controller
         'totalMutasi',
         'tahunAjaran',
         'tahunAktif',
-        'modeArsip'
+        'modeArsip',
+        'isStaff'
     )
 );
 }
+
+
+
     /*
     |--------------------------------------------------------------------------
     | CREATE
@@ -265,21 +287,18 @@ public function update(Request $request, $id)
 public function import(Request $request)
 {
     $request->validate([
-
         'file' => 'required|mimes:xlsx,xls'
-
     ]);
 
     DB::beginTransaction();
 
     try {
 
+        $import = new GuruImport();
+
         Excel::import(
-
-            new GuruImport(),
-
+            $import,
             $request->file('file')
-
         );
 
         DB::commit();
@@ -288,7 +307,11 @@ public function import(Request $request)
             ->route('guru.index')
             ->with(
                 'success',
-                'Data guru berhasil diimport.'
+                'Import selesai. '
+                . $import->baru
+                . ' data guru baru ditambahkan dan '
+                . $import->diperbarui
+                . ' data guru diperbarui.'
             );
 
     } catch (\Exception $e) {
@@ -296,13 +319,14 @@ public function import(Request $request)
         DB::rollBack();
 
         return back()
+            ->withInput()
             ->with(
                 'error',
-                $e->getMessage()
+                'Import gagal: ' . $e->getMessage()
             );
-
     }
-}
+} 
+
 
 public function mutasi($id)
 {

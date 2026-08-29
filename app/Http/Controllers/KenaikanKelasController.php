@@ -7,6 +7,7 @@ use App\Models\Kelas;
 use App\Models\Siswa;
 use App\Models\TahunAjaran;
 use App\Models\Nilai;
+use App\Models\Rapor;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -396,275 +397,55 @@ if (strtolower($tahunAktif->semester) !== 'genap') {
 
     DB::beginTransaction();
 
-    try {
+ try {
 
-        /*
-        |--------------------------------------------------------------------------
-        | Ambil Kelas yang Dipilih
-        |--------------------------------------------------------------------------
-        */
+    // seluruh proses kenaikan
+    foreach ($anggotaKelas as $anggota) {
 
-        $kelasAsal = Kelas::find($request->kelas_id);
+        // proses siswa
 
-       if (
-    !$kelasAsal ||
-    $kelasAsal->tahun_ajaran_id != $tahunAktif->id
-) {
+        if ($kelasTujuan) {
+
+            $anggota->update([
+                'kelas_tujuan_id' => $kelasTujuan->id
+            ]);
+
+            $rapor = Rapor::where('siswa_id', $anggota->siswa_id)
+                ->where('tahun_ajaran_id', $tahunAktif->id)
+                ->where('semester', $tahunAktif->semester)
+                ->first();
+
+            if ($rapor) {
+
+                $rapor->update([
+                    'naik_kelas' => $kelasTujuan->nama_kelas,
+                    'tinggal_kelas' => null,
+                ]);
+
+            }
+        }
+
+    } // tutup foreach
+
+    DB::commit();
+
+    return redirect()
+        ->route('kenaikan.index', [
+            'tahun_ajaran_id' => $tahunAktif->id
+        ])
+        ->with(
+            'success',
+            'Generate kenaikan kelas berhasil diproses. Data kelas tujuan siswa telah berhasil disimpan dan akan digunakan pada proses Pembagian Kelas.'
+        );
+
+} catch (\Exception $e) {
 
     DB::rollBack();
 
     return back()->with(
         'error',
-        'Kelas yang dipilih tidak sesuai dengan tahun ajaran aktif.'
+        $e->getMessage()
     );
-
 }
-
-        /*
-        |--------------------------------------------------------------------------
-        | Ambil Kelas Tujuan
-        |--------------------------------------------------------------------------
-        */
-
-        $rombel = substr(
-            $kelasAsal->nama_kelas,
-            -1
-        );
-
-        $kelasTujuan = Kelas::where(
-            'tingkat',
-            $kelasAsal->tingkat + 1
-        )
-        ->where(
-            'tahun_ajaran_id',
-            $tahunAktif->id
-        )
-        ->where(
-            'nama_kelas',
-            'LIKE',
-            '%' . $rombel
-        )
-        ->first();
-
-        /*
-        |--------------------------------------------------------------------------
-        | Ambil SEMUA Siswa dari Kelas yang Dipilih
-        |--------------------------------------------------------------------------
-        */
-
-        $anggotaList = AnggotaKelas::with([
-            'siswa',
-            'kelas'
-        ])
-        ->where(
-            'tahun_ajaran_id',
-            $tahunAktif->id
-        )
-        ->where(
-            'kelas_id',
-            $request->kelas_id
-        )
-        ->get();
-
-        $gagal = [];
-
-        /*
-        |--------------------------------------------------------------------------
-        | Validasi Nilai KKM
-        |--------------------------------------------------------------------------
-        */
-
-        foreach ($anggotaList as $anggota) {
-
-            if (!$anggota->kelas) {
-                continue;
-            }
-
-            /*
-            |--------------------------------------------------------------------------
-            | Kelas 6 = Lulus
-            |--------------------------------------------------------------------------
-            */
-
-            if ((int) $anggota->kelas->tingkat === 6) {
-                continue;
-            }
-
-            /*
-            |--------------------------------------------------------------------------
-            | Ambil Nilai di Bawah KKM
-            |--------------------------------------------------------------------------
-            */
-
-            $nilaiKurang = Nilai::with('mapel')
-                ->where(
-                    'siswa_id',
-                    $anggota->siswa_id
-                )
-                ->where(
-                    'tahun_ajaran_id',
-                    $tahunAktif->id
-                )
-                ->where(function ($query) {
-
-                    $query->where(
-                        'nilai_akhir',
-                        '<',
-                        75
-                    )
-                    ->orWhereNull(
-                        'nilai_akhir'
-                    );
-
-                })
-                ->get();
-
-            /*
-            |--------------------------------------------------------------------------
-            | Belum Memiliki Nilai
-            |--------------------------------------------------------------------------
-            */
-
-            $jumlahNilai = Nilai::where(
-                'siswa_id',
-                $anggota->siswa_id
-            )
-            ->where(
-                'tahun_ajaran_id',
-                $tahunAktif->id
-            )
-            ->count();
-
-            if ($jumlahNilai === 0) {
-
-                $gagal[] =
-                    $anggota->siswa->nama_siswa .
-                    ' : belum memiliki nilai.';
-
-                continue;
-            }
-
-            /*
-            |--------------------------------------------------------------------------
-            | Ada Nilai di Bawah KKM
-            |--------------------------------------------------------------------------
-            */
-
-            if ($nilaiKurang->count()) {
-
-                $detailNilai = $nilaiKurang
-                    ->map(function ($n) {
-
-                        $namaMapel = $n->mapel
-                            ? $n->mapel->nama_mapel
-                            : 'Mata Pelajaran';
-
-                        $nilai = ($n->nilai_akhir === null || $n->nilai_akhir == 0)
-    ? 'Belum ada nilai'
-    : number_format($n->nilai_akhir, 2);
-
-                        return $namaMapel .
-                            ' (' .
-                            $nilai .
-                            ')';
-
-                    })
-                    ->implode(', ');
-
-                $gagal[] =
-                    $anggota->siswa->nama_siswa .
-                    ' : ' .
-                    $detailNilai;
-            }
-        }
-
-        /*
-        |--------------------------------------------------------------------------
-        | Jika Masih Ada yang Belum Memenuhi KKM
-        |--------------------------------------------------------------------------
-        */
-
-        if (count($gagal)) {
-
-            DB::rollBack();
-
-            return back()
-                ->withInput()
-                ->with(
-                    'error',
-                    "<strong>Generate kenaikan kelas tidak dapat diproses.</strong><br><br>" .
-                    "Kelas: <strong>" .
-                    $kelasAsal->nama_kelas .
-                    "</strong><br><br>" .
-                    "Siswa yang belum memenuhi KKM:<br><br>" .
-                    implode("<br>", $gagal) .
-                    "<br><br>" .
-                    "<strong>Silakan lakukan remedial terlebih dahulu.</strong>"
-                );
-        }
-
-        /*
-        |--------------------------------------------------------------------------
-        | Simpan Hasil Kenaikan
-        |--------------------------------------------------------------------------
-        */
-
-        foreach ($anggotaList as $anggota) {
-
-            if (!$anggota->kelas) {
-                continue;
-            }
-
-            /*
-            |--------------------------------------------------------------------------
-            | Kelas 6 = Lulus
-            |--------------------------------------------------------------------------
-            */
-
-            if ((int) $anggota->kelas->tingkat === 6) {
-
-                $anggota->siswa->update([
-                    'status_siswa' => 'Lulus'
-                ]);
-
-                continue;
-            }
-
-            /*
-            |--------------------------------------------------------------------------
-            | Kelas 1-5 = Simpan Kelas Tujuan
-            |--------------------------------------------------------------------------
-            */
-
-            if ($kelasTujuan) {
-
-                $anggota->update([
-                    'kelas_tujuan_id' => $kelasTujuan->id
-                ]);
-            }
-        }
-
-        DB::commit();
-
-        return redirect()
-    ->route('kenaikan.index', [
-        'tahun_ajaran_id' => $tahunAktif->id
-    ])
-    ->with(
-        'success',
-        'Generate kenaikan kelas berhasil diproses. Data kelas tujuan siswa telah berhasil disimpan dan akan digunakan pada proses Pembagian Kelas.'
-    );
-
-    } catch (\Exception $e) {
-
-        DB::rollBack();
-
-        return back()
-            ->withInput()
-            ->with(
-                'error',
-                $e->getMessage()
-            );
-    }
 }
 }

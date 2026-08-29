@@ -9,6 +9,8 @@ use Illuminate\Support\Facades\DB;
 use App\Exports\TahunAjaranExport;
 use Maatwebsite\Excel\Facades\Excel;
 
+use Carbon\Carbon;
+
 class TahunAjaranController extends Controller
 {
     public function index(Request $request)
@@ -69,22 +71,35 @@ class TahunAjaranController extends Controller
         )->count();
 
         // Tahun ajaran aktif
-        $tahunAktif = TahunAjaran::where(
-            'status',
-            'Aktif'
-        )->first();
+$tahunAktif = TahunAjaran::where(
+    'status',
+    'Aktif'
+)->first();
 
-        return view(
-            'tahunajaran.index',
-            compact(
-                'tahunAjaran',
-                'totalTahun',
-                'aktif',
-                'ganjil',
-                'genap',
-                'tahunAktif'
-            )
+$periodeAktifBelumSelesai = false;
+
+if ($tahunAktif && $tahunAktif->tanggal_selesai) {
+
+    $periodeAktifBelumSelesai =
+        now()->lt(
+            Carbon::parse(
+                $tahunAktif->tanggal_selesai
+            )->endOfDay()
         );
+}
+
+       return view(
+    'tahunajaran.index',
+    compact(
+        'tahunAjaran',
+        'totalTahun',
+        'aktif',
+        'ganjil',
+        'genap',
+        'tahunAktif',
+        'periodeAktifBelumSelesai'
+    )
+);
     }
 
 
@@ -94,49 +109,44 @@ class TahunAjaranController extends Controller
     }
 
 
-    public function store(Request $request)
-    {
-        $request->validate([
+    
+       
+       
 
-            'tahun_ajaran' => 'required',
 
-            'semester' => 'required',
 
-            'tanggal_mulai' => 'required|date',
 
-            'tanggal_selesai' => 'required|date'
 
-        ]);
+       public function store(Request $request)
+{
+    $request->validate([
+        'tahun_ajaran' => 'required|string',
+        'semester' => 'required|in:Ganjil,Genap',
+        'tanggal_mulai' => 'required|date',
+        'tanggal_selesai' => 'required|date|after:tanggal_mulai',
+    ]);
 
-        DB::beginTransaction();
+    DB::beginTransaction();
 
-        try {
+    try {
 
-            TahunAjaran::create([
+        /*
+        |--------------------------------------------------------------------------
+        | 1. Cegah periode yang sama dibuat dua kali
+        |--------------------------------------------------------------------------
+        */
 
-                'tahun_ajaran' => $request->tahun_ajaran,
+        $sudahAda = TahunAjaran::where(
+            'tahun_ajaran',
+            $request->tahun_ajaran
+        )
+        ->where(
+            'semester',
+            $request->semester
+        )
+        ->exists();
 
-                'semester' => $request->semester,
-
-                'tanggal_mulai' => $request->tanggal_mulai,
-
-                'tanggal_selesai' => $request->tanggal_selesai,
-
-                // Periode baru dibuat sebagai arsip
-                'status' => 'Tidak Aktif'
-
-            ]);
-
-            DB::commit();
-
-            return redirect()
-                ->route('tahun-ajaran.index')
-                ->with(
-                    'success',
-                    'Tahun ajaran berhasil ditambahkan.'
-                );
-
-        } catch (\Exception $e) {
+        if ($sudahAda) {
 
             DB::rollBack();
 
@@ -144,10 +154,255 @@ class TahunAjaranController extends Controller
                 ->withInput()
                 ->with(
                     'error',
-                    $e->getMessage()
+                    'Tahun ajaran dan semester tersebut sudah tersedia.'
                 );
         }
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | 2. Cari periode aktif sekarang
+        |--------------------------------------------------------------------------
+        */
+
+       $periodeAktif = TahunAjaran::where(
+    'status',
+    'Aktif'
+)->first();
+
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | 3. Kalau periode aktif belum selesai,
+        |    tidak boleh membuat periode berikutnya
+        |--------------------------------------------------------------------------
+        */
+
+        if ($periodeAktif) {
+
+    if (
+        $periodeAktif->tanggal_selesai &&
+        now()->lt($periodeAktif->tanggal_selesai)
+    ) {
+
+        return back()
+            ->withInput()
+            ->with(
+                'error',
+                'Anda tidak dapat menambahkan tahun ajaran atau semester baru karena periode tahun ajaran yang sedang aktif belum selesai.'
+            );
     }
+
+        }
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | 4. Cari periode sebelumnya
+        |--------------------------------------------------------------------------
+        */
+
+        $periodeSebelumnya = null;
+
+        if ($request->semester === 'Genap') {
+
+            /*
+             * Contoh:
+             * 2026/2027 Ganjil
+             *        ↓
+             * 2026/2027 Genap
+             */
+
+            $periodeSebelumnya = TahunAjaran::where(
+                'tahun_ajaran',
+                $request->tahun_ajaran
+            )
+            ->where(
+                'semester',
+                'Ganjil'
+            )
+            ->first();
+
+        } else {
+
+            /*
+             * Contoh:
+             * 2026/2027 Genap
+             *        ↓
+             * 2027/2028 Ganjil
+             */
+
+            $bagianTahun = explode(
+                '/',
+                $request->tahun_ajaran
+            );
+
+            $periodeSebelumnya = null;
+
+            if (count($bagianTahun) === 2) {
+
+                $tahunAwal = (int) $bagianTahun[0];
+
+                $tahunSebelumnya =
+                    ($tahunAwal - 1)
+                    . '/'
+                    . $tahunAwal;
+
+                $periodeSebelumnya = TahunAjaran::where(
+                    'tahun_ajaran',
+                    $tahunSebelumnya
+                )
+                ->where(
+                    'semester',
+                    'Genap'
+                )
+                ->first();
+            }
+        }
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | 5. Kalau bukan periode pertama,
+        |    periode sebelumnya wajib ditemukan
+        |--------------------------------------------------------------------------
+        */
+
+        if (!$periodeSebelumnya && TahunAjaran::count() > 0) {
+
+            DB::rollBack();
+
+            return back()
+                ->withInput()
+                ->with(
+                    'error',
+                    'Periode sebelumnya tidak ditemukan. '
+                    . 'Pastikan urutan tahun ajaran dan semester sudah benar.'
+                );
+        }
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | 6. Pastikan tanggal tidak bentrok
+        |--------------------------------------------------------------------------
+        */
+
+        $tanggalMulai = Carbon::parse(
+            $request->tanggal_mulai
+        )->startOfDay();
+
+        $tanggalSelesai = Carbon::parse(
+            $request->tanggal_selesai
+        )->startOfDay();
+
+
+        $periodeBentrok = TahunAjaran::where(function ($query) use (
+            $tanggalMulai,
+            $tanggalSelesai
+        ) {
+
+            $query
+                ->whereBetween(
+                    'tanggal_mulai',
+                    [$tanggalMulai, $tanggalSelesai]
+                )
+                ->orWhereBetween(
+                    'tanggal_selesai',
+                    [$tanggalMulai, $tanggalSelesai]
+                )
+                ->orWhere(function ($q) use (
+                    $tanggalMulai,
+                    $tanggalSelesai
+                ) {
+
+                    $q->where(
+                        'tanggal_mulai',
+                        '<=',
+                        $tanggalMulai
+                    )
+                    ->where(
+                        'tanggal_selesai',
+                        '>=',
+                        $tanggalSelesai
+                    );
+
+                });
+
+        })
+        ->exists();
+
+
+        if ($periodeBentrok) {
+
+            DB::rollBack();
+
+            return back()
+                ->withInput()
+                ->with(
+                    'error',
+                    'Tanggal periode yang dimasukkan bertabrakan dengan periode tahun ajaran yang sudah ada.'
+                );
+        }
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | 7. Buat periode baru
+        |--------------------------------------------------------------------------
+        |
+        | Periode baru TIDAK LANGSUNG AKTIF.
+        |
+        */
+
+        $tahunBaru = TahunAjaran::create([
+
+    'tahun_ajaran' =>
+        $request->tahun_ajaran,
+
+    'semester' =>
+        $request->semester,
+
+    'tanggal_mulai' =>
+        $request->tanggal_mulai,
+
+    'tanggal_selesai' =>
+        $request->tanggal_selesai,
+
+    'status' =>
+        'Tidak Aktif',
+
+    'periode_sebelumnya_id' =>
+        $periodeSebelumnya?->id,
+
+]);
+
+
+
+
+
+        DB::commit();
+
+        return redirect()
+            ->route('tahun-ajaran.index')
+            ->with(
+                'success',
+                'Tahun ajaran berhasil ditambahkan. Periode masih tidak aktif sampai waktunya dapat diaktifkan.'
+            );
+
+    } catch (\Exception $e) {
+
+        DB::rollBack();
+
+        return back()
+            ->withInput()
+            ->with(
+                'error',
+                $e->getMessage()
+            );
+    }
+}
 
 
     public function show($id)
@@ -172,45 +427,32 @@ class TahunAjaranController extends Controller
     }
 
 
-    public function update(Request $request, $id)
-    {
-        $tahun = TahunAjaran::findOrFail($id);
+    
+              public function update(Request $request, $id)
+{
+    $tahun = TahunAjaran::findOrFail($id);
 
-        $request->validate([
+    $request->validate([
+        'tahun_ajaran' => 'required|string',
+        'semester' => 'required|in:Ganjil,Genap',
+        'tanggal_mulai' => 'required|date',
+        'tanggal_selesai' => 'required|date|after:tanggal_mulai',
+    ]);
 
-            'tahun_ajaran' => 'required',
+    $tahun->update([
+        'tahun_ajaran' => $request->tahun_ajaran,
+        'semester' => $request->semester,
+        'tanggal_mulai' => $request->tanggal_mulai,
+        'tanggal_selesai' => $request->tanggal_selesai,
+    ]);
 
-            'semester' => 'required',
-
-            'tanggal_mulai' => 'required|date',
-
-            'tanggal_selesai' => 'required|date',
-
-            'status' => 'required'
-
-        ]);
-
-        $tahun->update([
-
-            'tahun_ajaran' => $request->tahun_ajaran,
-
-            'semester' => $request->semester,
-
-            'tanggal_mulai' => $request->tanggal_mulai,
-
-            'tanggal_selesai' => $request->tanggal_selesai,
-
-            'status' => $request->status
-
-        ]);
-
-        return redirect()
-            ->route('tahun-ajaran.index')
-            ->with(
-                'success',
-                'Data berhasil diperbarui.'
-            );
-    }
+    return redirect()
+        ->route('tahun-ajaran.index')
+        ->with(
+            'success',
+            'Data tahun ajaran berhasil diperbarui.'
+        );
+}
 
 
     public function destroy($id)
@@ -239,45 +481,230 @@ class TahunAjaranController extends Controller
     |--------------------------------------------------------------------------
     */
 
-    public function riwayat($id)
-    {
-        $tahunAjaran = TahunAjaran::findOrFail($id);
+  public function aktifkan($id)
+{
+    DB::beginTransaction();
 
-        return view(
-            'tahunajaran.riwayat',
-            compact('tahunAjaran')
+    try {
+
+        $tahunBaru = TahunAjaran::findOrFail($id);
+
+        /*
+        |--------------------------------------------------------------------------
+        | 1. Cek apakah periode sudah aktif
+        |--------------------------------------------------------------------------
+        */
+
+        if ($tahunBaru->status === 'Aktif') {
+
+            return back()->with(
+                'error',
+                'Tahun ajaran tersebut sudah aktif.'
+            );
+        }
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | 2. Cek tanggal mulai
+        |--------------------------------------------------------------------------
+        */
+
+        if (
+            $tahunBaru->tanggal_mulai &&
+            now()->lt($tahunBaru->tanggal_mulai)
+        ) {
+
+            return back()->with(
+                'error',
+                'Tahun ajaran belum dapat diaktifkan karena tanggal mulai periode belum tercapai.'
+            );
+        }
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | 3. Cari periode aktif sekarang
+        |--------------------------------------------------------------------------
+        */
+
+        $periodeAktif = TahunAjaran::where(
+            'status',
+            'Aktif'
+        )->first();
+
+        $periodeSebelumnya = $tahunBaru->periodeSebelumnya;
+
+        if ($periodeSebelumnya) {
+
+    if (
+        $periodeSebelumnya->tanggal_selesai &&
+        now()->lt(
+            Carbon::parse($periodeSebelumnya->tanggal_selesai)
+        )
+    ) {
+
+        DB::rollBack();
+
+        return back()->with(
+            'error',
+            'Tidak dapat mengaktifkan periode ini karena periode sebelumnya '
+            . $periodeSebelumnya->tahun_ajaran
+            . ' semester '
+            . $periodeSebelumnya->semester
+            . ' belum selesai. Periode sebelumnya berakhir pada '
+            . Carbon::parse(
+                $periodeSebelumnya->tanggal_selesai
+            )->format('d-m-Y')
+            . '.'
         );
     }
+}
 
 
-    /*
-    |--------------------------------------------------------------------------
-    | AKTIFKAN TAHUN AJARAN
-    |--------------------------------------------------------------------------
-    */
+        /*
+        |--------------------------------------------------------------------------
+        | 4. Periode aktif sebelumnya harus sudah selesai
+        |--------------------------------------------------------------------------
+        */
 
-    public function aktifkan($id)
-    {
-        DB::transaction(function () use ($id) {
+        if ($periodeAktif) {
 
-            // Semua periode menjadi tidak aktif
-            TahunAjaran::query()->update([
-                'status' => 'Tidak Aktif'
-            ]);
+            if (
+                $periodeAktif->tanggal_selesai &&
+                now()->lt($periodeAktif->tanggal_selesai)
+            ) {
 
-            // Periode yang dipilih menjadi aktif
-            TahunAjaran::findOrFail($id)->update([
-                'status' => 'Aktif'
-            ]);
-        });
+                return back()->with(
+                    'error',
+                    'Periode tahun ajaran yang sedang aktif belum selesai. Anda belum dapat mengaktifkan periode berikutnya.'
+                );
+            }
+
+        }
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | 5. Nonaktifkan periode lama
+        |--------------------------------------------------------------------------
+        */
+
+        TahunAjaran::query()->update([
+            'status' => 'Tidak Aktif'
+        ]);
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | 6. Aktifkan periode baru
+        |--------------------------------------------------------------------------
+        */
+
+        $tahunBaru->update([
+            'status' => 'Aktif'
+        ]);
+
+        if (
+    $tahunBaru->semester === 'Genap'
+    && $periodeSebelumnya
+) {
+
+    $this->salinStrukturKeGenap(
+        $periodeSebelumnya->id,
+        $tahunBaru->id
+    );
+}
+
+
+
+
+        DB::commit();
+
 
         return redirect()
             ->route('tahun-ajaran.index')
             ->with(
                 'success',
-                'Tahun ajaran berhasil diaktifkan.'
+                'Tahun ajaran ' .
+                $tahunBaru->tahun_ajaran .
+                ' semester ' .
+                $tahunBaru->semester .
+                ' berhasil diaktifkan.'
             );
+
+    } catch (\Exception $e) {
+
+        DB::rollBack();
+
+        return back()->with(
+            'error',
+            'Gagal mengaktifkan tahun ajaran: ' .
+            $e->getMessage()
+        );
     }
+
+}
+
+
+private function salinStrukturKeGenap($tahunLamaId, $tahunBaruId)
+{
+    $kelasLama = \App\Models\Kelas::where(
+        'tahun_ajaran_id',
+        $tahunLamaId
+    )->get();
+
+    foreach ($kelasLama as $kelas) {
+
+        /*
+        |--------------------------------------------------------------------------
+        | Buat kelas untuk semester Genap
+        |--------------------------------------------------------------------------
+        */
+
+        $kelasBaru = \App\Models\Kelas::firstOrCreate(
+            [
+                'nama_kelas'      => $kelas->nama_kelas,
+                'tingkat'         => $kelas->tingkat,
+                'tahun_ajaran_id' => $tahunBaruId,
+            ],
+            [
+                'wali_kelas_id' => $kelas->wali_kelas_id,
+            ]
+        );
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Salin anggota kelas
+        |--------------------------------------------------------------------------
+        */
+
+        $anggotaLama = \App\Models\AnggotaKelas::where(
+            'kelas_id',
+            $kelas->id
+        )
+        ->where(
+            'tahun_ajaran_id',
+            $tahunLamaId
+        )
+        ->get();
+
+
+        foreach ($anggotaLama as $anggota) {
+
+            \App\Models\AnggotaKelas::firstOrCreate(
+                [
+                    'siswa_id'        => $anggota->siswa_id,
+                    'tahun_ajaran_id' => $tahunBaruId,
+                ],
+                [
+                    'kelas_id' => $kelasBaru->id,
+                ]
+            );
+        }
+    }
+}
 
     public function dashboard($id)
 {

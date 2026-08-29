@@ -32,6 +32,7 @@ use App\Http\Controllers\MasterEkstrakurikulerController;
 use App\Http\Controllers\AlumniController;
 use App\Http\Controllers\RekapNilaiOperatorController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\MasterMapelController;
 use Illuminate\Http\Request;
 
 /*
@@ -205,6 +206,9 @@ Route::patch(
     [GuruController::class, 'mutasi']
 )->name('guru.mutasi');
 
+Route::get('/staff', [GuruController::class, 'index'])
+    ->name('staff.index');
+
    Route::post('/siswa/import', [SiswaController::class,'import'])
     ->name('siswa.import');
 
@@ -260,6 +264,16 @@ Route::get(
 | MAPEL
 |--------------------------------------------------------------------------
 */
+
+Route::get(
+    '/mapel/master/create',
+    [MasterMapelController::class, 'create']
+)->name('mapel.master.create');
+
+Route::post(
+    '/mapel/master',
+    [MasterMapelController::class, 'store']
+)->name('mapel.master.store');
 
 Route::get('/mapel', [MapelController::class, 'index'])
     ->name('mapel.index');
@@ -386,51 +400,51 @@ Route::prefix('kelas')->name('kelas.')->group(function () {
 |--------------------------------------------------------------------------
 */
 
-Route::post(
-    '/jadwal/import',
-    [JadwalPelajaranController::class,'import']
+Route::post('/jadwal/import',
+    [JadwalPelajaranController::class, 'import']
 )->name('jadwal.import');
 
-Route::get(
-    '/jadwal/export',
-    [JadwalPelajaranController::class,'export']
+Route::get('/jadwal/export',
+    [JadwalPelajaranController::class, 'export']
 )->name('jadwal.export');
 
-Route::get(
-    '/jadwal/template',
-    [JadwalPelajaranController::class,'template']
+Route::get('/jadwal/template',
+    [JadwalPelajaranController::class, 'template']
 )->name('jadwal.template');
-
-Route::get(
-    '/jadwal/jam/{kelas}',
-    [JadwalPelajaranController::class,'getJam']
-);
-
-Route::patch('/jadwal/{jadwal}/nonaktif', [JadwalPelajaranController::class, 'nonaktif'])
-    ->name('jadwal.nonaktif');
-
-Route::patch(
-    '/jadwal/{jadwal}/aktif',
-    [JadwalPelajaranController::class,'aktif']
-)->name('jadwal.aktif');
-
-
-Route::patch('/jadwal/{jadwal}/toggle-status',
-    [JadwalPelajaranController::class,'toggleStatus'])
-    ->name('jadwal.toggleStatus');
-
-Route::get(
-    '/jadwal/mapel/{kelas}',
-    [JadwalPelajaranController::class, 'getMapelByKelas']
-)->name('jadwal.mapel');
-Route::resource('lingkup-materi', LingkupMateriController::class);
 
 Route::get(
     '/jadwal/mapel/{kelasId}',
     [JadwalPelajaranController::class, 'getMapelByKelas']
 )->name('jadwal.mapel');
 
+Route::get(
+    '/jadwal/jam/{kelasId}/{hari}',
+    [JadwalPelajaranController::class, 'getJamByKelasHari']
+)->name('jadwal.jam');
+
+Route::get(
+    '/jadwal/guru/{kelasId}/{mapelId}',
+    [JadwalPelajaranController::class, 'getGuruByMapelKelas']
+)->name('jadwal.guru');
+
+
+
+Route::patch('/jadwal/{jadwal}/nonaktif',
+    [JadwalPelajaranController::class, 'nonaktif']
+)->name('jadwal.nonaktif');
+
+Route::patch('/jadwal/{jadwal}/aktif',
+    [JadwalPelajaranController::class, 'aktif']
+)->name('jadwal.aktif');
+
+Route::patch('/jadwal/{jadwal}/toggle-status',
+    [JadwalPelajaranController::class, 'toggleStatus']
+)->name('jadwal.toggleStatus');
+
+Route::resource('lingkup-materi', LingkupMateriController::class);
+
 Route::resource('jadwal', JadwalPelajaranController::class);
+
 
 
 Route::post(

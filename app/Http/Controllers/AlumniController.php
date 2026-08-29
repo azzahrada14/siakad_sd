@@ -18,7 +18,7 @@ use App\Exports\AlumniExport;
 
 class AlumniController extends Controller
 {
-    public function index(Request $request)
+   public function index(Request $request)
 {
     $tahunAktif = $request->filled('tahun_ajaran_id')
         ? TahunAjaran::findOrFail($request->tahun_ajaran_id)
@@ -38,50 +38,68 @@ class AlumniController extends Controller
         && strtolower($tahunAktif->semester) === 'genap'
     );
 
+    /*
+    |--------------------------------------------------------------------------
+    | DATA ALUMNI
+    |--------------------------------------------------------------------------
+    */
+
     $alumni = Alumni::with([
         'siswa',
         'tahunAjaran'
     ])
-    ->where(
-        'tahun_ajaran_id',
-        $tahunAktif->id
-    )
+    ->where('tahun_ajaran_id', $tahunAktif->id)
     ->orderByDesc('tanggal_lulus')
-    ->get();
-
+    ->paginate(10)
+    ->withQueryString();
 
 
     /*
     |--------------------------------------------------------------------------
-    | Dashboard
+    | DASHBOARD
     |--------------------------------------------------------------------------
     */
 
-    $totalAlumni = $alumni->count();
+    // Total seluruh alumni, bukan hanya halaman yang sedang ditampilkan
+    $totalAlumni = Alumni::where(
+        'tahun_ajaran_id',
+        $tahunAktif->id
+    )->count();
 
-    $laki = $alumni->filter(function($item){
 
-        return $item->siswa->jenis_kelamin == 'L';
+    // Total laki-laki
+    $laki = Alumni::where(
+        'tahun_ajaran_id',
+        $tahunAktif->id
+    )
+    ->whereHas('siswa', function ($query) {
+        $query->where('jenis_kelamin', 'L');
+    })
+    ->count();
 
-    })->count();
 
-    $perempuan = $alumni->filter(function($item){
+    // Total perempuan
+    $perempuan = Alumni::where(
+        'tahun_ajaran_id',
+        $tahunAktif->id
+    )
+    ->whereHas('siswa', function ($query) {
+        $query->where('jenis_kelamin', 'P');
+    })
+    ->count();
 
-        return $item->siswa->jenis_kelamin == 'P';
-
-    })->count();
 
     return view(
         'alumni.index',
         compact(
-    'tahunAktif',
-    'modeArsip',
-    'bolehProses',
-    'alumni',
-    'totalAlumni',
-    'laki',
-    'perempuan'
-)
+            'tahunAktif',
+            'modeArsip',
+            'bolehProses',
+            'alumni',
+            'totalAlumni',
+            'laki',
+            'perempuan'
+        )
     );
 }
 

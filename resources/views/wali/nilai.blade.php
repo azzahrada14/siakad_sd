@@ -665,21 +665,37 @@
 
 
         {{-- NILAI AKHIR --}}
-        <td class="border border-gray-300 px-3 py-2 text-center whitespace-nowrap">
+<td class="border border-gray-300 px-3 py-2 text-center whitespace-nowrap">
 
-            @if($nilai)
+    @if($nilai)
 
-                <span class="inline-flex items-center rounded-full bg-green-100 px-3 py-1 font-semibold text-green-700">
-                    {{ number_format($nilai->nilai_akhir ?? 0, 2) }}
-                </span>
+        @php
+            $nilaiAkhir = $nilai->nilai_akhir ?? 0;
+        @endphp
 
-            @else
+        @if($nilaiAkhir >= 75)
 
-                -
+            {{-- TUNTAS --}}
+            <span class="inline-flex items-center rounded-full bg-green-100 px-3 py-1 font-semibold text-green-700">
+                {{ number_format($nilaiAkhir, 2) }}
+            </span>
 
-            @endif
+        @else
 
-        </td>
+            {{-- BELUM TUNTAS / REMEDIAL --}}
+            <span class="inline-flex items-center rounded-full bg-red-100 px-3 py-1 font-semibold text-red-700">
+                {{ number_format($nilaiAkhir, 2) }}
+            </span>
+
+        @endif
+
+    @else
+
+        -
+
+    @endif
+
+</td>
 
 
         {{-- PREDIKAT --}}

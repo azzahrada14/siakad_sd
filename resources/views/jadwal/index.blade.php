@@ -807,9 +807,7 @@
 @if($jadwals->hasPages())
 
     <div class="mt-6">
-
-        {{ $jadwals->withQueryString()->links() }}
-
+        {{ $jadwals->links('pagination::tailwind') }}
     </div>
 
 @endif

@@ -303,6 +303,28 @@ $kelas = Kelas::with([
 ->orderBy('nama_kelas')
 ->get();
 
+// HITUNG JUMLAH LAKI-LAKI DAN PEREMPUAN
+$kelas->each(function ($item) {
+
+    $anggota = $item->anggotaKelas;
+
+    $item->jumlah_l = $anggota
+        ->filter(function ($anggota) {
+            return $anggota->siswa
+                && strtoupper($anggota->siswa->jenis_kelamin) === 'L';
+        })
+        ->count();
+
+    $item->jumlah_p = $anggota
+        ->filter(function ($anggota) {
+            return $anggota->siswa
+                && strtoupper($anggota->siswa->jenis_kelamin) === 'P';
+        })
+        ->count();
+
+    $item->jumlah_siswa = $anggota->count();
+});
+
 
 
         /*

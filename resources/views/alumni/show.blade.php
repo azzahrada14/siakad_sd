@@ -78,7 +78,7 @@
 
         <h1 class="text-2xl font-bold uppercase">
 
-            Transkrip Nilai Alumni
+            Transkrip Nilai Kelulusan Siswa
 
         </h1>
 

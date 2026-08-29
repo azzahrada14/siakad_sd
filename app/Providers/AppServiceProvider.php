@@ -22,8 +22,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        // Pagination Bootstrap
-        Paginator::useBootstrapFive();
+        // Pagination Tailwind
+        Paginator::useTailwind();
 
         // Tahun ajaran aktif untuk semua halaman
         View::composer('*', function ($view) {

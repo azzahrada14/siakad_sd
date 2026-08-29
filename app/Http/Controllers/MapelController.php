@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Imports\MapelImport;
 use App\Exports\MapelExport;
+use App\Models\MasterMapel;
 use Maatwebsite\Excel\Facades\Excel;
 
 class MapelController extends Controller
@@ -59,7 +60,11 @@ class MapelController extends Controller
     |--------------------------------------------------------------------------
     */
 
-    $query = Mapel::with('kategori');
+    $query = Mapel::with('kategori')
+    ->where(
+        'tahun_ajaran_id',
+        $tahunAjaran->id
+    );
 
 
     /*
@@ -159,6 +164,11 @@ class MapelController extends Controller
         )
         ->count();
 
+        $jumlahMasterMapel = MasterMapel::where(
+    'status',
+    'Aktif'
+)->count();
+
 
     /*
     |--------------------------------------------------------------------------
@@ -167,17 +177,18 @@ class MapelController extends Controller
     */
 
     return view(
-        'mapel.index',
-        compact(
-            'mapels',
-            'totalMapel',
-            'mapelAktif',
-            'mapelIntrakurikuler',
-            'mapelMulok',
-            'tahunAjaran',
-            'modeArsip'
-        )
-    );
+    'mapel.index',
+    compact(
+        'mapels',
+        'totalMapel',
+        'mapelAktif',
+        'mapelIntrakurikuler',
+        'mapelMulok',
+        'tahunAjaran',
+        'modeArsip',
+        'jumlahMasterMapel'
+    )
+);
 }
 
     public function nonaktif($id)
@@ -200,16 +211,57 @@ class MapelController extends Controller
     |--------------------------------------------------------------------------
     */
 
-    public function create()
+public function create()
 {
+    $tahunAjaran = \App\Models\TahunAjaran::where(
+        'status',
+        'Aktif'
+    )->first();
+
+    if (!$tahunAjaran) {
+
+        return back()->with(
+            'error',
+            'Belum ada tahun ajaran yang aktif.'
+        );
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | MASTER MATA PELAJARAN
+    |--------------------------------------------------------------------------
+    */
+
+    $masterMapels = MasterMapel::where(
+        'status',
+        'Aktif'
+    )
+    ->with('kategori')
+    ->orderBy('nama_mapel')
+    ->get();
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | KATEGORI
+    |--------------------------------------------------------------------------
+    */
+
     $kategoriMapels = KategoriMapel::where(
         'status',
         'Aktif'
-    )->orderBy('kode_kategori')->get();
+    )
+    ->orderBy('kode_kategori')
+    ->get();
+
 
     return view(
         'mapel.create',
-        compact('kategoriMapels')
+        compact(
+            'tahunAjaran',
+            'masterMapels',
+            'kategoriMapels'
+        )
     );
 }
 
@@ -219,63 +271,173 @@ class MapelController extends Controller
     |--------------------------------------------------------------------------
     */
 
-    public function store(Request $request)
-    {
-       $request->validate([
-    'kategori_mapel_id' => 'required',
-    'guru_id' => 'nullable|exists:gurus,id',
-    'kode_mapel' => 'required|unique:mapels,kode_mapel',
-    'nama_mapel' => 'required',
-    'kelompok' => 'required',
-    'jenis' => 'required',
-    'kkm' => 'required|numeric|min:0|max:100',
-    'status' => 'required',
-]);
+    /*
+|--------------------------------------------------------------------------
+| STORE
+|--------------------------------------------------------------------------
+*/
+
+public function store(Request $request)
+{
+    /*
+    |--------------------------------------------------------------------------
+    | VALIDASI
+    |--------------------------------------------------------------------------
+    */
+
+    $request->validate([
+        'nama_mapel' => 'required|exists:master_mapels,id',
+        'kkm'        => 'required|numeric|min:0|max:100',
+    ], [
+        'nama_mapel.required' =>
+            'Mata pelajaran wajib dipilih.',
+
+        'nama_mapel.exists' =>
+            'Mata pelajaran yang dipilih tidak tersedia.',
+
+        'kkm.required' =>
+            'KKM wajib diisi.',
+
+        'kkm.numeric' =>
+            'KKM harus berupa angka.',
+
+        'kkm.min' =>
+            'KKM minimal 0.',
+
+        'kkm.max' =>
+            'KKM maksimal 100.',
+    ]);
 
 
-        DB::beginTransaction();
+    /*
+    |--------------------------------------------------------------------------
+    | TAHUN AJARAN AKTIF
+    |--------------------------------------------------------------------------
+    */
 
-        try {
+    $tahunAjaran = \App\Models\TahunAjaran::where(
+        'status',
+        'Aktif'
+    )->first();
 
-            Mapel::create([
 
-                'kode_mapel' => $request->kode_mapel,
+    if (!$tahunAjaran) {
 
-                'nama_mapel' => $request->nama_mapel,
-
-                'kelompok' => $request->kelompok,
-
-                'kategori_mapel_id'=>$request->kategori_mapel_id,
-
-                
-                'kkm' => $request->kkm,
-
-                'status' => 'Aktif'
-
-            ]);
-
-            DB::commit();
-
-            return redirect()
-                ->route('mapel.index')
-                ->with(
-                    'success',
-                    'Data mata pelajaran berhasil ditambahkan.'
-                );
-
-        } catch (\Exception $e) {
-
-            DB::rollBack();
-
-            return back()
-                ->withInput()
-                ->with(
-                    'error',
-                    $e->getMessage()
-                );
-
-        }
+        return back()
+            ->withInput()
+            ->with(
+                'error',
+                'Belum ada tahun ajaran yang aktif.'
+            );
     }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | AMBIL MASTER MAPEL
+    |--------------------------------------------------------------------------
+    */
+
+    $masterMapel = MasterMapel::with('kategori')
+        ->where('status', 'Aktif')
+        ->findOrFail(
+            $request->nama_mapel
+        );
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | CEK DUPLIKASI PADA TAHUN AJARAN AKTIF
+    |--------------------------------------------------------------------------
+    */
+
+    $sudahAda = Mapel::where(
+        'tahun_ajaran_id',
+        $tahunAjaran->id
+    )
+    ->where(
+        'master_mapel_id',
+        $masterMapel->id
+    )
+    ->exists();
+
+
+    if ($sudahAda) {
+
+        return back()
+            ->withInput()
+            ->with(
+                'warning',
+                'Mata pelajaran "' .
+                $masterMapel->nama_mapel .
+                '" sudah diinputkan pada tahun ajaran ' .
+                $tahunAjaran->tahun_ajaran .
+                '.'
+            );
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | SIMPAN MAPEL TAHUN AJARAN
+    |--------------------------------------------------------------------------
+    */
+
+    Mapel::create([
+
+        'tahun_ajaran_id' =>
+            $tahunAjaran->id,
+
+        'master_mapel_id' =>
+            $masterMapel->id,
+
+        'kategori_mapel_id' =>
+            $masterMapel->kategori_mapel_id,
+
+        'kode_mapel' =>
+            $masterMapel->kode_mapel,
+
+        'nama_mapel' =>
+            $masterMapel->nama_mapel,
+
+        'jenis' =>
+            $masterMapel->jenis,
+
+        'kelompok' =>
+            $masterMapel->kelompok,
+
+        'kkm' =>
+            $request->kkm,
+
+        'status' =>
+            'Aktif',
+
+        'guru_id' =>
+            null,
+
+    ]);
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | BERHASIL
+    |--------------------------------------------------------------------------
+    */
+
+    return redirect()
+    ->route('mapel.index')
+    ->with(
+        'success',
+        'Mata pelajaran "' .
+        $masterMapel->nama_mapel .
+        '" berhasil ditambahkan ke tahun ajaran ' .
+        $tahunAjaran->tahun_ajaran .
+        '.'
+    );
+}
+   
+
+
 
     /*
     |--------------------------------------------------------------------------
@@ -301,61 +463,132 @@ class MapelController extends Controller
 
     public function edit($id)
 {
-    $mapel = Mapel::findOrFail($id);
-
-    $kategoriMapels = KategoriMapel::where(
-        'status',
-        'Aktif'
-    )->orderBy('kode_kategori')->get();
+    $mapel = Mapel::with([
+        'masterMapel',
+        'kategori'
+    ])->findOrFail($id);
 
     return view(
         'mapel.edit',
-        compact(
-            'mapel',
-            'kategoriMapels'
-        )
+        compact('mapel')
     );
 }
+/*
+|--------------------------------------------------------------------------
+| UPDATE
+|--------------------------------------------------------------------------
+*/
+
+public function update(Request $request, $id)
+{
+    $mapel = Mapel::findOrFail($id);
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | CEK TAHUN AJARAN
+    |--------------------------------------------------------------------------
+    */
+
+    $tahunAjaran = \App\Models\TahunAjaran::findOrFail(
+        $mapel->tahun_ajaran_id
+    );
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | JIKA ARSIP
+    |--------------------------------------------------------------------------
+    */
+
+    if ($tahunAjaran->status !== 'Aktif') {
+
+        return back()->with(
+            'error',
+            'Data pada tahun ajaran arsip tidak dapat diubah.'
+        );
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | VALIDASI
+    |--------------------------------------------------------------------------
+    */
+
+    $request->validate([
+        'guru_id' => [
+            'nullable',
+            'exists:gurus,id',
+        ],
+
+        'kkm' => [
+            'required',
+            'numeric',
+            'min:0',
+            'max:100',
+        ],
+
+        'status' => [
+            'required',
+            'in:Aktif,Nonaktif',
+        ],
+    ], [
+        'kkm.required' =>
+            'KKM wajib diisi.',
+
+        'kkm.numeric' =>
+            'KKM harus berupa angka.',
+
+        'kkm.min' =>
+            'KKM minimal 0.',
+
+        'kkm.max' =>
+            'KKM maksimal 100.',
+
+        'guru_id.exists' =>
+            'Guru yang dipilih tidak tersedia.',
+
+        'status.required' =>
+            'Status wajib dipilih.',
+    ]);
+
 
     /*
     |--------------------------------------------------------------------------
     | UPDATE
     |--------------------------------------------------------------------------
     */
-public function update(Request $request, $id)
-{
-    $mapel = Mapel::findOrFail($id);
-
-    $request->validate([
-        'kategori_mapel_id' => 'required|exists:kategori_mapels,id',
-        'guru_id'           => 'nullable|exists:gurus,id',
-        'kode_mapel'        => 'required|unique:mapels,kode_mapel,' . $mapel->id,
-        'nama_mapel'        => 'required',
-        'jenis'             => 'required',
-        'kelompok'          => 'required',
-        'kkm'               => 'required|numeric|min:0|max:100',
-        'status'            => 'required',
-    ]);
 
     $mapel->update([
-        'kategori_mapel_id' => $request->kategori_mapel_id,
-        'guru_id'           => $request->guru_id,
-        'kode_mapel'        => $request->kode_mapel,
-        'nama_mapel'        => $request->nama_mapel,
-        'jenis'             => $request->jenis,
-        'kelompok'          => $request->kelompok,
-        'kkm'               => $request->kkm,
-        'status'            => $request->status,
+
+        'guru_id' =>
+            $request->guru_id,
+
+        'kkm' =>
+            $request->kkm,
+
+        'status' =>
+            $request->status,
+
     ]);
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | NOTIFIKASI
+    |--------------------------------------------------------------------------
+    */
 
     return redirect()
         ->route('mapel.index')
         ->with(
             'success',
-            'Data mata pelajaran berhasil diperbarui.'
+            'Data mata pelajaran "' .
+            $mapel->nama_mapel .
+            '" berhasil diperbarui.'
         );
 }
-
     /*
     |--------------------------------------------------------------------------
     | DESTROY

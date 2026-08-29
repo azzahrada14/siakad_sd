@@ -2,6 +2,20 @@
 
 @section('content')
 
+@if(session('success'))
+    <div class="mb-4 rounded-lg bg-green-100 border border-green-300
+                text-green-700 px-4 py-3">
+        {{ session('success') }}
+    </div>
+@endif
+
+@if(session('error'))
+    <div class="mb-4 rounded-lg bg-red-100 border border-red-300
+                text-red-700 px-4 py-3">
+        {{ session('error') }}
+    </div>
+@endif
+
 {{-- ================= MODAL IMPORT ================= --}}
 <div
     id="modalImport"
@@ -13,10 +27,18 @@
             Import Data Siswa
         </h2>
 
-        <form
-            action="{{ route('siswa.import') }}"
-            method="POST"
-            enctype="multipart/form-data">
+       <form
+    action="{{ route('siswa.import') }}"
+    method="POST"
+    enctype="multipart/form-data">
+
+    @csrf
+
+    <input
+        type="hidden"
+        name="tahun_ajaran_id"
+        value="{{ $tahunAjaran->id }}"
+    >
 
             @csrf
 
@@ -644,15 +666,13 @@
 
                     </td>
 
-                    <td class="border text-center">
+                   <td class="border text-center">
+{{ optional(optional($item->kelasPeriode)->kelas)->tingkat ?? '-' }}
+</td>
 
-                        {{ $item->tingkat }}
-
-                    </td>
-
-                    <td class="border text-center">
-{{ optional(optional($item->kelasAktif)->kelas)->nama_kelas ?? '-' }}
-
+           <td class="border text-center">
+{{ optional(optional($item->kelasPeriode)->kelas)->nama_kelas ?? '-' }}
+</td>
                     </td>
 
                     <td class="border text-center">
@@ -705,24 +725,20 @@
 
 
         {{-- EDIT HANYA PERIODE AKTIF --}}
-        @if(!$modeArsip)
+@if(!$modeArsip)
 
-            <a
-                href="{{ route('siswa.edit', [
-                    'id' => $item->id,
-                    'tahun_ajaran_id' => $tahunAjaran->id
-                ]) }}"
-                class="p-1.5 rounded-lg bg-yellow-100 hover:bg-yellow-200 transition"
-                title="Edit"
-            >
+    <a
+        href="{{ route('siswa.edit', [
+            'siswa' => $item->id,
+            'tahun_ajaran_id' => $tahunAjaran->id
+        ]) }}"
+        class="p-1.5 rounded-lg bg-yellow-100 hover:bg-yellow-200 transition"
+        title="Edit"
+    >
+        <x-heroicon-o-pencil-square class="w-5 h-5 text-yellow-600"/>
+    </a>
 
-                <x-heroicon-o-pencil-square
-                    class="w-5 h-5 text-yellow-600"
-                />
-
-            </a>
-
-        @endif
+@endif
 
     </div>
 

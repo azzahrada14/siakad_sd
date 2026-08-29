@@ -18,12 +18,22 @@ class Mapel extends Model
     'jenis',
     'kkm',
     'status',
+    'tahun_ajaran_id',
 ];
+
+public function tahunAjaran()
+{
+    return $this->belongsTo(
+        TahunAjaran::class,
+        'tahun_ajaran_id'
+    );
+}
 
     public function kategori()
     {
         return $this->belongsTo(
             KategoriMapel::class,
+            
             'kategori_mapel_id'
         );
     }

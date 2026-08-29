@@ -10,6 +10,7 @@ use App\Models\JadwalPelajaran;
 use Illuminate\Http\Request;
 use App\Exports\JadwalExport;
 use Maatwebsite\Excel\Facades\Excel;
+use App\Models\JamPelajaran;
 
 class JadwalPelajaranController extends Controller
 {
@@ -38,6 +39,7 @@ class JadwalPelajaranController extends Controller
     $tahunAktif = $tahunAjaran;
 
     $modeArsip = $tahunAjaran->status !== 'Aktif';
+
 
 
     /*
@@ -335,6 +337,142 @@ class JadwalPelajaranController extends Controller
 
 
     /**
+ * Mengambil jam pelajaran berdasarkan kelas dan hari.
+ */
+public function getJamByKelasHari($kelasId, $hari)
+{
+    $kelas = Kelas::findOrFail($kelasId);
+
+    $jam = JamPelajaran::where(
+        'tingkat',
+        $kelas->tingkat
+    )
+    ->orderBy('jam_ke')
+    ->get();
+
+    return response()->json($jam);
+}
+
+
+public function getGuruByMapelKelas($kelasId, $mapelId)
+{
+    $kelas = Kelas::findOrFail($kelasId);
+    $mapel = Mapel::findOrFail($mapelId);
+
+    /*
+    |--------------------------------------------------------------------------
+    | PENDIDIKAN AGAMA ISLAM
+    |--------------------------------------------------------------------------
+    */
+
+    if ($mapel->nama_mapel === 'Pendidikan Agama Islam') {
+
+        $guru = Guru::where('status_guru', 'Aktif')
+            ->where('jabatan_ptk', 'GURU AGAMA ISLAM')
+            ->orderBy('nama_guru')
+            ->get();
+
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | PJOK
+    |--------------------------------------------------------------------------
+    */
+
+    elseif ($mapel->nama_mapel === 'PJOK') {
+
+        $guru = Guru::where('status_guru', 'Aktif')
+            ->where('jabatan_ptk', 'GURU PENJASORKES')
+            ->orderBy('nama_guru')
+            ->get();
+
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | MAPEL UMUM → WALI KELAS
+    |--------------------------------------------------------------------------
+    */
+
+    else {
+
+        $guru = Guru::where(
+            'id',
+            $kelas->wali_kelas_id
+        )
+        ->where('status_guru', 'Aktif')
+        ->where('jabatan_ptk', 'GURU KELAS')
+        ->orderBy('nama_guru')
+        ->get();
+
+    }
+
+    return response()->json($guru);
+}
+
+
+    /**
+ * Form tambah jadwal.
+ */
+public function create(Request $request)
+{
+    // Tahun ajaran dari URL, atau gunakan tahun ajaran aktif
+    $tahunAjaran = $request->filled('tahun_ajaran_id')
+        ? TahunAjaran::findOrFail($request->tahun_ajaran_id)
+        : TahunAjaran::where('status', 'Aktif')->first();
+
+    if (!$tahunAjaran) {
+        return redirect()
+            ->route('jadwal.index')
+            ->with('error', 'Belum ada tahun ajaran yang tersedia.');
+    }
+
+    // Periode arsip tidak boleh menambah jadwal
+    if ($tahunAjaran->status !== 'Aktif') {
+        return redirect()
+            ->route('jadwal.index', [
+                'tahun_ajaran_id' => $tahunAjaran->id
+            ])
+            ->with(
+                'error',
+                'Jadwal pada periode arsip tidak dapat ditambahkan.'
+            );
+    }
+
+    $kelas = Kelas::where(
+        'tahun_ajaran_id',
+        $tahunAjaran->id
+    )
+    ->orderBy('tingkat')
+    ->orderBy('nama_kelas')
+    ->get();
+
+    $gurus = Guru::where(
+        'status_guru',
+        'Aktif'
+    )
+    ->orderBy('nama_guru')
+    ->get();
+
+    $mapels = Mapel::where(
+        'status',
+        'Aktif'
+    )
+    ->orderBy('nama_mapel')
+    ->get();
+
+    return view('jadwal.create', [
+        'tahunAjaran' => $tahunAjaran,
+        'tahunAktif' => $tahunAjaran,
+        'kelas' => $kelas,
+        'gurus' => $gurus,
+        'mapels' => $mapels,
+    ]);
+}
+
+
+    /**
      * Menyimpan jadwal baru.
      */
     public function store(Request $request)
@@ -346,20 +484,12 @@ class JadwalPelajaranController extends Controller
         */
 
         $rules = [
-
-            'tahun_ajaran_id' => 'required',
-
-            'kelas_id' => 'required',
-
-            'hari' => 'required',
-
-            'jam_ke' => 'required',
-
-            'waktu' => 'required',
-
-            'jenis_jadwal' => 'required|in:Wajib,Kokurikuler,Kegiatan',
-
-        ];
+    'tahun_ajaran_id' => 'required',
+    'kelas_id' => 'required',
+    'hari' => 'required',
+    'jam_ke' => 'required|integer',
+    'jenis_jadwal' => 'required|in:Wajib,Kokurikuler,Kegiatan',
+];
 
        $tahunAjaran = TahunAjaran::findOrFail(
     $request->tahun_ajaran_id
@@ -423,6 +553,31 @@ if ($tahunAjaran->status !== 'Aktif') {
 
         $request->validate($rules);
 
+        $kelas = Kelas::findOrFail($request->kelas_id);
+
+$jamPelajaran = JamPelajaran::where(
+    'tingkat',
+    $kelas->tingkat
+)
+->where(
+    'jam_ke',
+    $request->jam_ke
+)
+->first();
+
+if (!$jamPelajaran) {
+    return back()
+        ->withInput()
+        ->with(
+            'error',
+            'Jam pelajaran tidak tersedia untuk tingkat kelas tersebut.'
+        );
+}
+
+$request->merge([
+    'waktu' => $jamPelajaran->waktu,
+]);
+
 
         /*
         |--------------------------------------------------------------------------
@@ -454,14 +609,14 @@ if ($tahunAjaran->status !== 'Aktif') {
 
 
         if ($kelasBentrok) {
-
-            return back()
-                ->withInput()
-                ->with(
-                    'error',
-                    'Jadwal kelas pada hari dan jam tersebut sudah ada.'
-                );
-        }
+    return redirect()
+        ->back()
+        ->withInput()
+        ->with(
+            'error',
+            'Jadwal kelas sudah terisi pada hari dan jam tersebut.'
+        );
+}
 
 
         /*
@@ -503,15 +658,15 @@ if ($tahunAjaran->status !== 'Aktif') {
                 ->exists();
 
 
-            if ($guruBentrok) {
-
-                return back()
-                    ->withInput()
-                    ->with(
-                        'error',
-                        'Guru sudah memiliki jadwal pada hari dan jam tersebut.'
-                    );
-            }
+           if ($guruBentrok) {
+    return redirect()
+        ->back()
+        ->withInput()
+        ->with(
+            'error',
+            'Guru tersebut sudah memiliki jadwal pada hari dan jam tersebut.'
+        );
+}
 
         }
 
@@ -603,21 +758,37 @@ if ($tahunAjaran->status !== 'Aktif') {
         */
 
         $rules = [
+    'tahun_ajaran_id' => 'required',
+    'kelas_id' => 'required',
+    'hari' => 'required',
+    'jam_ke' => 'required|integer',
+    'jenis_jadwal' => 'required|in:Wajib,Kokurikuler,Kegiatan',
+];
 
-            'tahun_ajaran_id' => 'required',
+$kelas = Kelas::findOrFail($request->kelas_id);
 
-            'kelas_id' => 'required',
+$jamPelajaran = JamPelajaran::where(
+    'tingkat',
+    $kelas->tingkat
+)
+->where(
+    'jam_ke',
+    $request->jam_ke
+)
+->first();
 
-            'hari' => 'required',
+if (!$jamPelajaran) {
+    return back()
+        ->withInput()
+        ->with(
+            'error',
+            'Jam pelajaran tidak tersedia untuk tingkat kelas tersebut.'
+        );
+}
 
-            'jam_ke' => 'required',
-
-            'waktu' => 'required',
-
-            'jenis_jadwal' =>
-                'required|in:Wajib,Kokurikuler,Kegiatan',
-
-        ];
+$request->merge([
+    'waktu' => $jamPelajaran->waktu,
+]);
 
 
         /*
@@ -822,6 +993,7 @@ if ($tahunAjaran->status !== 'Aktif') {
         'Jadwal pelajaran berhasil diperbarui.'
     );
     }
+
 
 
     /**

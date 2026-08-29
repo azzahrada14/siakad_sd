@@ -11,29 +11,20 @@ class JamPelajaran extends Model
 
     protected $table = 'jam_pelajarans';
 
+    protected $appends = ['waktu'];
+    
     protected $fillable = [
-    'tahun_ajaran_id',
-    'kelas_id',
-    'hari',
-    'jam_ke',
-    'waktu',
-    'jenis_jadwal',
-    'nama_kegiatan',
-    'mapel_id',
-    'guru_id',
-    'status',
-];
+        'tingkat',
+        'jam_ke',
+        'jam_mulai',
+        'jam_selesai',
+        'durasi',
+    ];
 
-    /*
-    |--------------------------------------------------------------------------
-    | ACCESSOR
-    |--------------------------------------------------------------------------
-    */
-
-    public function getJamAttribute()
+    public function getWaktuAttribute()
     {
-        return substr($this->jam_mulai,0,5)
-            .' - '.
-            substr($this->jam_selesai,0,5);
+        return substr($this->jam_mulai, 0, 5)
+            . ' - ' .
+            substr($this->jam_selesai, 0, 5);
     }
 }

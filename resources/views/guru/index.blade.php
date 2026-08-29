@@ -81,19 +81,22 @@ class="mb-5 rounded-lg bg-red-100 border border-red-300 text-red-700 px-4 py-3">
 
     <div>
 
-     <h2 class="flex items-center gap-3 text-3xl font-bold text-gray-800">
+    <h2 class="flex items-center gap-3 text-3xl font-bold text-gray-800">
 
-                    <x-heroicon-o-user-group class="w-8 h-8 text-blue-600"/>
+    <x-heroicon-o-user-group class="w-8 h-8 text-blue-600"/>
 
-                    Data Guru
+    {{ $isStaff ? 'Data Staff' : 'Data Guru' }}
 
-                </h2>
+</h2>
 
-        <p class="text-gray-500 mt-2 text-lg">
+       <p class="text-gray-500 mt-2 text-lg">
 
-            Kelola seluruh data guru SD Negeri Cimanahayu.
+    {{ $isStaff
+        ? 'Kelola data staff sekolah.'
+        : 'Kelola seluruh data guru SD Negeri Cimanahayu.'
+    }}
 
-        </p>
+</p>
 
     </div>
 
@@ -266,11 +269,9 @@ class="mb-5 rounded-lg bg-red-100 border border-red-300 text-red-700 px-4 py-3">
 
             <x-heroicon-o-funnel class="w-5 h-5 text-blue-600"/>
 
-            <h2 class="font-semibold text-gray-800">
-
-                Filter Data Guru
-
-            </h2>
+           <h2 class="font-semibold text-gray-800">
+    Filter Data {{ $isStaff ? 'Staff' : 'Guru' }}
+</h2>
 
         </div>
 
@@ -315,38 +316,50 @@ class="mb-5 rounded-lg bg-red-100 border border-red-300 text-red-700 px-4 py-3">
 
                     </label>
 
-                    <select
-                        name="jenis_pengajar"
-                        class="w-full h-11 rounded-lg border-gray-300">
+                    
+                            <select
+    name="jenis_pengajar"
+    class="w-full h-11 rounded-lg border-gray-300">
 
-                        <option value="">Semua</option>
+    <option value="">Semua</option>
 
-                        <option value="Wali Kelas"
-                            {{ request('jenis_pengajar')=='Wali Kelas' ? 'selected' : '' }}>
-                            Wali Kelas
-                        </option>
+    @if($isStaff)
 
-                        <option value="Guru PAI"
-                            {{ request('jenis_pengajar')=='Guru PAI' ? 'selected' : '' }}>
-                            Guru PAI
-                        </option>
+        <option value="Operator"
+            {{ request('jenis_pengajar') == 'Operator' ? 'selected' : '' }}>
+            Operator
+        </option>
 
-                        <option value="Guru PJOK"
-                            {{ request('jenis_pengajar')=='Guru PJOK' ? 'selected' : '' }}>
-                            Guru PJOK
-                        </option>
+        <option value="Staff"
+            {{ request('jenis_pengajar') == 'Staff' ? 'selected' : '' }}>
+            Staff
+        </option>
 
-                        <option value="Kepala Sekolah"
-                            {{ request('jenis_pengajar')=='Kepala Sekolah' ? 'selected' : '' }}>
-                            Kepala Sekolah
-                        </option>
+    @else
 
-                        <option value="Operator"
-                            {{ request('jenis_pengajar')=='Operator' ? 'selected' : '' }}>
-                            Operator
-                        </option>
+        <option value="Wali Kelas"
+            {{ request('jenis_pengajar') == 'Wali Kelas' ? 'selected' : '' }}>
+            Wali Kelas
+        </option>
 
-                    </select>
+        <option value="Guru PAI"
+            {{ request('jenis_pengajar') == 'Guru PAI' ? 'selected' : '' }}>
+            Guru PAI
+        </option>
+
+        <option value="Guru PJOK"
+            {{ request('jenis_pengajar') == 'Guru PJOK' ? 'selected' : '' }}>
+            Guru PJOK
+        </option>
+
+        <option value="Kepala Sekolah"
+            {{ request('jenis_pengajar') == 'Kepala Sekolah' ? 'selected' : '' }}>
+            Kepala Sekolah
+        </option>
+
+    @endif
+
+</select>
 
                 </div>
 
@@ -422,22 +435,21 @@ class="mb-5 rounded-lg bg-red-100 border border-red-300 text-red-700 px-4 py-3">
     <div>
 
         <h2 class="text-lg font-semibold text-slate-800">
+    Manajemen Data {{ $isStaff ? 'Staff' : 'Guru' }}
+</h2>
 
-            Manajemen Data Guru
-
-        </h2>
-
-        <p class="text-sm text-gray-500 mt-1">
-
-            Import, export data guru.
-
-        </p>
+<p class="text-sm text-gray-500 mt-1">
+    {{ $isStaff
+        ? 'Kelola data staff sekolah.'
+        : 'Import, export data guru.'
+    }}
+</p>
 
     </div>
 
     <div class="flex flex-wrap gap-3 mt-5 lg:mt-0">
 
-    @if(!$modeArsip)
+    @if(!$modeArsip && !$isStaff)
 
         {{-- IMPORT --}}
         <button
@@ -476,10 +488,8 @@ class="mb-5 rounded-lg bg-red-100 border border-red-300 text-red-700 px-4 py-3">
         <div>
 
             <h2 class="text-lg font-semibold text-slate-800">
-
-                Data Guru
-
-            </h2>
+    Data {{ $isStaff ? 'Staff' : 'Guru' }}
+</h2>
 
             <p class="text-sm text-gray-500 mt-1">
 
@@ -507,7 +517,7 @@ class="mb-5 rounded-lg bg-red-100 border border-red-300 text-red-700 px-4 py-3">
 
                 </span>
 
-                data guru
+                data {{ strtolower($isStaff ? 'Staff' : 'Guru') }}
 
             </p>
 
@@ -517,7 +527,7 @@ class="mb-5 rounded-lg bg-red-100 border border-red-300 text-red-700 px-4 py-3">
 
             <span class="inline-flex items-center rounded-full bg-blue-100 px-4 py-2 text-sm font-semibold text-blue-700">
 
-                {{ $totalGuru }} Guru
+                {{ $totalGuru }} {{ $isStaff ? 'Staff' : 'Guru' }}
 
             </span>
 
@@ -675,62 +685,56 @@ class="mb-5 rounded-lg bg-red-100 border border-red-300 text-red-700 px-4 py-3">
 
     </td>
 
-    {{-- JENIS PENGAJAR --}}
-    <td class="border px-3 py-3 text-center">
+   {{-- JENIS PENGAJAR --}}
+<td class="border px-3 py-3 text-center">
 
-        @switch($guru->jenis_pengajar)
+    @switch($guru->jenis_pengajar)
 
-            @case('Wali Kelas')
+        @case('Wali Kelas')
+            <span class="inline-flex rounded-full bg-blue-100 text-blue-700 px-3 py-1 text-xs font-semibold">
+                Wali Kelas
+            </span>
+        @break
 
-                <span class="inline-flex rounded-full bg-blue-100 text-blue-700 px-3 py-1 text-xs font-semibold">
+        @case('Guru PAI')
+            <span class="inline-flex rounded-full bg-green-100 text-green-700 px-3 py-1 text-xs font-semibold">
+                Guru PAI
+            </span>
+        @break
 
-                    Wali Kelas
+        @case('Guru PJOK')
+            <span class="inline-flex rounded-full bg-yellow-100 text-yellow-700 px-3 py-1 text-xs font-semibold">
+                Guru PJOK
+            </span>
+        @break
 
-                </span>
+        @case('Kepala Sekolah')
+            <span class="inline-flex rounded-full bg-purple-100 text-purple-700 px-3 py-1 text-xs font-semibold">
+                Kepala Sekolah
+            </span>
+        @break
 
-            @break
+        @case('Operator')
+            <span class="inline-flex rounded-full bg-gray-100 text-gray-700 px-3 py-1 text-xs font-semibold">
+                Operator
+            </span>
+        @break
 
-            @case('Guru PAI')
+        @case('Staff')
+            <span class="inline-flex rounded-full bg-indigo-100 text-indigo-700 px-3 py-1 text-xs font-semibold">
+                Staff
+            </span>
+        @break
 
-                <span class="inline-flex rounded-full bg-green-100 text-green-700 px-3 py-1 text-xs font-semibold">
+        @default
+            <span class="inline-flex rounded-full bg-gray-100 text-gray-700 px-3 py-1 text-xs font-semibold">
+                {{ $guru->jenis_pengajar ?? '-' }}
+            </span>
+        @break
 
-                    Guru PAI
+    @endswitch
 
-                </span>
-
-            @break
-
-            @case('Guru PJOK')
-
-                <span class="inline-flex rounded-full bg-yellow-100 text-yellow-700 px-3 py-1 text-xs font-semibold">
-
-                    Guru PJOK
-
-                </span>
-
-            @break
-
-            @case('Kepala Sekolah')
-
-                <span class="inline-flex rounded-full bg-purple-100 text-purple-700 px-3 py-1 text-xs font-semibold">
-
-                    Kepala Sekolah
-
-                </span>
-
-            @break
-
-            @default
-
-                <span class="inline-flex rounded-full bg-gray-100 text-gray-700 px-3 py-1 text-xs font-semibold">
-
-                    Operator
-
-                </span>
-
-        @endswitch
-
-    </td>
+</td>
 
 
 <td>
@@ -876,13 +880,13 @@ class="mb-5 rounded-lg bg-red-100 border border-red-300 text-red-700 px-4 py-3">
 
 <h3 class="mt-4 text-lg font-semibold text-gray-700">
 
-Belum Ada Data Guru
+Belum Ada Data {{ $isStaff ? 'Staff' : 'Guru' }}
 
 </h3>
 
 <p class="mt-2 text-gray-500">
 
-Silakan tambahkan data guru terlebih dahulu.
+Silakan tambahkan data {{ strtolower($isStaff ? 'staff' : 'guru') }} terlebih dahulu.
 
 </p>
 

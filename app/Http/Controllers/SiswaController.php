@@ -70,15 +70,10 @@ public function index(Request $request)
     */
 
    $query = Siswa::with([
-    'kelasAktif' => function ($q) use ($tahunAjaran) {
-
-        $q->where(
-            'tahun_ajaran_id',
-            $tahunAjaran->id
-        );
-
-    },
-    'kelasAktif.kelas'
+    'anggotaKelas' => function ($q) use ($tahunAjaran) {
+        $q->where('tahun_ajaran_id', $tahunAjaran->id)
+          ->with('kelas');
+    }
 ]);
 
 
@@ -121,12 +116,19 @@ public function index(Request $request)
 
     if ($request->filled('tingkat')) {
 
-        $query->where(
-            'tingkat',
-            $request->tingkat
-        );
-
+   $query->whereHas(
+    'anggotaKelas',
+    function ($q) use ($request, $tahunAjaran) {
+        $q->where('tahun_ajaran_id', $tahunAjaran->id)
+          ->whereHas('kelas', function ($q) use ($request) {
+              $q->where('tingkat', $request->tingkat);
+          });
     }
+);
+
+        
+
+}
 
 
     /*
@@ -137,21 +139,14 @@ public function index(Request $request)
 
     if ($request->filled('kelas')) {
 
-        $query->whereHas(
-            'kelasAktif',
-            function ($q) use ($request, $tahunAjaran) {
-
-                $q->where(
-                    'kelas_id',
-                    $request->kelas
-                )
-                ->where(
-                    'tahun_ajaran_id',
-                    $tahunAjaran->id
-                );
-
-            }
-        );
+       $query->whereHas(
+    'anggotaKelas',
+    function ($q) use ($request, $tahunAjaran) {
+        $q->where('tahun_ajaran_id', $tahunAjaran->id)
+          ->where('kelas_id', $request->kelas);
+    }
+);
+    
 
     }
 
@@ -174,34 +169,32 @@ public function index(Request $request)
 
     /*
     |--------------------------------------------------------------------------
-    | SISWA PADA PERIODE YANG DIPILIH
-    |--------------------------------------------------------------------------
-    */
-
-    $query->whereHas(
-        'kelasAktif',
-        function ($q) use ($tahunAjaran) {
-
-            $q->where(
-                'tahun_ajaran_id',
-                $tahunAjaran->id
-            );
-
-        }
-    );
-
-
-    /*
-    |--------------------------------------------------------------------------
     | PAGINATION
     |--------------------------------------------------------------------------
     */
 
-    $siswa = $query
-        ->orderBy('tingkat')
-        ->orderBy('nama_siswa')
-        ->paginate(10)
-        ->withQueryString();
+ $siswa = $query
+    ->leftJoin('anggota_kelas as ak', function ($join) use ($tahunAjaran) {
+        $join->on('ak.siswa_id', '=', 'siswas.id')
+             ->where('ak.tahun_ajaran_id', '=', $tahunAjaran->id);
+    })
+    ->leftJoin('kelas as k', 'k.id', '=', 'ak.kelas_id')
+    ->select('siswas.*')
+    ->orderByRaw('CASE WHEN k.tingkat IS NULL THEN 999 ELSE k.tingkat END ASC')
+    ->orderBy('k.nama_kelas', 'ASC')
+    ->orderBy('siswas.nama_siswa', 'ASC')
+    ->paginate(10)
+    ->withQueryString();
+
+$siswa->getCollection()->transform(function ($item) use ($tahunAjaran) {
+
+    $item->kelasPeriode = \App\Models\AnggotaKelas::with('kelas')
+        ->where('siswa_id', $item->id)
+        ->where('tahun_ajaran_id', $tahunAjaran->id)
+        ->first();
+
+    return $item;
+});
 
 
     /*
@@ -226,6 +219,8 @@ public function index(Request $request)
 
     $totalSiswa = (clone $query)->count();
 
+
+    
 
     /*
     |--------------------------------------------------------------------------
@@ -659,30 +654,8 @@ $siswa->update([
 
 
 
-   public function import(Request $request)
+  public function import(Request $request)
 {
-    $tahunAjaran = $request->filled('tahun_ajaran_id')
-        ? TahunAjaran::findOrFail($request->tahun_ajaran_id)
-        : TahunAjaran::where('status', 'Aktif')->first();
-
-    if (!$tahunAjaran) {
-
-        return back()->with(
-            'error',
-            'Belum ada tahun ajaran yang tersedia.'
-        );
-
-    }
-
-    if ($tahunAjaran->status !== 'Aktif') {
-
-        return back()->with(
-            'error',
-            'Data pada periode arsip tidak dapat diimport.'
-        );
-
-    }
-
     $request->validate([
         'file' => 'required|mimes:xlsx,xls'
     ]);
@@ -691,32 +664,39 @@ $siswa->update([
 
     try {
 
+        $import = new \App\Imports\SiswaImport();
+
         Excel::import(
-            new SiswaImport,
+            $import,
             $request->file('file')
         );
 
         DB::commit();
 
         return redirect()
-            ->route('siswa.index', [
-                'tahun_ajaran_id' => $tahunAjaran->id
-            ])
+            ->route('siswa.index')
             ->with(
                 'success',
-                'Data siswa berhasil diimport.'
+                'Import selesai. '
+                . $import->baru
+                . ' data siswa baru ditambahkan dan '
+                . $import->diperbarui
+                . ' data siswa diperbarui.'
             );
 
     } catch (\Exception $e) {
 
         DB::rollBack();
 
-        return back()->with(
-            'error',
-            $e->getMessage()
-        );
+        return back()
+            ->withInput()
+            ->with(
+                'error',
+                'Import gagal: ' . $e->getMessage()
+            );
     }
 }
+    
 
 public function export()
 {

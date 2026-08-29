@@ -265,41 +265,44 @@ Aksi
 
 <tr>
 
-<td class="border border-gray-300 px-4 py-3">
+<td class="border border-gray-300 px-4 py-3 text-center">
 
 {{ $loop->iteration }}
 
 </td>
 
-<td class="border border-gray-300 px-4 py-3">
+<td class="border border-gray-300 px-4 py-3 text-center">
 
 {{ $item->siswa->nisn }}
 
 </td>
 
-<td class="border border-gray-300 px-4 py-3">
+<td class="border border-gray-300 px-4 py-3 text-center">
     {{ $item->siswa?->nama_siswa ?? '-' }}
 </td>
 
-<td class="border border-gray-300 px-4 py-3">
+<td class="border border-gray-300 px-4 py-3 text-center">
 
 {{ $item->tanggal_lulus }}
 
 </td>
 
-<td class="border border-gray-300 px-4 py-3">
+<td class="border border-gray-300 px-4 py-3 text-center">
 
 {{ $item->nomor_ijazah ?? '-' }}
 
 </td>
 
-<td class="border border-gray-300 px-4 py-3">
+<td class="border border-gray-300 px-4 py-3 text-center">
 
-<span class="px-3 py-1 rounded-full bg-green-100 text-green-700">
+    <span class="inline-flex items-center px-3 py-1 rounded-full
+                 bg-purple-100 text-purple-700 font-medium whitespace-nowrap">
 
-{{ $item->status }}
+        Alumni
 
-</span>
+    </span>
+
+</td>
 
 </td>
 
@@ -321,7 +324,7 @@ Aksi
 
 <tr>
 
-<td colspan="6"
+<td colspan="7"
 class="border border-gray-300 text-center py-10">
 
 Belum ada data alumni.
@@ -337,6 +340,19 @@ Belum ada data alumni.
 </table>
 
 </div>
+
+</div>
+
+</table>
+
+</div>
+
+{{-- PAGINATION --}}
+@if($alumni->hasPages())
+    <div class="px-6 py-4 border-t border-gray-200">
+        {{ $alumni->withQueryString()->links() }}
+    </div>
+@endif
 
 </div>
 

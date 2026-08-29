@@ -398,32 +398,38 @@
 
     </td>
 
-    {{-- Status --}}
-    <td
-        class="border p-3 text-center statusNaik"
-        data-status="{{ $row->status_kenaikan }}">
+   {{-- Status --}}
+<td
+    class="border p-3 text-center statusNaik whitespace-nowrap min-w-[140px]"
+    data-status="{{ $row->status_kenaikan }}">
 
-        @if($row->status_kenaikan == 'Naik')
+    @if($row->status_kenaikan == 'Naik')
 
-            <span class="bg-green-100 text-green-700 px-3 py-1 rounded-full">
-                Naik
-            </span>
+        <span class="inline-flex items-center justify-center
+                     bg-green-100 text-green-700 px-3 py-1 rounded-full
+                     whitespace-nowrap">
+            Naik
+        </span>
 
-        @elseif($row->status_kenaikan == 'Lulus')
+    @elseif($row->status_kenaikan == 'Lulus')
 
-            <span class="bg-blue-100 text-blue-700 px-3 py-1 rounded-full">
-                Lulus
-            </span>
+        <span class="inline-flex items-center justify-center
+                     bg-blue-100 text-blue-700 px-3 py-1 rounded-full
+                     whitespace-nowrap">
+            Lulus
+        </span>
 
-        @else
+    @else
 
-            <span class="bg-red-100 text-red-700 px-3 py-1 rounded-full">
-                Belum Tuntas
-            </span>
+        <span class="inline-flex items-center justify-center
+                     bg-red-100 text-red-700 px-3 py-1 rounded-full
+                     whitespace-nowrap">
+            Belum Tuntas
+        </span>
 
-        @endif
+    @endif
 
-    </td>
+</td>
 
     {{-- Alasan --}}
     <td class="border p-3">

@@ -2,6 +2,44 @@
 
 @section('content')
 
+{{-- ================= NOTIFIKASI ================= --}}
+
+@if(session('success'))
+    <div class="mb-6 rounded-xl border border-green-200 bg-green-50 px-5 py-4 text-green-700 shadow-sm">
+        <div class="flex items-center gap-3">
+            <x-heroicon-o-check-circle class="w-6 h-6"/>
+
+            <div>
+                <p class="font-semibold">
+                    Berhasil
+                </p>
+
+                <p class="text-sm mt-1">
+                    {{ session('success') }}
+                </p>
+            </div>
+        </div>
+    </div>
+@endif
+
+@if(session('error'))
+    <div class="mb-6 rounded-xl border border-red-200 bg-red-50 px-5 py-4 text-red-700 shadow-sm">
+        <div class="flex items-center gap-3">
+            <x-heroicon-o-exclamation-triangle class="w-6 h-6"/>
+
+            <div>
+                <p class="font-semibold">
+                    Tidak dapat diproses
+                </p>
+
+                <p class="text-sm mt-1">
+                    {{ session('error') }}
+                </p>
+            </div>
+        </div>
+    </div>
+@endif
+
 <div class="flex flex-col lg:flex-row lg:justify-between lg:items-start mb-6">
 
 <div>
@@ -362,15 +400,18 @@ Aktif
         </a>
 
         {{-- TAMBAH --}}
-        <a
-            href="{{ route('tahun-ajaran.create') }}"
-            class="inline-flex items-center gap-2 px-5 py-3 rounded-lg bg-blue-600 hover:bg-blue-700 text-white">
+        <button
+    type="button"
+    onclick="cekPeriodeTahunAjaran()"
+    class="inline-flex items-center gap-2 px-5 py-3
+           rounded-lg bg-blue-600 hover:bg-blue-700
+           text-white transition">
 
-            <x-heroicon-o-plus class="w-5 h-5"/>
+    <x-heroicon-o-plus class="w-5 h-5"/>
 
-            Tambah
+    Tambah
 
-        </a>
+</button>
 
     </div>
 
@@ -642,4 +683,257 @@ data
 </div>
 
 </div>
+
+{{-- =========================================================
+     MODAL TAMBAH TAHUN AJARAN
+========================================================= --}}
+
+<div
+    id="modalTambahTahun"
+    class="fixed inset-0 z-50 hidden
+           items-center justify-center
+           bg-black/50">
+
+    <div
+        class="bg-white rounded-xl shadow-xl
+               w-full max-w-md mx-4">
+
+        {{-- HEADER --}}
+        <div class="px-6 py-5 border-b">
+
+            <h3 class="text-lg font-semibold text-slate-800">
+                Tambah Tahun Ajaran
+            </h3>
+
+            <p class="text-sm text-gray-500 mt-1">
+                Sistem memeriksa periode tahun ajaran aktif terlebih dahulu.
+            </p>
+
+        </div>
+
+
+        {{-- ISI --}}
+        <div class="p-6">
+
+            @if($tahunAktif && $periodeAktifBelumSelesai)
+
+                {{-- BELUM SELESAI --}}
+
+                <div class="rounded-lg
+                            bg-yellow-50
+                            border border-yellow-200
+                            p-4">
+
+                    <div class="flex items-start gap-3">
+
+                        <x-heroicon-o-exclamation-triangle
+                            class="w-6 h-6 text-yellow-600 flex-shrink-0"/>
+
+                        <div>
+
+                            <p class="font-semibold text-yellow-800">
+                                Periode tahun ajaran masih berlangsung.
+                            </p>
+
+                            <p class="text-sm text-yellow-700 mt-1">
+
+                                Tahun ajaran
+                                <strong>
+                                    {{ $tahunAktif->tahun_ajaran }}
+                                </strong>
+                                semester
+                                <strong>
+                                    {{ $tahunAktif->semester }}
+                                </strong>
+                                masih aktif.
+
+                            </p>
+
+                            <p class="text-sm text-yellow-700 mt-1">
+
+                                Periode berakhir pada
+                                <strong>
+                                    {{ \Carbon\Carbon::parse($tahunAktif->tanggal_selesai)->format('d F Y') }}
+                                </strong>.
+
+                            </p>
+
+                            <p class="text-sm text-yellow-700 mt-1">
+
+                                Tahun ajaran baru belum dapat ditambahkan
+                                sebelum periode tersebut selesai.
+
+                            </p>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            @else
+
+                {{-- SUDAH SELESAI / TIDAK ADA PERIODE AKTIF --}}
+
+                <div class="rounded-lg
+                            bg-blue-50
+                            border border-blue-200
+                            p-4">
+
+                    <div class="flex items-start gap-3">
+
+                        <x-heroicon-o-question-mark-circle
+                            class="w-6 h-6 text-blue-600 flex-shrink-0"/>
+
+                        <div>
+
+                            @if($tahunAktif)
+
+                                <p class="font-semibold text-blue-800">
+                                    Periode tahun ajaran telah selesai.
+                                </p>
+
+                                <p class="text-sm text-blue-700 mt-1">
+
+                                    Tahun ajaran aktif
+                                    <strong>
+                                        {{ $tahunAktif->tahun_ajaran }}
+                                    </strong>
+                                    semester
+                                    <strong>
+                                        {{ $tahunAktif->semester }}
+                                    </strong>
+                                    telah melewati tanggal selesai.
+
+                                </p>
+
+                            @else
+
+                                <p class="font-semibold text-blue-800">
+                                    Belum ada tahun ajaran aktif.
+                                </p>
+
+                                <p class="text-sm text-blue-700 mt-1">
+                                    Anda dapat membuat tahun ajaran baru.
+                                </p>
+
+                            @endif
+
+                            <p class="text-sm text-blue-700 mt-2">
+
+                                Apakah Anda yakin ingin menambahkan
+                                tahun ajaran baru?
+
+                            </p>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            @endif
+
+        </div>
+
+
+        {{-- FOOTER --}}
+        <div
+            class="px-6 py-5 border-t bg-slate-50
+                   flex justify-end gap-3">
+
+            {{-- BATAL --}}
+            <button
+                type="button"
+                onclick="tutupModalTambahTahun()"
+                class="px-5 py-2.5 rounded-lg
+                       bg-gray-500 hover:bg-gray-600
+                       text-white">
+
+                Batal
+
+            </button>
+
+
+            {{-- JIKA BELUM SELESAI --}}
+            @if($tahunAktif && $periodeAktifBelumSelesai)
+
+                <button
+                    type="button"
+                    disabled
+                    class="px-5 py-2.5 rounded-lg
+                           bg-gray-300 text-gray-500
+                           cursor-not-allowed">
+
+                    Belum Dapat Menambah
+
+                </button>
+
+            @else
+
+                <a
+                    href="{{ route('tahun-ajaran.create') }}"
+                    class="inline-flex items-center gap-2
+                           px-5 py-2.5 rounded-lg
+                           bg-blue-600 hover:bg-blue-700
+                           text-white">
+
+                    <x-heroicon-o-check class="w-5 h-5"/>
+
+                    Ya, Lanjut
+
+                </a>
+
+            @endif
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<script>
+
+function cekPeriodeTahunAjaran()
+{
+    const modal =
+        document.getElementById('modalTambahTahun');
+
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+}
+
+
+function tutupModalTambahTahun()
+{
+    const modal =
+        document.getElementById('modalTambahTahun');
+
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+}
+
+
+document
+    .getElementById('modalTambahTahun')
+    .addEventListener('click', function(event) {
+
+        if (event.target === this) {
+            tutupModalTambahTahun();
+        }
+
+    });
+
+
+document.addEventListener('keydown', function(event) {
+
+    if (event.key === 'Escape') {
+        tutupModalTambahTahun();
+    }
+
+});
+
+</script>
+
 @endsection

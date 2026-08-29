@@ -201,13 +201,72 @@
 
                 </a>
 
-                <a href="{{ route('guru.index', request()->only('tahun_ajaran_id')) }}"
-                     class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-blue-600 transition">
-                    <i data-feather="users"></i>
+              {{-- ========================= --}}
+{{-- GURU --}}
+{{-- ========================= --}}
 
-                    <span x-show="sidebarOpen">Guru</span>
+<div
+    x-data="{openGuru:true}"
+    class="mt-1">
 
-                </a>
+    <button
+        @click="openGuru=!openGuru"
+        class="w-full flex items-center justify-between px-4 py-3 rounded-xl hover:bg-blue-600 transition">
+
+        <div class="flex items-center gap-3">
+
+            <i data-feather="users"></i>
+
+            <span x-show="sidebarOpen">
+                Guru
+            </span>
+
+        </div>
+
+        <i
+            x-show="sidebarOpen"
+            data-feather="chevron-down"
+            class="w-4 h-4">
+        </i>
+
+    </button>
+
+
+    {{-- SUB MENU --}}
+
+    <div
+        x-show="openGuru"
+        x-transition
+        class="ml-10 mt-2 space-y-1">
+
+        {{-- DATA GURU --}}
+
+        <a
+            href="{{ route('guru.index', request()->only('tahun_ajaran_id')) }}"
+            class="block px-4 py-2 rounded-lg hover:bg-blue-600">
+
+            <span x-show="sidebarOpen">
+                Data Guru
+            </span>
+
+        </a>
+
+
+        {{-- DATA STAFF --}}
+
+        <a
+            href="{{ route('staff.index', request()->only('tahun_ajaran_id')) }}"
+            class="block px-4 py-2 rounded-lg hover:bg-blue-600">
+
+            <span x-show="sidebarOpen">
+                Data Staff
+            </span>
+
+        </a>
+
+    </div>
+
+</div>
 
                 <a href="{{ route('siswa.index', request()->only('tahun_ajaran_id')) }}"
                     class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-blue-600 transition">
@@ -218,13 +277,72 @@
 
                 </a>
 
-                <a href="{{ route('kelas.index', request()->only('tahun_ajaran_id')) }}"
-                     class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-blue-600 transition">
+                {{-- ========================= --}}
+{{-- KELAS --}}
+{{-- ========================= --}}
 
-                    <i data-feather="grid"></i>
-                    <span x-show="sidebarOpen">Kelas</span>
+<div
+    x-data="{openKelas: {{ request()->routeIs('kelas.index') || request()->routeIs('kelola-akademik.index') ? 'true' : 'false' }}}"
+    class="mt-1">
 
-                </a>
+    <button
+        @click="openKelas=!openKelas"
+        class="w-full flex items-center justify-between px-4 py-3 rounded-xl hover:bg-blue-600 transition">
+
+        <div class="flex items-center gap-3">
+
+            <i data-feather="grid"></i>
+
+            <span x-show="sidebarOpen">
+                Kelas
+            </span>
+
+        </div>
+
+        <i
+            x-show="sidebarOpen"
+            data-feather="chevron-down"
+            class="w-4 h-4">
+        </i>
+
+    </button>
+
+
+    {{-- SUB MENU --}}
+
+    <div
+        x-show="openKelas"
+        x-transition
+        class="ml-10 mt-2 space-y-1">
+
+        {{-- DATA KELAS --}}
+
+        <a
+            href="{{ route('kelas.index', request()->only('tahun_ajaran_id')) }}"
+            class="block px-4 py-2 rounded-lg hover:bg-blue-600">
+
+            <span x-show="sidebarOpen">
+                Data Kelas
+            </span>
+
+        </a>
+
+
+        {{-- PEMBAGIAN KELAS --}}
+
+        <a
+            href="{{ route('kelola-akademik.index', request()->only('tahun_ajaran_id')) }}"
+            class="block px-4 py-2 rounded-lg hover:bg-blue-600">
+
+            <span x-show="sidebarOpen">
+                Pembagian Kelas
+            </span>
+
+        </a>
+
+    </div>
+
+</div>
 
                 <a href="{{ route('mapel.index', request()->only('tahun_ajaran_id')) }}"
                      class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-blue-600 transition">
@@ -245,14 +363,6 @@
 
 </div>
 
-<a href="{{ route('kelola-akademik.index', request()->only('tahun_ajaran_id')) }}"
-class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-blue-600 transition">
-
-    <x-heroicon-o-academic-cap class="w-5 h-5"/>
-
-    <span x-show="sidebarOpen">
-        Pembagian Kelas
-    </span>
 
 </a>
 
