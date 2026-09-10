@@ -299,6 +299,7 @@ $kelas = Kelas::with([
     'tahun_ajaran_id',
     $tahunStruktur?->id ?? $tahunAjaran->id
 )
+->whereHas('anggotaKelas')
 ->orderBy('tingkat')
 ->orderBy('nama_kelas')
 ->get();
@@ -373,6 +374,7 @@ $kelas->each(function ($item) {
 
 public function generate(Request $request)
 {
+    
     $request->validate([
 
         'tingkat' => 'required|integer|min:1|max:6'
@@ -406,22 +408,11 @@ if ($tahunAjaran->status !== 'Aktif') {
 |--------------------------------------------------------------------------
 */
 
+// RESET PEMBAGIAN LAMA
 $this->resetPembagian(
     $tingkat,
     $tahunAjaran->id
 );
-
-if ($cek) {
-
-    $this->resetPembagian(
-
-        $tingkat,
-
-        $tahunAjaran->id
-
-    );
-
-}
         /*
         |--------------------------------------------------------------------------
         | AMBIL SISWA
@@ -523,114 +514,59 @@ if ($cek) {
         }
 
         /*
-        |--------------------------------------------------------------------------
-        | DUA ROMBEL
-        |--------------------------------------------------------------------------
-        */
+|--------------------------------------------------------------------------
+| DUA ROMBEL
+|--------------------------------------------------------------------------
+*/
 
-        else{
+else {
 
-            $kelasA = collect();
+    // Urutkan semua siswa berdasarkan nama
+    $semuaSiswa = $siswa
+        ->sortBy('nama_siswa')
+        ->values();
 
-            $kelasB = collect();
+    // Tentukan jumlah siswa masing-masing rombel
+    // Rombel A mendapat 1 siswa lebih banyak jika jumlah ganjil
+    $jumlahA = (int) ceil($semuaSiswa->count() / 2);
+    $jumlahB = $semuaSiswa->count() - $jumlahA;
 
-            /*
-            -------------------------
-            LAKI-LAKI
-            -------------------------
-            */
+    // Pastikan tidak ada rombel yang melebihi 30 siswa
+    if ($jumlahA > 30 || $jumlahB > 30) {
 
-            $laki = $kelompok['L']->values();
+        throw new \Exception(
+            'Pembagian siswa tidak dapat dilakukan karena kapasitas maksimal rombel adalah 30 siswa.'
+        );
 
-            $batasL = ceil(
+    }
 
-                $laki->count()/2
+    // Bagi siswa menjadi A dan B
+    $kelasA = $semuaSiswa
+        ->slice(0, $jumlahA)
+        ->values();
 
-            );
+    $kelasB = $semuaSiswa
+        ->slice($jumlahA, $jumlahB)
+        ->values();
 
-            foreach($laki as $i=>$row){
+    /*
+    |--------------------------------------------------------------------------
+    | SIMPAN ANGGOTA KELAS
+    |--------------------------------------------------------------------------
+    */
 
-                if($i < $batasL){
+    $this->simpanAnggota(
+        $kelas[0]->id,
+        $tahunAjaran->id,
+        $kelasA
+    );
 
-                    $kelasA->push($row);
-
-                }else{
-
-                    $kelasB->push($row);
-
-                }
-
-            }
-
-            /*
-            -------------------------
-            PEREMPUAN
-            -------------------------
-            */
-
-            $perempuan = $kelompok['P']->values();
-
-            $batasP = ceil(
-
-                $perempuan->count()/2
-
-            );
-
-            foreach($perempuan as $i=>$row){
-
-                if($i < $batasP){
-
-                    $kelasA->push($row);
-
-                }else{
-
-                    $kelasB->push($row);
-
-                }
-
-            }
-
-            /*
-            -------------------------
-            URUTKAN
-            -------------------------
-            */
-
-            $kelasA = $kelasA
-                ->sortBy('nama_siswa')
-                ->values();
-
-            $kelasB = $kelasB
-                ->sortBy('nama_siswa')
-                ->values();
-
-            /*
-            -------------------------
-            SIMPAN
-            -------------------------
-            */
-
-            $this->simpanAnggota(
-
-                $kelas[0]->id,
-
-                $tahunAjaran->id,
-
-                $kelasA
-
-            );
-
-            $this->simpanAnggota(
-
-                $kelas[1]->id,
-
-                $tahunAjaran->id,
-
-                $kelasB
-
-            );
-
-        }
+    $this->simpanAnggota(
+        $kelas[1]->id,
+        $tahunAjaran->id,
+        $kelasB
+    );
+}
 
         DB::commit();
 

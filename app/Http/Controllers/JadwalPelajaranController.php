@@ -397,14 +397,12 @@ public function getGuruByMapelKelas($kelasId, $mapelId)
 
     else {
 
-        $guru = Guru::where(
-            'id',
-            $kelas->wali_kelas_id
-        )
+    $guru = Guru::where('id', $kelas->wali_kelas_id)
         ->where('status_guru', 'Aktif')
-        ->where('jabatan_ptk', 'GURU KELAS')
         ->orderBy('nama_guru')
         ->get();
+
+
 
     }
 

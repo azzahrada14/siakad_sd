@@ -207,23 +207,29 @@ Belum Ada Rombel
     @csrf
 
     <input
-    type="hidden"
-    name="tahun_ajaran_id"
-    value="{{ $tahunAjaran->id }}"
->
+        type="hidden"
+        name="tahun_ajaran_id"
+        value="{{ $tahunAjaran->id }}"
+    >
+
+    <input
+        type="hidden"
+        name="tingkat"
+        value="{{ $item['tingkat'] }}"
+    >
 
 
     @if(!$modeArsip && $tahunAjaran->semester === 'Ganjil')
 
     <button
-        type="submit"
-        class="w-full inline-flex items-center justify-center gap-2 px-5 py-3 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-semibold">
+    type="button"
+    onclick="openGenerateModal(this, '{{ $item['tingkat'] }}')"
+    class="w-full inline-flex items-center justify-center gap-2 px-5 py-3 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-semibold">
 
-        <x-heroicon-o-arrow-path class="w-5 h-5"/>
+    <x-heroicon-o-arrow-path class="w-5 h-5"/>
 
-        Generate Pembagian Kelas
-
-    </button>
+    Generate Pembagian Kelas
+</button>
 
 @else
 
@@ -249,6 +255,76 @@ Belum Ada Rombel
 @endforeach
 
 </div>
+
+<div
+    id="generateModal"
+    class="fixed inset-0 bg-black/50 hidden z-50 flex items-center justify-center px-4">
+
+    <div class="bg-white rounded-xl shadow-xl w-full max-w-md">
+
+        <div class="p-6">
+
+            <div class="flex items-center gap-3 mb-4">
+
+                <div class="w-12 h-12 rounded-full bg-yellow-100 flex items-center justify-center">
+
+                    <x-heroicon-o-exclamation-triangle
+                        class="w-6 h-6 text-yellow-600"
+                    />
+
+                </div>
+
+                <div>
+                    <h3 class="text-lg font-bold text-gray-800">
+                        Konfirmasi Generate
+                    </h3>
+
+                    <p class="text-sm text-gray-500">
+                        Pembagian Kelas
+                    </p>
+                </div>
+
+            </div>
+
+            <p class="text-gray-600 text-sm leading-relaxed">
+                Pembagian kelas untuk tingkat
+                <strong id="generateTingkat"></strong>
+                akan dibuat ulang berdasarkan jumlah siswa aktif.
+                Data pembagian kelas yang sudah ada untuk tingkat tersebut
+                akan diperbarui.
+            </p>
+
+            <p class="mt-3 text-sm text-red-600 font-medium">
+                Pastikan data siswa sudah benar sebelum melanjutkan.
+            </p>
+
+        </div>
+
+        <div class="border-t px-6 py-4 flex justify-end gap-3">
+
+            <button
+                type="button"
+                onclick="closeGenerateModal()"
+                class="px-5 py-2.5 rounded-lg bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold">
+
+                Batal
+
+            </button>
+
+            <button
+                type="button"
+                onclick="submitGenerate()"
+                class="px-5 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-semibold">
+
+                Ya, Generate
+
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
 {{-- ====================================================== --}}
 {{-- HASIL PEMBAGIAN KELAS --}}
 {{-- ====================================================== --}}
@@ -266,8 +342,9 @@ Hasil Pembagian Kelas
 </div>
 
 <form
-action="{{ route('kelola-akademik.simpan') }}"
-method="POST">
+    id="formSimpan"
+    action="{{ route('kelola-akademik.simpan') }}"
+    method="POST">
 
 @csrf
 
@@ -510,14 +587,15 @@ Belum ada pembagian kelas.
 @if(!$modeArsip && $tahunAjaran->semester === 'Ganjil')
 
     <button
-        type="submit"
-        class="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-green-600 hover:bg-green-700 text-white">
+    type="button"
+    onclick="openSimpanModal()"
+    class="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-green-600 hover:bg-green-700 text-white">
 
-        <x-heroicon-o-check-circle class="w-5 h-5"/>
+    <x-heroicon-o-check-circle class="w-5 h-5"/>
 
-        Simpan Wali Kelas
+    Simpan Wali Kelas
 
-    </button>
+</button>
 
 @elseif($modeArsip)
 
@@ -538,6 +616,76 @@ Belum ada pembagian kelas.
 </div>
 
 </form>
+
+<div
+    id="simpanModal"
+    class="fixed inset-0 bg-black/50 hidden z-50 flex items-center justify-center px-4">
+
+    <div class="bg-white rounded-xl shadow-xl w-full max-w-md">
+
+        <div class="p-6">
+
+            <div class="flex items-center gap-3 mb-4">
+
+                <div class="w-12 h-12 rounded-full bg-yellow-100 flex items-center justify-center">
+
+                    <x-heroicon-o-exclamation-triangle
+                        class="w-6 h-6 text-yellow-600"
+                    />
+
+                </div>
+
+                <div>
+
+                    <h3 class="text-lg font-bold text-gray-800">
+                        Konfirmasi Simpan
+                    </h3>
+
+                    <p class="text-sm text-gray-500">
+                        Data Pembagian Kelas
+                    </p>
+
+                </div>
+
+            </div>
+
+            <p class="text-gray-600 text-sm leading-relaxed">
+                Apakah data wali kelas dan ruang kelas
+                yang telah diatur sudah benar?
+            </p>
+
+            <p class="mt-3 text-sm text-red-600 font-medium">
+                Data akan disimpan dan digunakan dalam sistem akademik.
+            </p>
+
+        </div>
+
+        <div class="border-t px-6 py-4 flex justify-end gap-3">
+
+            <button
+                type="button"
+                onclick="closeSimpanModal()"
+                class="px-5 py-2.5 rounded-lg bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold">
+
+                Batal
+
+            </button>
+
+            <button
+    type="button"
+    onclick="submitSimpan()"
+    id="btnYaSimpan"
+    class="px-5 py-2.5 rounded-lg bg-green-600 hover:bg-green-700 text-white font-semibold">
+
+    Ya, Simpan
+
+</button>
+
+        </div>
+
+    </div>
+
+</div>
 
 {{-- ====================================================== --}}
 {{-- DETAIL KELAS --}}
@@ -802,4 +950,111 @@ Tutup
 
 </div>
 
+<script>
+    let generateForm = null;
+
+    // =====================================================
+    // MODAL GENERATE
+    // =====================================================
+
+    function openGenerateModal(button, tingkat)
+    {
+        generateForm = button.closest('form');
+
+        document.getElementById('generateTingkat').innerText =
+            'Kelas ' + tingkat;
+
+        document.getElementById('generateModal')
+            .classList.remove('hidden');
+    }
+
+    function closeGenerateModal()
+    {
+        document.getElementById('generateModal')
+            .classList.add('hidden');
+
+        generateForm = null;
+    }
+
+    function submitGenerate()
+    {
+        if (!generateForm) {
+            alert('Form generate tidak ditemukan.');
+            return;
+        }
+
+        generateForm.submit();
+    }
+
+
+    // =====================================================
+    // MODAL SIMPAN
+    // =====================================================
+
+    function openSimpanModal()
+    {
+        document.getElementById('simpanModal')
+            .classList.remove('hidden');
+    }
+
+    function closeSimpanModal()
+    {
+        document.getElementById('simpanModal')
+            .classList.add('hidden');
+    }
+
+    function submitSimpan()
+    {
+        const form = document.getElementById('formSimpan');
+        const button = document.getElementById('btnYaSimpan');
+
+        if (!form) {
+            alert('Form simpan tidak ditemukan.');
+            return;
+        }
+
+        button.disabled = true;
+        button.innerText = 'Menyimpan...';
+
+        document.getElementById('simpanModal')
+            .classList.add('hidden');
+
+        form.requestSubmit();
+    }
+
+
+    // =====================================================
+    // TUTUP MODAL KLIK DI LUAR
+    // =====================================================
+
+    document.addEventListener('click', function(event)
+    {
+        const generateModal =
+            document.getElementById('generateModal');
+
+        const simpanModal =
+            document.getElementById('simpanModal');
+
+        if (event.target === generateModal) {
+            closeGenerateModal();
+        }
+
+        if (event.target === simpanModal) {
+            closeSimpanModal();
+        }
+    });
+
+
+    // =====================================================
+    // TUTUP MODAL DENGAN ESC
+    // =====================================================
+
+    document.addEventListener('keydown', function(event)
+    {
+        if (event.key === 'Escape') {
+            closeGenerateModal();
+            closeSimpanModal();
+        }
+    });
+</script>
 @endsection

@@ -219,22 +219,22 @@ class GuruImport implements ToCollection
                 ),
 
                 'jabatan_ptk' => $this->cleanUpper(
-                    $this->getColumn(
-                        $row,
-                        $kolom,
-                        'jabatan ptk'
-                    )
-                ),
+    $this->getColumn(
+        $row,
+        $kolom,
+        'jabatan ptk'
+    )
+),
 
-                'jenis_pengajar' => $this->jenisPengajar(
-                    $this->getColumn(
-                        $row,
-                        $kolom,
-                        'jabatan ptk'
-                    )
-                ),
+'jenis_pengajar' => $this->jenisPengajar(
+    $this->getColumn(
+        $row,
+        $kolom,
+        'jabatan ptk'
+    )
+),
 
-                'status_guru' => 'Aktif',
+'status_guru' => 'Aktif',
 
                 /*
                 | Pertahankan kelas yang sudah ada
@@ -508,7 +508,7 @@ class GuruImport implements ToCollection
         str_contains($jabatan, 'staff') ||
         str_contains($jabatan, 'staf')
     ) {
-        return 'Staff';
+        return 'Operator';
     }
 
     // GURU PJOK

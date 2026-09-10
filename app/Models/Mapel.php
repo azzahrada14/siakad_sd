@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Models;
+use App\Models\MasterMapel;
 
 
 use Illuminate\Database\Eloquent\Model;
@@ -37,6 +38,14 @@ public function tahunAjaran()
             'kategori_mapel_id'
         );
     }
+
+    public function masterMapel()
+{
+    return $this->belongsTo(
+        MasterMapel::class,
+        'master_mapel_id'
+    );
+}
 
     public function guru()
 {
